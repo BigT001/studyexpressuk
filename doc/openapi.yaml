@@ -1,0 +1,99 @@
+openapi: 3.0.3
+info:
+  title: Study Express UK API
+  version: '0.1'
+paths:
+  /api/users:
+    post:
+      summary: Create user (signup)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateUser'
+      responses:
+        '201':
+          description: Created
+    get:
+      summary: List users (admin)
+      responses:
+        '200':
+          description: OK
+  /api/events:
+    post:
+      summary: Create event (admin)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateEvent'
+      responses:
+        '201':
+          description: Created
+    get:
+      summary: List events
+      responses:
+        '200':
+          description: OK
+  /api/memberships:
+    post:
+      summary: Purchase membership
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PurchaseMembership'
+      responses:
+        '201':
+          description: Created
+
+components:
+  schemas:
+    CreateUser:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+        phone:
+          type: string
+        role:
+          type: string
+          enum: [INDIVIDUAL, CORPORATE, SUB_ADMIN, ADMIN]
+      required: [email, password]
+
+    CreateEvent:
+      type: object
+      properties:
+        title:
+          type: string
+        description:
+          type: string
+        type:
+          type: string
+          enum: [event, course]
+        access:
+          type: string
+          enum: [free, premium, corporate]
+      required: [title]
+
+    PurchaseMembership:
+      type: object
+      properties:
+        subjectType:
+          type: string
+          enum: [USER, CORPORATE]
+        subjectId:
+          type: string
+        planId:
+          type: string
+        amount:
+          type: integer
+        currency:
+          type: string
+      required: [subjectType, subjectId, planId, amount]
