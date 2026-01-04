@@ -8,7 +8,7 @@ export async function POST(req: Request) {
     const body = await req.json();
     const parsed = createEventSchema.parse(body);
     // Require admin or sub-admin role (server-side session)
-    const session: any = await getServerAuthSession(req);
+    const session: any = await getServerAuthSession();
     if (!session || (session.user.role !== 'ADMIN' && session.user.role !== 'SUB_ADMIN')) {
       return NextResponse.json({ success: false, error: 'Forbidden' }, { status: 403 });
     }

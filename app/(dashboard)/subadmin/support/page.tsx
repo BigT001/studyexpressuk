@@ -5,7 +5,7 @@ import { MessageSquare, Flag, ArrowRight, AlertTriangle } from 'lucide-react'
 
 
 export default function SupportPage() {
-  const [selectedIssue, setSelectedIssue] = useState(null)
+  const [selectedIssue, setSelectedIssue] = useState<number | null>(null)
   const [escalationForm, setEscalationForm] = useState({ title: '', description: '', priority: 'Medium', category: 'Technical' })
 
   const issues = [

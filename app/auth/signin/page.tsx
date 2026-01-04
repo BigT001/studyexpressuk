@@ -1,11 +1,11 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, Suspense } from 'react';
 import { signIn } from 'next-auth/react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 
-export default function SignIn() {
+function SignInForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [email, setEmail] = useState('');
@@ -13,9 +13,9 @@ export default function SignIn() {
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
-  const message = searchParams.get('message');
+  const message = searchParams?.get('message');
   // Default to /individual for regular users, but allow callbackUrl override
-  const callbackUrl = searchParams.get('callbackUrl') || '/individual';
+  const callbackUrl = searchParams?.get('callbackUrl') || '/individual';
 
   const handleEmailChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setEmail(e.target.value);
@@ -187,5 +187,12 @@ export default function SignIn() {
         </p>
       </div>
     </div>
+  );
+}
+export default function SignIn() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-gradient-to-br from-white via-white to-white" />}>
+      <SignInForm />
+    </Suspense>
   );
 }

@@ -53,7 +53,7 @@ export const authOptions: NextAuthOptions = {
             id: (user as any)._id.toString(),
             email: user.email,
             role: (user as any).role,
-            name: user.firstName,
+            name: user.email,
           } as any;
         } catch (error) {
           console.error('[Auth] Authorization error:', error);
@@ -92,7 +92,6 @@ export const authOptions: NextAuthOptions = {
   },
   pages: {
     signIn: '/auth/signin',
-    signUp: '/auth/signup',
   },
 };
 

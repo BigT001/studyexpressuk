@@ -5,7 +5,7 @@ import { Search, MoreVertical, Paperclip, Send, MessageSquare } from 'lucide-rea
 
 
 export default function MessagesPage() {
-  const [selectedMessage, setSelectedMessage] = useState(null)
+  const [selectedMessage, setSelectedMessage] = useState<number | null>(null)
   const [searchQuery, setSearchQuery] = useState('')
   const [replyText, setReplyText] = useState('')
 

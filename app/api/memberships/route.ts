@@ -7,7 +7,7 @@ export async function POST(req: Request) {
   try {
     const body = await req.json();
     const parsed = purchaseMembershipSchema.parse(body);
-    const session: any = await getServerAuthSession(req);
+    const session: any = await getServerAuthSession();
     if (!session || (session.user.role !== 'INDIVIDUAL' && session.user.role !== 'CORPORATE')) {
       return NextResponse.json({ success: false, error: 'Forbidden' }, { status: 403 });
     }

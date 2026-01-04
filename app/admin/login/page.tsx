@@ -1,11 +1,11 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, Suspense } from 'react';
 import { signIn } from 'next-auth/react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 
-export default function AdminSignIn() {
+function AdminSignInForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [email, setEmail] = useState('');
@@ -13,7 +13,7 @@ export default function AdminSignIn() {
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
-  const callbackUrl = searchParams.get('callbackUrl') || '/admin';
+  const callbackUrl = searchParams?.get('callbackUrl') || '/admin';
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -147,5 +147,12 @@ export default function AdminSignIn() {
         </p>
       </div>
     </div>
+  );
+}
+export default function AdminSignIn() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900" />}>
+      <AdminSignInForm />
+    </Suspense>
   );
 }

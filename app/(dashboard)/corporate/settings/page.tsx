@@ -56,7 +56,7 @@ export default function CorporateSettingsPage() {
     setPasswordForm(prev => ({ ...prev, [name]: value }));
   };
 
-  const handleAccessControlChange = (key: string) => {
+  const handleAccessControlChange = (key: keyof typeof accessControl) => {
     setAccessControl(prev => ({ ...prev, [key]: !prev[key] }));
   };
 
@@ -241,7 +241,7 @@ export default function CorporateSettingsPage() {
                 </p>
               </div>
               <button
-                onClick={() => handleAccessControlChange(key)}
+                onClick={() => handleAccessControlChange(key as keyof typeof accessControl)}
                 className={`relative inline-flex h-8 w-14 items-center rounded-full transition-colors ${
                   value ? 'bg-green-600' : 'bg-gray-300'
                 }`}

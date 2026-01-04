@@ -70,11 +70,11 @@ export default function NotificationsPage() {
       return true
     })
 
-  const handleMarkAsRead = (id) => {
+  const handleMarkAsRead = (id: number) => {
     setNotifications(notifications.map(n => n.id === id ? { ...n, read: true } : n))
   }
 
-  const handleDelete = (id) => {
+  const handleDelete = (id: number) => {
     setNotifications(notifications.filter(n => n.id !== id))
   }
 

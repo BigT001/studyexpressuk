@@ -31,7 +31,7 @@ export default async function EnrollmentsPage() {
         <div className="bg-white rounded-2xl shadow-md border border-gray-200 p-6">
           <p className="text-gray-600 font-semibold mb-2">In Progress</p>
           <p className="text-4xl font-black text-gray-900">
-            {enrollments.filter(e => e.status === 'in_progress' || e.status === 'active').length}
+            {enrollments.filter(e => e.status === 'in_progress').length}
           </p>
         </div>
         <div className="bg-white rounded-2xl shadow-md border border-gray-200 p-6">
@@ -67,10 +67,10 @@ export default async function EnrollmentsPage() {
                 <div className="flex items-start justify-between mb-6">
                   <div className="flex-1">
                     <h3 className="text-2xl font-bold text-gray-900">
-                      {enrollment.eventId || 'Course'} #{enrollment._id}
+                      {enrollment.eventId?.toString() || 'Course'} #{enrollment._id?.toString()}
                     </h3>
                     <p className="text-gray-600 mt-1">
-                      Enrolled on {enrollment.enrollmentDate ? new Date(enrollment.enrollmentDate).toLocaleDateString() : 'Recently'}
+                      Enrolled on {enrollment.createdAt ? new Date(enrollment.createdAt).toLocaleDateString() : 'Recently'}
                     </p>
                   </div>
                   <span className={`px-4 py-2 rounded-full font-semibold text-sm ${
@@ -151,7 +151,7 @@ export default async function EnrollmentsPage() {
                   <div className="flex items-start justify-between mb-4">
                     <div>
                       <h4 className="font-bold text-gray-900 text-lg">Certificate of Completion</h4>
-                      <p className="text-sm text-gray-600 mt-1">{enrollment.eventId || 'Course'}</p>
+                      <p className="text-sm text-gray-600 mt-1">{enrollment.eventId?.toString() || 'Course'}</p>
                     </div>
                     <span className="text-3xl">🏆</span>
                   </div>
