@@ -1,9 +1,9 @@
 import { connectToDatabase } from '../db/mongoose';
-import EventModel from '../db/models/event.model';
+import EventModel, { IEvent } from '../db/models/event.model';
 
-export async function createEvent(data: Partial<{ title: string; description?: string; type?: string; access?: string; startDate?: Date; endDate?: Date; capacity?: number; createdBy?: string; metadata?: any }>) {
+export async function createEvent(data: Partial<IEvent>) {
   await connectToDatabase();
-  const ev = await EventModel.create(data as any);
+  const ev = await EventModel.create(data);
   return ev.toObject();
 }
 

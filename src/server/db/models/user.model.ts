@@ -7,7 +7,7 @@ export enum UserRole {
   ADMIN = 'ADMIN',
 }
 
-export type UserStatus = 'active' | 'inactive' | 'suspended';
+export type UserStatus = 'subscribed' | 'not-subscribed';
 
 export interface IUser extends Document {
   email: string;
@@ -25,7 +25,7 @@ const UserSchema = new Schema<IUser>(
     phone: { type: String, required: false },
     passwordHash: { type: String, required: true },
     role: { type: String, enum: Object.values(UserRole), default: UserRole.INDIVIDUAL },
-    status: { type: String, enum: ['active', 'inactive', 'suspended'], default: 'active' },
+    status: { type: String, enum: ['subscribed', 'not-subscribed'], default: 'not-subscribed' },
   },
   { timestamps: true }
 );

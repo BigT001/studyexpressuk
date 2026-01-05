@@ -12,7 +12,7 @@ export const updateUserSchema = z.object({
   email: z.string().email().optional(),
   phone: z.string().min(6).max(20).optional(),
   role: z.nativeEnum(UserRole).optional(),
-  status: z.enum(['active', 'inactive', 'suspended']).optional(),
+  status: z.enum(['subscribed', 'not-subscribed']).optional(),
 });
 
 export type CreateUserInput = z.infer<typeof createUserSchema>;

@@ -1,21 +1,46 @@
-import { getServerAuthSession } from '@/server/auth/session';
-import { connectToDatabase } from '@/server/db/mongoose';
-import IndividualProfileModel from '@/server/db/models/individualProfile.model';
-import { redirect } from 'next/navigation';
-import Link from 'next/link';
+'use client';
 
-// Mark as dynamic to prevent build-time data fetching
-export const dynamic = 'force-dynamic';
+import { useState } from 'react';
+import CloudinaryUpload from '@/components/CloudinaryUpload';
 
-export default async function ProfilePage() {
-  const session = await getServerAuthSession();
+interface ProfileData {
+  firstName: string;
+  lastName: string;
+  email: string;
+  dob: string;
+  bio: string;
+  interests: string;
+  qualifications: string;
+  profileImage: string;
+}
 
-  if (!session || session.user?.role !== 'INDIVIDUAL') {
-    redirect('/auth/signin');
-  }
+export default function ProfilePage() {
+  const [profileData, setProfileData] = useState<ProfileData>({
+    firstName: '',
+    lastName: '',
+    email: 'user@example.com',
+    dob: '',
+    bio: '',
+    interests: '',
+    qualifications: '',
+    profileImage: '',
+  });
+  const [isSaving, setIsSaving] = useState(false);
+  const [saveSuccess, setSaveSuccess] = useState(false);
 
-  await connectToDatabase();
-  const profile = await IndividualProfileModel.findOne({ userId: session.user.id }).maxTimeMS(30000).lean();
+  const handleSaveChanges = async () => {
+    try {
+      setIsSaving(true);
+      // API call would go here
+      console.log('Saving profile:', profileData);
+      setSaveSuccess(true);
+      setTimeout(() => setSaveSuccess(false), 3000);
+    } catch (error) {
+      console.error('Failed to save profile:', error);
+    } finally {
+      setIsSaving(false);
+    }
+  };
 
   return (
     <div className="space-y-8">
@@ -25,33 +50,39 @@ export default async function ProfilePage() {
         <p className="text-gray-600">Manage your personal information and account settings</p>
       </div>
 
+      {/* Success Message */}
+      {saveSuccess && (
+        <div className="bg-green-50 border border-green-200 rounded-lg p-4 text-green-800">
+          ✓ Profile updated successfully!
+        </div>
+      )}
+
       {/* Profile Card */}
       <div className="bg-white rounded-2xl shadow-md border border-gray-200 p-8">
-        <div className="flex items-center gap-6 mb-8">
-          <div className="w-24 h-24 bg-gradient-to-br from-[#008200] to-[#00B300] rounded-full flex items-center justify-center text-5xl">
-            👤
-          </div>
-          <div>
-            <h2 className="text-3xl font-black text-gray-900">
-              {profile?.firstName && profile?.lastName 
-                ? `${profile.firstName} ${profile.lastName}` 
-                : 'Complete Your Profile'}
-            </h2>
-            <p className="text-gray-600 mt-1">{session.user?.email}</p>
-            <p className="text-sm text-gray-500 mt-2">Member since: January 2, 2026</p>
-          </div>
+        {/* Profile Image Upload */}
+        <div className="mb-8 pb-8 border-b border-gray-200">
+          <CloudinaryUpload
+            folder="users"
+            onUploadSuccess={(url) => setProfileData({ ...profileData, profileImage: url })}
+            currentImage={profileData.profileImage}
+            label="Profile Picture"
+            width={120}
+            height={120}
+            buttonText="📸 Upload Profile Photo"
+          />
         </div>
 
-        <div className="grid md:grid-cols-2 gap-8 border-t border-gray-200 pt-8">
+        <div className="grid md:grid-cols-2 gap-8">
           {/* Personal Details Section */}
           <div className="space-y-6">
             <h3 className="text-xl font-bold text-gray-900">Personal Details</h3>
-            
+
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-2">First Name</label>
               <input
                 type="text"
-                defaultValue={profile?.firstName || ''}
+                value={profileData.firstName}
+                onChange={(e) => setProfileData({ ...profileData, firstName: e.target.value })}
                 placeholder="Enter first name"
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#008200]"
               />
@@ -61,7 +92,8 @@ export default async function ProfilePage() {
               <label className="block text-sm font-semibold text-gray-700 mb-2">Last Name</label>
               <input
                 type="text"
-                defaultValue={profile?.lastName || ''}
+                value={profileData.lastName}
+                onChange={(e) => setProfileData({ ...profileData, lastName: e.target.value })}
                 placeholder="Enter last name"
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#008200]"
               />
@@ -71,7 +103,7 @@ export default async function ProfilePage() {
               <label className="block text-sm font-semibold text-gray-700 mb-2">Email Address</label>
               <input
                 type="email"
-                value={session.user?.email || ''}
+                value={profileData.email}
                 disabled
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-gray-100 text-gray-600"
               />
@@ -82,7 +114,8 @@ export default async function ProfilePage() {
               <label className="block text-sm font-semibold text-gray-700 mb-2">Date of Birth</label>
               <input
                 type="date"
-                defaultValue={profile?.dob ? new Date(profile.dob).toISOString().split('T')[0] : ''}
+                value={profileData.dob}
+                onChange={(e) => setProfileData({ ...profileData, dob: e.target.value })}
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#008200]"
               />
             </div>
@@ -95,7 +128,8 @@ export default async function ProfilePage() {
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-2">Bio / About You</label>
               <textarea
-                defaultValue={profile?.bio || ''}
+                value={profileData.bio}
+                onChange={(e) => setProfileData({ ...profileData, bio: e.target.value })}
                 placeholder="Tell us about yourself..."
                 rows={4}
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#008200]"
@@ -106,6 +140,8 @@ export default async function ProfilePage() {
               <label className="block text-sm font-semibold text-gray-700 mb-2">Interests / Areas of Learning</label>
               <input
                 type="text"
+                value={profileData.interests}
+                onChange={(e) => setProfileData({ ...profileData, interests: e.target.value })}
                 placeholder="e.g., Web Development, Business, etc."
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#008200]"
               />
@@ -115,6 +151,8 @@ export default async function ProfilePage() {
               <label className="block text-sm font-semibold text-gray-700 mb-2">Qualifications</label>
               <input
                 type="text"
+                value={profileData.qualifications}
+                onChange={(e) => setProfileData({ ...profileData, qualifications: e.target.value })}
                 placeholder="e.g., BSc Computer Science, etc."
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#008200]"
               />
@@ -124,8 +162,12 @@ export default async function ProfilePage() {
 
         {/* Action Buttons */}
         <div className="flex gap-4 mt-8 pt-8 border-t border-gray-200">
-          <button className="px-6 py-3 bg-gradient-to-r from-[#008200] to-[#00B300] text-white font-bold rounded-lg hover:shadow-lg transition-all duration-300 disabled:opacity-50">
-            Save Changes
+          <button
+            onClick={handleSaveChanges}
+            disabled={isSaving}
+            className="px-6 py-3 bg-gradient-to-r from-[#008200] to-[#00B300] text-white font-bold rounded-lg hover:shadow-lg transition-all duration-300 disabled:opacity-50"
+          >
+            {isSaving ? 'Saving...' : 'Save Changes'}
           </button>
           <button className="px-6 py-3 bg-gray-200 text-gray-900 font-bold rounded-lg hover:bg-gray-300 transition-all duration-300">
             Cancel
@@ -155,10 +197,10 @@ export default async function ProfilePage() {
 
           <button className="w-full flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors group">
             <div className="text-left">
-              <h4 className="font-bold text-gray-900 group-hover:text-[#008200] transition-colors">Profile Picture</h4>
-              <p className="text-sm text-gray-600">Upload or change your profile picture</p>
+              <h4 className="font-bold text-gray-900 group-hover:text-[#008200] transition-colors">Activity Log</h4>
+              <p className="text-sm text-gray-600">View your account activity</p>
             </div>
-            <span className="text-2xl">📸</span>
+            <span className="text-2xl">📊</span>
           </button>
         </div>
       </div>

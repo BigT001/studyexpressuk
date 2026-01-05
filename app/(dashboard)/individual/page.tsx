@@ -41,12 +41,4 @@ export default async function IndividualDashboard() {
       </div>
     </div>
   );
-        <CommunicationSection />
-        <NotificationsSection />
-        <QuickActionsSection />
-          </div>
-        </div>
-      </div>
-    </div>
-  );
 }
