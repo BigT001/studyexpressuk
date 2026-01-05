@@ -4,9 +4,9 @@ import mongoose from 'mongoose';
 mongoose.set('bufferTimeoutMS', 30000); // 30 second buffer timeout for queries
 
 const MONGODB_URI = process.env.MONGODB_URI || '';
-const CONNECTION_TIMEOUT = 60000; // 60 second timeout for initial connection
-const MAX_RETRIES = 3;
-const RETRY_DELAY = 2000; // 2 seconds between retries
+const CONNECTION_TIMEOUT = 30000; // 30 second timeout (reduced from 60)
+const MAX_RETRIES = 2; // Reduced from 3 to 2
+const RETRY_DELAY = 1000; // Reduced from 2000 to 1 second between retries
 
 let cachedConnection: typeof mongoose | null = null;
 
@@ -31,13 +31,13 @@ export async function connectToDatabase() {
       
       // Add connection timeout
       const timeoutPromise = new Promise<never>((_, reject) =>
-        setTimeout(() => reject(new Error('MongoDB connection timeout after 60 seconds')), CONNECTION_TIMEOUT)
+        setTimeout(() => reject(new Error(`MongoDB connection timeout after ${CONNECTION_TIMEOUT / 1000} seconds`)), CONNECTION_TIMEOUT)
       );
       
       const connectPromise = mongoose.connect(MONGODB_URI, {
-        serverSelectionTimeoutMS: 60000,
-        socketTimeoutMS: 60000,
-        connectTimeoutMS: 60000,
+        serverSelectionTimeoutMS: 30000, // Reduced from 60000
+        socketTimeoutMS: 30000, // Reduced from 60000
+        connectTimeoutMS: 30000, // Reduced from 60000
         maxPoolSize: 10,
         minPoolSize: 2,
         maxIdleTimeMS: 45000,

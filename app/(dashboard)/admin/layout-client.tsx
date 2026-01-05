@@ -7,12 +7,12 @@ export default function AdminLayoutClient({ children }: { children: React.ReactN
   const { isCollapsed } = useSidebar();
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 flex">
       {/* Fixed Sidebar */}
       <AdminSidebar />
 
       {/* Main Content with responsive margin for sidebar */}
-      <main className={`min-h-screen overflow-y-auto transition-all duration-300 md:${isCollapsed ? 'ml-20' : 'ml-64'} pt-16 md:pt-0`}>
+      <main className={`flex-1 min-h-screen overflow-y-auto transition-all duration-300 ${isCollapsed ? 'md:ml-20' : 'md:ml-64'}`}>
         <div className="p-4 md:p-8">
           <h1 className="text-2xl md:text-3xl font-black text-gray-900 mb-6 md:mb-8">Admin</h1>
           {children}

@@ -7,6 +7,7 @@ export default async function AdminDashboard() {
   let userCount = 0;
   let eventCount = 0;
   let membershipCount = 0;
+  let connectionError = false;
 
   try {
     const { connectToDatabase } = await import('@/server/db/mongoose');
@@ -14,12 +15,25 @@ export default async function AdminDashboard() {
     const EventModel = (await import('@/server/db/models/event.model')).default;
     const MembershipModel = (await import('@/server/db/models/membership.model')).default;
 
-    await connectToDatabase();
-    userCount = await UserModel.countDocuments().maxTimeMS(30000);
-    eventCount = await EventModel.countDocuments().maxTimeMS(30000);
-    membershipCount = await MembershipModel.countDocuments().maxTimeMS(30000);
+    // Wrap connection in timeout to prevent hanging
+    const connectionPromise = connectToDatabase();
+    const timeoutPromise = new Promise((_, reject) =>
+      setTimeout(() => reject(new Error('Connection timeout')), 45000)
+    );
+
+    try {
+      await Promise.race([connectionPromise, timeoutPromise]);
+      userCount = await UserModel.countDocuments().maxTimeMS(30000);
+      eventCount = await EventModel.countDocuments().maxTimeMS(30000);
+      membershipCount = await MembershipModel.countDocuments().maxTimeMS(30000);
+    } catch (err) {
+      console.error('Error fetching stats:', err instanceof Error ? err.message : err);
+      connectionError = true;
+      // Continue with default values (0) if connection fails
+    }
   } catch (error) {
-    console.error('Error fetching stats:', error);
+    console.error('Error importing models:', error);
+    connectionError = true;
   }
 
   const adminSections = [
@@ -134,10 +148,24 @@ export default async function AdminDashboard() {
   ];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
+    <div className="w-full min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
+      {/* Connection Error Banner */}
+      {connectionError && (
+        <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-6 rounded">
+          <div className="flex items-center">
+            <span className="text-2xl mr-3">⚠️</span>
+            <div>
+              <p className="font-semibold text-yellow-900">Database Connection Issue</p>
+              <p className="text-sm text-yellow-800 mt-1">
+                Unable to connect to MongoDB. Stats are showing default values. Please check your internet connection or database status.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Key Metrics Section - Responsive Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 mb-8 md:mb-10">
+      <div className="w-full grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 mb-8 md:mb-10">
         {/* Total Users Card */}
         <div className="group relative overflow-hidden bg-white rounded-2xl shadow-md border border-gray-200 p-6 md:p-8 hover:shadow-lg transition-shadow duration-300">
           <div className="absolute top-0 right-0 w-24 h-24 bg-blue-100 rounded-full -mr-12 -mt-12 opacity-50 group-hover:opacity-100 transition-opacity"></div>

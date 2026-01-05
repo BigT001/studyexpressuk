@@ -74,6 +74,17 @@ export async function POST(req: Request) {
     const error = err as Error & { errors?: unknown };
     console.error('Signup error:', error);
     
+    // Handle database connection errors
+    if (error.message?.includes('MongoDB connection') || error.message?.includes('timeout')) {
+      return NextResponse.json(
+        { 
+          success: false, 
+          error: 'Database service is currently unavailable. Please try again in a few moments.' 
+        }, 
+        { status: 503 }
+      );
+    }
+    
     // Handle validation errors
     if (error.errors) {
       return NextResponse.json(
