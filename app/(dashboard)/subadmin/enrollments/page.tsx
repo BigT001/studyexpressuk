@@ -4,6 +4,9 @@ import UserModel from '../../../../src/server/db/models/user.model';
 import EventModel from '../../../../src/server/db/models/event.model';
 import { Card } from '../../../../src/components/ui';
 
+// Mark this page as dynamic to prevent build-time data fetching
+export const dynamic = 'force-dynamic';
+
 export default async function SubAdminEnrollmentsPage() {
   try {
     await connectToDatabase();
@@ -13,6 +16,7 @@ export default async function SubAdminEnrollmentsPage() {
       .populate('eventId', 'title')
       .select('status enrollmentDate completionDate progress')
       .lean()
+      .maxTimeMS(30000)
       .limit(100);
 
     const statusStats = {

@@ -35,7 +35,7 @@ function SignInForm() {
     try {
       // Create a timeout promise
       const timeoutPromise = new Promise((_, reject) =>
-        setTimeout(() => reject(new Error('Signin timeout')), 15000) // 15 second timeout
+        setTimeout(() => reject(new Error('Signin timeout')), 50000) // 50 second timeout for production MongoDB latency
       );
 
       const signInPromise = signIn('credentials', {

@@ -2,6 +2,9 @@ import { connectToDatabase } from '../../../../src/server/db/mongoose';
 import UserModel from '../../../../src/server/db/models/user.model';
 import { Card, Table } from '../../../../src/components/ui';
 
+// Mark this page as dynamic to prevent build-time data fetching
+export const dynamic = 'force-dynamic';
+
 export default async function SubAdminUsersPage() {
   try {
     await connectToDatabase();
@@ -9,6 +12,7 @@ export default async function SubAdminUsersPage() {
     const users = await UserModel.find()
       .select('email role status createdAt')
       .lean()
+      .maxTimeMS(30000)
       .limit(100);
 
     const roleStats = {

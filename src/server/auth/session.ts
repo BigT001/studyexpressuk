@@ -22,10 +22,10 @@ export const authOptions: NextAuthOptions = {
         try {
           console.log(`[Auth] Attempting login for email: ${credentials.email}`);
           
-          // Add timeout to database connection
+          // Add timeout to database connection (45 seconds for production MongoDB Atlas)
           const connectPromise = connectToDatabase();
           const timeoutPromise = new Promise<never>((_, reject) =>
-            setTimeout(() => reject(new Error('[Auth] Database connection timeout')), 15000)
+            setTimeout(() => reject(new Error('[Auth] Database connection timeout')), 45000)
           );
           
           try {

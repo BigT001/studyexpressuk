@@ -4,18 +4,21 @@ import EventModel from '../../../src/server/db/models/event.model';
 import EnrollmentModel from '../../../src/server/db/models/enrollment.model';
 import { Card } from '../../../src/components/ui';
 
+// Mark this page as dynamic to prevent build-time data fetching
+export const dynamic = 'force-dynamic';
+
 export default async function SubAdminDashboard() {
   try {
     await connectToDatabase();
 
     const [totalUsers, totalEvents, totalEnrollments] = await Promise.all([
-      UserModel.countDocuments(),
-      EventModel.countDocuments(),
-      EnrollmentModel.countDocuments(),
+      UserModel.countDocuments().maxTimeMS(30000),
+      EventModel.countDocuments().maxTimeMS(30000),
+      EnrollmentModel.countDocuments().maxTimeMS(30000),
     ]);
 
-    const activeEvents = await EventModel.countDocuments({ status: 'active' });
-    const completedEnrollments = await EnrollmentModel.countDocuments({ status: 'completed' });
+    const activeEvents = await EventModel.countDocuments({ status: 'active' }).maxTimeMS(30000);
+    const completedEnrollments = await EnrollmentModel.countDocuments({ status: 'completed' }).maxTimeMS(30000);
 
     return (
       <div className="space-y-6">

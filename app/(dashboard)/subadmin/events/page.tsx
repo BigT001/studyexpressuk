@@ -3,6 +3,9 @@ import { connectToDatabase } from '../../../../src/server/db/mongoose';
 import EventModel from '../../../../src/server/db/models/event.model';
 import { Card } from '../../../../src/components/ui';
 
+// Mark this page as dynamic to prevent build-time data fetching
+export const dynamic = 'force-dynamic';
+
 export default async function SubAdminEventsPage() {
   try {
     await connectToDatabase();
@@ -10,6 +13,7 @@ export default async function SubAdminEventsPage() {
     const events = await EventModel.find()
       .select('title description status date capacity enrollmentCount createdAt')
       .lean()
+      .maxTimeMS(30000)
       .limit(100);
 
     const statusStats = {
