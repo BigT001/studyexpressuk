@@ -1,5 +1,8 @@
 import mongoose from 'mongoose';
 
+// Set global mongoose options
+mongoose.set('bufferTimeoutMS', 30000); // 30 second buffer timeout for queries
+
 const MONGODB_URI = process.env.MONGODB_URI || '';
 const CONNECTION_TIMEOUT = 60000; // 60 second timeout for initial connection
 const MAX_RETRIES = 3;

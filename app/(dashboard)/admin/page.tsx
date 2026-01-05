@@ -1,5 +1,8 @@
 import Link from 'next/link';
 
+// Mark as dynamic to prevent build-time data fetching
+export const dynamic = 'force-dynamic';
+
 export default async function AdminDashboard() {
   let userCount = 0;
   let eventCount = 0;
@@ -12,9 +15,9 @@ export default async function AdminDashboard() {
     const MembershipModel = (await import('@/server/db/models/membership.model')).default;
 
     await connectToDatabase();
-    userCount = await UserModel.countDocuments().maxTimeMS(15000);
-    eventCount = await EventModel.countDocuments().maxTimeMS(15000);
-    membershipCount = await MembershipModel.countDocuments().maxTimeMS(15000);
+    userCount = await UserModel.countDocuments().maxTimeMS(30000);
+    eventCount = await EventModel.countDocuments().maxTimeMS(30000);
+    membershipCount = await MembershipModel.countDocuments().maxTimeMS(30000);
   } catch (error) {
     console.error('Error fetching stats:', error);
   }

@@ -35,7 +35,7 @@ export const authOptions: NextAuthOptions = {
             throw connectErr;
           }
           
-          const user = await UserModel.findOne({ email: credentials.email }).lean();
+          const user = await UserModel.findOne({ email: credentials.email }).maxTimeMS(30000).lean();
           if (!user) {
             console.log(`[Auth] User not found: ${credentials.email}`);
             return null;

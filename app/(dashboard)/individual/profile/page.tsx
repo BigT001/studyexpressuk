@@ -4,6 +4,9 @@ import IndividualProfileModel from '@/server/db/models/individualProfile.model';
 import { redirect } from 'next/navigation';
 import Link from 'next/link';
 
+// Mark as dynamic to prevent build-time data fetching
+export const dynamic = 'force-dynamic';
+
 export default async function ProfilePage() {
   const session = await getServerAuthSession();
 
@@ -12,7 +15,7 @@ export default async function ProfilePage() {
   }
 
   await connectToDatabase();
-  const profile = await IndividualProfileModel.findOne({ userId: session.user.id }).lean();
+  const profile = await IndividualProfileModel.findOne({ userId: session.user.id }).maxTimeMS(30000).lean();
 
   return (
     <div className="space-y-8">
