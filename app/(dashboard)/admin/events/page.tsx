@@ -11,6 +11,7 @@ interface Event {
   type: 'event' | 'course';
   category?: string;
   access: 'free' | 'premium' | 'corporate';
+  format?: 'online' | 'offline' | 'hybrid';
   startDate?: string;
   endDate?: string;
   maxCapacity?: number;
@@ -18,6 +19,7 @@ interface Event {
   location?: string;
   status: 'draft' | 'published' | 'active' | 'completed' | 'cancelled';
   featured?: boolean;
+  imageUrl?: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -52,6 +54,7 @@ export default function EventsManagementPage() {
     description: '',
     category: '',
     access: 'free' as 'free' | 'premium' | 'corporate',
+    format: '' as 'online' | 'offline' | 'hybrid' | '',
     startDate: '',
     endDate: '',
     maxCapacity: '',
@@ -79,7 +82,11 @@ export default function EventsManagementPage() {
         setLoading(true);
         const res = await fetch('/api/events');
         const data = await res.json();
+        console.log('===== FETCH EVENTS =====');
+        console.log('Raw API response:', data);
         if (data.success) {
+          console.log('Events fetched:', data.events);
+          console.log('Sample event format field:', data.events[0]?.format);
           setEvents(data.events);
           calculateStats(data.events);
         }
@@ -129,21 +136,46 @@ export default function EventsManagementPage() {
   // Handle create event
   const handleCreateEvent = async () => {
     try {
+      const payload: any = {
+        title: formData.title,
+        description: formData.description,
+        category: formData.category,
+        access: formData.access,
+        startDate: formData.startDate ? new Date(formData.startDate) : undefined,
+        endDate: formData.endDate ? new Date(formData.endDate) : undefined,
+        maxCapacity: formData.maxCapacity ? parseInt(formData.maxCapacity) : undefined,
+        location: formData.location,
+        status: formData.status,
+        imageUrl: formData.imageUrl,
+      };
+      // Only include format if it's not empty
+      if (formData.format) {
+        payload.format = formData.format;
+      }
+      console.log('===== CREATE EVENT =====');
+      console.log('Form data format:', formData.format);
+      console.log('Sending payload to API:', payload);
+      
       const res = await fetch('/api/events', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          ...formData,
-          maxCapacity: formData.maxCapacity ? parseInt(formData.maxCapacity) : undefined,
-        }),
+        body: JSON.stringify(payload),
       });
       const data = await res.json();
+      console.log('API Response:', data);
+      console.log('Saved event format in response:', data.event?.format);
+      
       if (data.success) {
+        console.log('Event created successfully, adding to state');
         setEvents([data.event, ...events]);
         resetModal();
+        alert('Event created successfully!');
+      } else {
+        alert(`Error: ${data.error || 'Failed to create event'}`);
       }
     } catch (error) {
       console.error('Failed to create event:', error);
+      alert(`Error creating event: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   };
 
@@ -151,21 +183,69 @@ export default function EventsManagementPage() {
   const handleEditEvent = async () => {
     if (!selectedEvent) return;
     try {
+      const payload: any = {
+        title: formData.title,
+        description: formData.description,
+        category: formData.category,
+        access: formData.access,
+        startDate: formData.startDate ? new Date(formData.startDate) : undefined,
+        endDate: formData.endDate ? new Date(formData.endDate) : undefined,
+        maxCapacity: formData.maxCapacity ? parseInt(formData.maxCapacity) : undefined,
+        location: formData.location,
+        status: formData.status,
+        imageUrl: formData.imageUrl,
+      };
+      // Only include format if it's not empty
+      if (formData.format) {
+        payload.format = formData.format;
+      }
+      console.log('Sending update payload:', payload);
       const res = await fetch(`/api/events/${selectedEvent._id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          ...formData,
-          maxCapacity: formData.maxCapacity ? parseInt(formData.maxCapacity) : undefined,
-        }),
+        body: JSON.stringify(payload),
       });
       const data = await res.json();
+      console.log('Update response:', data);
       if (data.success) {
-        setEvents(events.map(e => e._id === selectedEvent._id ? data.event : e));
+        // Update local state with the new data
+        setEvents(events.map(e => e._id === selectedEvent._id ? { ...e, ...data.event } : e));
+        setFilteredEvents(filteredEvents.map(e => e._id === selectedEvent._id ? { ...e, ...data.event } : e));
         resetModal();
+        alert('Event updated successfully!');
+      } else {
+        alert(`Error: ${data.error || 'Failed to update event'}`);
       }
     } catch (error) {
       console.error('Failed to update event:', error);
+      alert(`Error updating event: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
+  };
+
+  // Handle delete event
+  const handleDeleteEvent = async (eventId: string, eventTitle: string) => {
+    if (!confirm(`Are you sure you want to delete "${eventTitle}"? This action cannot be undone.`)) {
+      return;
+    }
+
+    try {
+      const res = await fetch(`/api/events/${eventId}`, {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+      });
+      const data = await res.json();
+
+      if (data.success) {
+        // Remove from state
+        setEvents(events.filter(e => e._id !== eventId));
+        setFilteredEvents(filteredEvents.filter(e => e._id !== eventId));
+        alert(`Event "${eventTitle}" deleted successfully!`);
+      } else {
+        alert(`Error: ${data.error || 'Failed to delete event'}`);
+      }
+    } catch (error) {
+      console.error('Failed to delete event:', error);
+      alert(`Error deleting event: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   };
 
@@ -179,6 +259,7 @@ export default function EventsManagementPage() {
       description: '',
       category: '',
       access: 'free',
+      format: '',
       startDate: '',
       endDate: '',
       maxCapacity: '',
@@ -197,11 +278,15 @@ export default function EventsManagementPage() {
   // Open edit modal
   const openEditModal = (event: Event) => {
     setSelectedEvent(event);
+    const eventFormat = event.format || '';
+    console.log('Editing event:', event);
+    console.log('Event format from DB:', event.format);
     setFormData({
       title: event.title,
       description: event.description || '',
       category: event.category || '',
       access: event.access,
+      format: eventFormat as 'online' | 'offline' | 'hybrid' | '',
       startDate: event.startDate?.split('T')[0] || '',
       endDate: event.endDate?.split('T')[0] || '',
       maxCapacity: event.maxCapacity?.toString() || '',
@@ -335,6 +420,7 @@ export default function EventsManagementPage() {
                   category={event.category}
                   status={event.status}
                   access={event.access}
+                  format={event.format}
                   startDate={event.startDate}
                   location={event.location}
                   currentEnrollment={event.currentEnrollment}
@@ -342,6 +428,7 @@ export default function EventsManagementPage() {
                   imageUrl={event.imageUrl}
                   onEdit={() => openEditModal(event)}
                   onPermissions={() => openPermissionsModal(event)}
+                  onDelete={() => handleDeleteEvent(event._id, event.title)}
                 />
               ))}
             </div>
@@ -456,6 +543,20 @@ export default function EventsManagementPage() {
                     placeholder="Physical location or 'Virtual'"
                     className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                   />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Event Format (Optional)</label>
+                  <select
+                    value={formData.format}
+                    onChange={(e) => setFormData({ ...formData, format: e.target.value as any })}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    <option value="">-- Select Format --</option>
+                    <option value="online">🌐 Online</option>
+                    <option value="offline">📍 Offline</option>
+                    <option value="hybrid">🔄 Hybrid (Online + Offline)</option>
+                  </select>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

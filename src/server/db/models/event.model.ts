@@ -3,6 +3,7 @@ import mongoose, { Schema, Document } from 'mongoose';
 export type EventAccess = 'free' | 'premium' | 'corporate';
 export type EventType = 'event' | 'course';
 export type EventStatus = 'draft' | 'published' | 'active' | 'completed' | 'cancelled';
+export type EventFormat = 'online' | 'offline' | 'hybrid';
 
 export interface IEvent extends Document {
   title: string;
@@ -15,6 +16,7 @@ export interface IEvent extends Document {
   maxCapacity?: number;
   currentEnrollment?: number;
   location?: string; // Physical or virtual location
+  format?: EventFormat; // online, offline, or hybrid
   instructor?: mongoose.Types.ObjectId; // ref: User
   imageUrl?: string; // Cloudinary URL
   status: EventStatus;
@@ -37,6 +39,7 @@ const EventSchema = new Schema<IEvent>(
     maxCapacity: { type: Number },
     currentEnrollment: { type: Number, default: 0 },
     location: { type: String },
+    format: { type: String, enum: ['online', 'offline', 'hybrid'] }, // No default - truly optional
     instructor: { type: Schema.Types.ObjectId, ref: 'User' },
     imageUrl: { type: String },
     status: { type: String, enum: ['draft', 'published', 'active', 'completed', 'cancelled'], default: 'draft' },

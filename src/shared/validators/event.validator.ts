@@ -6,6 +6,7 @@ export const createEventSchema = z.object({
   category: z.string().optional(),
   type: z.enum(['event', 'course']).optional(),
   access: z.enum(['free', 'premium', 'corporate']).optional(),
+  format: z.enum(['online', 'offline', 'hybrid']).optional(),
   startDate: z.string().optional(),
   endDate: z.string().optional(),
   location: z.string().optional(),

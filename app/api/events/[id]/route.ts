@@ -19,8 +19,23 @@ export async function PATCH(
 
     await connectToDatabase();
 
+    // Validate that ID is a valid MongoDB ObjectId
+    if (!id.match(/^[0-9a-fA-F]{24}$/)) {
+      return NextResponse.json(
+        { success: false, error: 'Invalid event ID' },
+        { status: 400 }
+      );
+    }
+
     // Update the event
-    const updatedEvent = await EventModel.findByIdAndUpdate(id, body, { new: true });
+    const updatedEvent = await EventModel.findByIdAndUpdate(
+      id,
+      {
+        ...body,
+        updatedAt: new Date(),
+      },
+      { new: true, runValidators: true }
+    );
 
     if (!updatedEvent) {
       return NextResponse.json(
