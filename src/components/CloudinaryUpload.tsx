@@ -68,15 +68,23 @@ export default function CloudinaryUpload({
             }}
             onSuccess={handleUploadSuccess}
           >
-            {({ open }) => (
-              <button
-                type="button"
-                onClick={() => open()}
-                className="w-full px-4 py-3 border-2 border-dashed border-blue-400 rounded-lg bg-blue-50 hover:bg-blue-100 transition-colors text-blue-700 font-medium cursor-pointer"
-              >
-                {buttonText}
-              </button>
-            )}
+            {(cloudinaryContext) => {
+              const handleClick = () => {
+                if (cloudinaryContext?.open) {
+                  cloudinaryContext.open();
+                }
+              };
+
+              return (
+                <button
+                  type="button"
+                  onClick={handleClick}
+                  className="w-full px-4 py-3 border-2 border-dashed border-blue-400 rounded-lg bg-blue-50 hover:bg-blue-100 transition-colors text-blue-700 font-medium cursor-pointer"
+                >
+                  {buttonText}
+                </button>
+              );
+            }}
           </CldUploadWidget>
           <p className="text-xs text-gray-500 mt-2">JPG, PNG, WebP (Max 5MB)</p>
         </div>

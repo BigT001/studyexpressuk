@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { HeroSection } from '@/components/HeroSection';
 import { ExploreAll } from '@/components/ExploreAll';
 import { ExploreEvents } from '@/components/ExploreEvents';
+import { ExploreCourses } from '@/components/ExploreCourses';
 
 export default function HomePage() {
   return (
@@ -11,6 +12,9 @@ export default function HomePage() {
 
       {/* Explore Events Section */}
       <ExploreEvents />
+
+      {/* Explore Courses Section */}
+      <ExploreCourses />
 
       {/* Explore All Section */}
       <ExploreAll />

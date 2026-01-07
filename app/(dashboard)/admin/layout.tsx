@@ -8,7 +8,7 @@ export default async function AdminDashboardLayout({ children }: { children: Rea
   const session: any = await getServerAuthSession();
 
   if (!session || session.user?.role !== 'ADMIN') {
-    redirect('/login');
+    redirect('/auth/signin');
   }
 
   return (

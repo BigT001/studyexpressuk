@@ -31,6 +31,7 @@ export default function CoursesManagementPage() {
   const [courses, setCourses] = useState<Course[]>([]);
   const [filteredCourses, setFilteredCourses] = useState<Course[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [selectedCourse, setSelectedCourse] = useState<Course | null>(null);
@@ -59,12 +60,23 @@ export default function CoursesManagementPage() {
     const fetchCourses = async () => {
       try {
         setLoading(true);
-        // Mock data for now - replace with real API call
-        const mockCourses: Course[] = [];
-        setCourses(mockCourses);
-        calculateStats(mockCourses);
+        setError(null);
+        const res = await fetch('/api/courses');
+        const data = await res.json();
+        console.log('===== FETCH COURSES =====');
+        console.log('Response status:', res.status);
+        console.log('Response data:', data);
+        if (data.success) {
+          setCourses(data.courses || []);
+          calculateStats(data.courses || []);
+        } else {
+          setError(data.error || 'Failed to fetch courses');
+          console.error('API error:', data.error);
+        }
       } catch (error) {
+        const message = error instanceof Error ? error.message : 'Unknown error';
         console.error('Failed to fetch courses:', error);
+        setError(message);
       } finally {
         setLoading(false);
       }
@@ -105,11 +117,40 @@ export default function CoursesManagementPage() {
   // Handle create course
   const handleCreateCourse = async () => {
     try {
-      // API call would go here
-      console.log('Creating course:', formData);
-      resetModal();
+      if (!formData.title.trim()) {
+        alert('Course title is required');
+        return;
+      }
+
+      const payload = {
+        title: formData.title,
+        description: formData.description,
+        category: formData.category,
+        level: formData.level,
+        duration: formData.duration ? parseInt(formData.duration) : undefined,
+        price: formData.price ? parseFloat(formData.price) : undefined,
+        instructor: formData.instructor,
+        status: formData.status,
+        imageUrl: formData.imageUrl,
+      };
+
+      const res = await fetch('/api/courses', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      const data = await res.json();
+
+      if (data.success) {
+        setCourses([data.course, ...courses]);
+        resetModal();
+        alert('Course created successfully!');
+      } else {
+        alert(`Error: ${data.error || 'Failed to create course'}`);
+      }
     } catch (error) {
       console.error('Failed to create course:', error);
+      alert(`Error creating course: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   };
 
@@ -117,11 +158,67 @@ export default function CoursesManagementPage() {
   const handleEditCourse = async () => {
     if (!selectedCourse) return;
     try {
-      // API call would go here
-      console.log('Updating course:', formData);
-      resetModal();
+      if (!formData.title.trim()) {
+        alert('Course title is required');
+        return;
+      }
+
+      const payload = {
+        title: formData.title,
+        description: formData.description,
+        category: formData.category,
+        level: formData.level,
+        duration: formData.duration ? parseInt(formData.duration) : undefined,
+        price: formData.price ? parseFloat(formData.price) : undefined,
+        instructor: formData.instructor,
+        status: formData.status,
+        imageUrl: formData.imageUrl,
+      };
+
+      const res = await fetch(`/api/courses/${selectedCourse._id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      const data = await res.json();
+
+      if (data.success) {
+        setCourses(courses.map(c => c._id === selectedCourse._id ? { ...c, ...data.course } : c));
+        setFilteredCourses(filteredCourses.map(c => c._id === selectedCourse._id ? { ...c, ...data.course } : c));
+        resetModal();
+        alert('Course updated successfully!');
+      } else {
+        alert(`Error: ${data.error || 'Failed to update course'}`);
+      }
     } catch (error) {
       console.error('Failed to update course:', error);
+      alert(`Error updating course: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
+  };
+
+  // Handle delete course
+  const handleDeleteCourse = async (courseId: string, courseTitle: string) => {
+    if (!confirm(`Are you sure you want to delete "${courseTitle}"? This action cannot be undone.`)) {
+      return;
+    }
+
+    try {
+      const res = await fetch(`/api/courses/${courseId}`, {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+      });
+      const data = await res.json();
+
+      if (data.success) {
+        setCourses(courses.filter(c => c._id !== courseId));
+        setFilteredCourses(filteredCourses.filter(c => c._id !== courseId));
+        alert(`Course "${courseTitle}" deleted successfully!`);
+      } else {
+        alert(`Error: ${data.error || 'Failed to delete course'}`);
+      }
+    } catch (error) {
+      console.error('Failed to delete course:', error);
+      alert(`Error deleting course: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   };
 
@@ -263,6 +360,11 @@ export default function CoursesManagementPage() {
 
         {/* Courses Grid */}
         <div>
+          {error && (
+            <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
+              <p className="text-red-800 font-semibold">Error: {error}</p>
+            </div>
+          )}
           {loading ? (
             <div className="p-8 text-center text-gray-500">Loading courses...</div>
           ) : filteredCourses.length === 0 ? (
@@ -270,83 +372,91 @@ export default function CoursesManagementPage() {
               {courses.length === 0 ? 'No courses created yet' : 'No courses match your filters'}
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="columns-1 md:columns-2 lg:columns-3 gap-6">
               {filteredCourses.map((course) => (
-                <div key={course._id} className="bg-white rounded-lg shadow-sm hover:shadow-md transition-all duration-200 border border-gray-200 overflow-hidden">
-                  {/* Image */}
-                  {course.imageUrl && (
-                    <div className="relative w-full h-40 overflow-hidden bg-gray-200">
-                      <img
-                        src={course.imageUrl}
-                        alt={course.title}
-                        className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
-                      />
+                <div key={course._id} className="break-inside-avoid mb-6">
+                  <div className="bg-white rounded-lg shadow-sm hover:shadow-md transition-all duration-200 border border-gray-200 overflow-hidden">
+                    {/* Image */}
+                    {course.imageUrl && (
+                      <div className="relative w-full aspect-video overflow-hidden bg-gray-200">
+                        <img
+                          src={course.imageUrl}
+                          alt={course.title}
+                          className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
+                        />
+                      </div>
+                    )}
+
+                    {/* Header */}
+                    <div className="bg-linear-to-br from-blue-50 to-blue-100 px-6 py-4 border-b border-gray-200">
+                      <h3 className="text-lg font-semibold text-gray-900 line-clamp-2">{course.title}</h3>
+                      {course.category && (
+                        <p className="text-xs text-gray-600 mt-1">{course.category}</p>
+                      )}
                     </div>
-                  )}
 
-                  {/* Header */}
-                  <div className="bg-gradient-to-r from-blue-50 to-blue-100 px-6 py-4 border-b border-gray-200">
-                    <h3 className="text-lg font-semibold text-gray-900 truncate">{course.title}</h3>
-                    {course.category && (
-                      <p className="text-xs text-gray-600 mt-1">{course.category}</p>
-                    )}
-                  </div>
+                    {/* Body */}
+                    <div className="p-6 space-y-4">
+                      {course.description && (
+                        <p className="text-sm text-gray-600 line-clamp-2">{course.description}</p>
+                      )}
 
-                  {/* Body */}
-                  <div className="p-6 space-y-4">
-                    {course.description && (
-                      <p className="text-sm text-gray-600 line-clamp-2">{course.description}</p>
-                    )}
-
-                    {/* Badges */}
-                    <div className="flex flex-wrap gap-2">
-                      <span className={`inline-flex text-xs font-semibold px-3 py-1 rounded-full border ${getStatusColor(course.status)}`}>
-                        {course.status.charAt(0).toUpperCase() + course.status.slice(1)}
-                      </span>
-                      {course.level && (
-                        <span className={`inline-flex text-xs font-semibold px-3 py-1 rounded-full border ${getLevelColor(course.level)}`}>
-                          {course.level.charAt(0).toUpperCase() + course.level.slice(1)}
+                      {/* Badges */}
+                      <div className="flex flex-wrap gap-2">
+                        <span className={`inline-flex text-xs font-semibold px-3 py-1 rounded-full border ${getStatusColor(course.status)}`}>
+                          {course.status.charAt(0).toUpperCase() + course.status.slice(1)}
                         </span>
-                      )}
+                        {course.level && (
+                          <span className={`inline-flex text-xs font-semibold px-3 py-1 rounded-full border ${getLevelColor(course.level)}`}>
+                            {course.level.charAt(0).toUpperCase() + course.level.slice(1)}
+                          </span>
+                        )}
+                      </div>
+
+                      {/* Info */}
+                      <div className="space-y-2 pt-2 border-t border-gray-200">
+                        {course.instructor && (
+                          <div className="flex justify-between text-sm">
+                            <span className="text-gray-600">Instructor:</span>
+                            <span className="font-semibold text-gray-900">{course.instructor}</span>
+                          </div>
+                        )}
+                        {course.duration && (
+                          <div className="flex justify-between text-sm">
+                            <span className="text-gray-600">Duration:</span>
+                            <span className="font-semibold text-gray-900">{course.duration}h</span>
+                          </div>
+                        )}
+                        {course.price && (
+                          <div className="flex justify-between text-sm">
+                            <span className="text-gray-600">Price:</span>
+                            <span className="font-semibold text-gray-900">${course.price}</span>
+                          </div>
+                        )}
+                        {course.enrolledCount !== undefined && (
+                          <div className="flex justify-between text-sm">
+                            <span className="text-gray-600">Enrolled:</span>
+                            <span className="font-semibold text-gray-900">{course.enrolledCount}</span>
+                          </div>
+                        )}
+                      </div>
                     </div>
 
-                    {/* Info */}
-                    <div className="space-y-2 pt-2 border-t border-gray-200">
-                      {course.duration && (
-                        <div className="flex justify-between text-sm">
-                          <span className="text-gray-600">Duration:</span>
-                          <span className="font-semibold text-gray-900">{course.duration}h</span>
-                        </div>
-                      )}
-                      {course.price && (
-                        <div className="flex justify-between text-sm">
-                          <span className="text-gray-600">Price:</span>
-                          <span className="font-semibold text-gray-900">${course.price}</span>
-                        </div>
-                      )}
-                      {course.enrolledCount !== undefined && (
-                        <div className="flex justify-between text-sm">
-                          <span className="text-gray-600">Enrolled:</span>
-                          <span className="font-semibold text-gray-900">{course.enrolledCount}</span>
-                        </div>
-                      )}
+                    {/* Footer */}
+                    <div className="bg-gray-50 px-6 py-4 border-t border-gray-200 flex gap-3">
+                      <button
+                        onClick={() => openEditModal(course)}
+                        className="flex-1 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors font-medium text-sm"
+                      >
+                        Edit
+                      </button>
+                      <button
+                        onClick={() => handleDeleteCourse(course._id, course.title)}
+                        className="flex-1 bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-colors font-medium text-sm"
+                      >
+                        Delete
+                      </button>
                     </div>
-                  </div>
-
-                  {/* Footer */}
-                  <div className="bg-gray-50 px-6 py-4 border-t border-gray-200 flex gap-3">
-                    <button
-                      onClick={() => openEditModal(course)}
-                      className="flex-1 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors font-medium text-sm"
-                    >
-                      Edit
-                    </button>
-                    <button
-                      onClick={() => { /* delete handler */ }}
-                      className="flex-1 bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-colors font-medium text-sm"
-                    >
-                      Delete
-                    </button>
                   </div>
                 </div>
               ))}

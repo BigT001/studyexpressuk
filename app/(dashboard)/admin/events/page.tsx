@@ -410,9 +410,10 @@ export default function EventsManagementPage() {
               {events.length === 0 ? 'No events created yet' : 'No events match your filters'}
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="columns-1 md:columns-2 lg:columns-3 gap-6">
               {filteredEvents.map((event) => (
-                <EventCard
+                <div key={event._id} className="break-inside-avoid mb-6">
+                  <EventCard
                   key={event._id}
                   _id={event._id}
                   title={event.title}
@@ -429,7 +430,8 @@ export default function EventsManagementPage() {
                   onEdit={() => openEditModal(event)}
                   onPermissions={() => openPermissionsModal(event)}
                   onDelete={() => handleDeleteEvent(event._id, event.title)}
-                />
+                  />
+                </div>
               ))}
             </div>
           )}
