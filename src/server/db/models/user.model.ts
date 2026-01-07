@@ -12,7 +12,15 @@ export type UserStatus = 'subscribed' | 'not-subscribed';
 export interface IUser extends Document {
   email: string;
   phone?: string;
-  passwordHash: string;
+  firstName?: string;
+  lastName?: string;
+  dob?: Date;
+  bio?: string;
+  interests?: string;
+  qualifications?: string;
+  profileImage?: string;
+  password: string;
+  passwordHash?: string;
   role: UserRole;
   status: UserStatus;
   createdAt: Date;
@@ -23,7 +31,15 @@ const UserSchema = new Schema<IUser>(
   {
     email: { type: String, required: true, unique: true, lowercase: true, index: true },
     phone: { type: String, required: false },
-    passwordHash: { type: String, required: true },
+    firstName: { type: String, required: false },
+    lastName: { type: String, required: false },
+    dob: { type: Date, required: false },
+    bio: { type: String, required: false, maxlength: 500 },
+    interests: { type: String, required: false },
+    qualifications: { type: String, required: false },
+    profileImage: { type: String, required: false },
+    password: { type: String, required: false },
+    passwordHash: { type: String, required: false },
     role: { type: String, enum: Object.values(UserRole), default: UserRole.INDIVIDUAL },
     status: { type: String, enum: ['subscribed', 'not-subscribed'], default: 'not-subscribed' },
   },

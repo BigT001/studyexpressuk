@@ -1,6 +1,11 @@
+// Utility function to check if user is logged in
+function isUserLoggedIn(session: any, status: string) {
+  return status === 'authenticated' && session && session.user && session.user.email;
+}
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useSession } from 'next-auth/react';
 import Image from 'next/image';
 import Link from 'next/link';
 
@@ -9,6 +14,66 @@ export function ExploreEvents() {
   const [events, setEvents] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const { data: session, status } = useSession();
+  const [showModal, setShowModal] = useState(false);
+  const [selectedEvent, setSelectedEvent] = useState<any | null>(null);
+  const [form, setForm] = useState({
+    firstName: '',
+    lastName: '',
+    email: '',
+    phone: '',
+    location: '',
+    referralCode: ''
+  });
+  const [submitting, setSubmitting] = useState(false);
+  const [success, setSuccess] = useState(false);
+
+  useEffect(() => {
+    if (session?.user) {
+      setForm(f => ({
+        ...f,
+        email: session.user.email || ''
+      }));
+    }
+  }, [session]);
+
+  const handleEnrollClick = (event: any) => {
+    if (status === 'loading') return;
+    if (!isUserLoggedIn(session, status)) {
+      window.location.href = '/auth/signin';
+      return;
+    }
+    setSelectedEvent(event);
+    setShowModal(true);
+  };
+
+  const handleFormChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setForm({ ...form, [e.target.name]: e.target.value });
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSubmitting(true);
+    try {
+      // Call API to enroll user in event
+      const res = await fetch('/api/enroll', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          eventId: selectedEvent._id,
+          ...form
+        })
+      });
+      if (!res.ok) throw new Error('Failed to enroll');
+      setSuccess(true);
+      setShowModal(false);
+      // Optionally: trigger admin update/notification
+    } catch (err) {
+      alert('Enrollment failed. Please try again.');
+    } finally {
+      setSubmitting(false);
+    }
+  };
 
   useEffect(() => {
     const fetchEvents = async () => {
@@ -139,7 +204,11 @@ export function ExploreEvents() {
                     </div>
 
                     {/* Button */}
-                    <button className="w-full px-4 py-2 text-white rounded hover:opacity-90 transition-colors text-sm font-bold" style={{ backgroundColor: '#008200' }}>
+                    <button
+                      className="w-full px-4 py-2 text-white rounded hover:opacity-90 transition-colors text-sm font-bold"
+                      style={{ backgroundColor: '#008200' }}
+                      onClick={() => handleEnrollClick(item)}
+                    >
                       Register Now
                     </button>
                   </div>
@@ -161,6 +230,26 @@ export function ExploreEvents() {
             )}
           </>
         )}
+      {/* Enrollment Modal */}
+      {showModal && selectedEvent && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40">
+          <div className="bg-white rounded-lg shadow-lg max-w-md w-full p-8 relative">
+            <button className="absolute top-3 right-3 text-gray-400 hover:text-gray-700" onClick={() => setShowModal(false)}>&times;</button>
+            <h2 className="text-xl font-bold mb-4 text-gray-900">Enroll in {selectedEvent.title}</h2>
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <input name="firstName" value={form.firstName} onChange={handleFormChange} required placeholder="First Name" className="w-full border rounded px-3 py-2" />
+              <input name="lastName" value={form.lastName} onChange={handleFormChange} required placeholder="Last Name" className="w-full border rounded px-3 py-2" />
+              <input name="email" value={form.email} onChange={handleFormChange} required placeholder="Email" className="w-full border rounded px-3 py-2" type="email" />
+              <input name="phone" value={form.phone} onChange={handleFormChange} required placeholder="Phone Number" className="w-full border rounded px-3 py-2" />
+              <input name="location" value={form.location} onChange={handleFormChange} required placeholder="Location" className="w-full border rounded px-3 py-2" />
+              <input name="referralCode" value={form.referralCode} onChange={handleFormChange} placeholder="Referral Code (optional)" className="w-full border rounded px-3 py-2" />
+              <button type="submit" disabled={submitting} className="w-full bg-green-600 text-white py-2 rounded font-bold mt-2 hover:bg-green-700 transition-colors">
+                {submitting ? 'Enrolling...' : 'Confirm Enrollment'}
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
       </div>
     </section>
   );

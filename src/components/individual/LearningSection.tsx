@@ -1,76 +1,61 @@
 'use client';
 
 import Link from 'next/link';
+import { BookOpen, Search, Calendar, Award } from 'lucide-react';
 
 export function LearningSection() {
   return (
-    <div className="space-y-4">
-      <div className="bg-gradient-to-r from-emerald-600 to-emerald-700 rounded-2xl p-6 text-white shadow-lg">
-        <div className="flex items-center gap-4">
-          <span className="text-5xl">📚</span>
-          <div>
-            <h2 className="text-2xl font-black">Learning Hub</h2>
-            <p className="text-emerald-100 text-sm mt-1">Explore courses, events & training</p>
-          </div>
-        </div>
+    <section className="space-y-2">
+      <div className="flex items-center gap-2 mb-1">
+        <BookOpen className="w-4 h-4 text-emerald-400" aria-hidden="true" />
+        <h2 className="text-lg font-semibold text-gray-900">Learning Hub</h2>
       </div>
-      <div className="grid md:grid-cols-2 gap-4">
+      <div className="grid md:grid-cols-2 gap-3">
         <Link
           href="/individual/enrollments"
-          className="bg-white border-2 border-emerald-200 rounded-xl p-6 hover:shadow-lg hover:border-emerald-400 transition-all duration-300 group"
+          className="flex flex-col border border-emerald-100 rounded-lg bg-white p-4 hover:border-emerald-400 transition-colors"
         >
-          <div className="flex items-start justify-between mb-4">
-            <div>
-              <h3 className="font-bold text-gray-900 group-hover:text-[#008200] transition-colors">My Enrollments</h3>
-              <p className="text-sm text-gray-500 mt-1">Courses you're learning</p>
-            </div>
-            <span className="text-3xl">🎓</span>
+          <div className="flex items-center gap-2 mb-1">
+            <BookOpen className="w-4 h-4 text-emerald-400" aria-hidden="true" />
+            <span className="text-sm font-medium text-gray-900">My Enrollments</span>
           </div>
-          <p className="text-xs text-gray-600">→ View enrollments</p>
+          <span className="text-xs text-gray-500 mb-2">Courses you&apos;re learning</span>
+          <span className="text-xs text-emerald-500 mt-auto">→ View enrollments</span>
         </Link>
-
         <Link
           href="/courses"
-          className="bg-white border-2 border-cyan-200 rounded-xl p-6 hover:shadow-lg hover:border-cyan-400 transition-all duration-300 group"
+          className="flex flex-col border border-cyan-100 rounded-lg bg-white p-4 hover:border-cyan-400 transition-colors"
         >
-          <div className="flex items-start justify-between mb-4">
-            <div>
-              <h3 className="font-bold text-gray-900 group-hover:text-[#008200] transition-colors">Browse Courses</h3>
-              <p className="text-sm text-gray-500 mt-1">Explore all available courses</p>
-            </div>
-            <span className="text-3xl">🔍</span>
+          <div className="flex items-center gap-2 mb-1">
+            <Search className="w-4 h-4 text-cyan-400" aria-hidden="true" />
+            <span className="text-sm font-medium text-gray-900">Browse Courses</span>
           </div>
-          <p className="text-xs text-gray-600">→ Browse</p>
+          <span className="text-xs text-gray-500 mb-2">Explore all available courses</span>
+          <span className="text-xs text-cyan-500 mt-auto">→ Browse</span>
         </Link>
-
         <Link
           href="/events"
-          className="bg-white border-2 border-purple-200 rounded-xl p-6 hover:shadow-lg hover:border-purple-400 transition-all duration-300 group"
+          className="flex flex-col border border-purple-100 rounded-lg bg-white p-4 hover:border-purple-400 transition-colors"
         >
-          <div className="flex items-start justify-between mb-4">
-            <div>
-              <h3 className="font-bold text-gray-900 group-hover:text-[#008200] transition-colors">Browse Events</h3>
-              <p className="text-sm text-gray-500 mt-1">Upcoming events & trainings</p>
-            </div>
-            <span className="text-3xl">📅</span>
+          <div className="flex items-center gap-2 mb-1">
+            <Calendar className="w-4 h-4 text-purple-400" aria-hidden="true" />
+            <span className="text-sm font-medium text-gray-900">Browse Events</span>
           </div>
-          <p className="text-xs text-gray-600">→ Browse</p>
+          <span className="text-xs text-gray-500 mb-2">Upcoming events & trainings</span>
+          <span className="text-xs text-purple-500 mt-auto">→ Browse</span>
         </Link>
-
         <Link
           href="/individual/enrollments?view=certificates"
-          className="bg-white border-2 border-amber-200 rounded-xl p-6 hover:shadow-lg hover:border-amber-400 transition-all duration-300 group"
+          className="flex flex-col border border-amber-100 rounded-lg bg-white p-4 hover:border-amber-400 transition-colors"
         >
-          <div className="flex items-start justify-between mb-4">
-            <div>
-              <h3 className="font-bold text-gray-900 group-hover:text-[#008200] transition-colors">My Certificates</h3>
-              <p className="text-sm text-gray-500 mt-1">Completed & earned certificates</p>
-            </div>
-            <span className="text-3xl">🏆</span>
+          <div className="flex items-center gap-2 mb-1">
+            <Award className="w-4 h-4 text-amber-400" aria-hidden="true" />
+            <span className="text-sm font-medium text-gray-900">My Certificates</span>
           </div>
-          <p className="text-xs text-gray-600">→ View certificates</p>
+          <span className="text-xs text-gray-500 mb-2">Completed & earned certificates</span>
+          <span className="text-xs text-amber-500 mt-auto">→ View certificates</span>
         </Link>
       </div>
-    </div>
+    </section>
   );
 }

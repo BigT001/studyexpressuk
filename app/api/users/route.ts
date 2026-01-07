@@ -10,8 +10,16 @@ import CorporateProfileModel from '@/server/db/models/corporate.model';
 export async function POST(req: Request) {
   try {
     const body = await req.json();
-    const parsed = createUserSchema.parse(body);
-    const user = await userService.createUser({ email: parsed.email, password: parsed.password, phone: parsed.phone, role: parsed.role as any });
+    const { firstName = '', lastName = '', ...rest } = body;
+    const parsed = createUserSchema.parse(rest);
+    const user = await userService.createUser({ 
+      email: parsed.email, 
+      password: parsed.password, 
+      phone: parsed.phone, 
+      role: parsed.role as any,
+      firstName,
+      lastName
+    });
     return NextResponse.json({ success: true, user }, { status: 201 });
   } catch (err: any) {
     return NextResponse.json({ success: false, error: err.message || String(err) }, { status: 400 });

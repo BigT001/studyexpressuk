@@ -1,48 +1,48 @@
 'use client';
 
 import Link from 'next/link';
+import { Mail, Megaphone } from 'lucide-react';
 
 export function CommunicationSection() {
   return (
-    <div className="space-y-4">
-      <div className="bg-gradient-to-r from-purple-600 to-purple-700 rounded-2xl p-6 text-white shadow-lg">
-        <div className="flex items-center gap-4">
-          <span className="text-5xl">💬</span>
-          <div>
-            <h2 className="text-2xl font-black">Communication Center</h2>
-            <p className="text-purple-100 text-sm mt-1">Messages & announcements</p>
-          </div>
-        </div>
+    <section className="space-y-2">
+      {/* Header */}
+      <div className="flex items-center gap-2 mb-1">
+        <Mail className="w-4 h-4 text-gray-400" aria-hidden="true" />
+        <h2 className="text-lg font-semibold text-gray-900">Communication Center</h2>
       </div>
-      <div className="grid md:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+        {/* My Inbox */}
         <Link
           href="/individual/messages"
-          className="bg-white border-2 border-purple-200 rounded-xl p-6 hover:shadow-lg hover:border-purple-400 transition-all duration-300 group"
+          className="flex flex-col border border-gray-200 rounded-lg bg-white p-4 hover:border-blue-400 transition-colors"
         >
-          <div className="flex items-start justify-between mb-4">
-            <div>
-              <h3 className="font-bold text-gray-900 group-hover:text-[#008200] transition-colors">My Inbox</h3>
-              <p className="text-sm text-gray-500 mt-1">Messages from administrators</p>
-            </div>
-            <span className="text-3xl">📧</span>
+          <div className="flex items-center gap-2 mb-1">
+            <Mail className="w-4 h-4 text-blue-400" aria-hidden="true" />
+            <span className="text-sm font-medium text-gray-900">My Inbox</span>
           </div>
-          <p className="text-xs text-gray-600">→ Open inbox</p>
+          <span className="text-xs text-gray-500 mb-2">Direct messages from administrators</span>
+          <div className="flex items-center justify-between mt-auto pt-2 border-t border-gray-100">
+            <span className="text-xs text-gray-400">Messages</span>
+            <span className="text-base font-bold text-blue-600">0</span>
+          </div>
         </Link>
-
+        {/* Announcements */}
         <Link
           href="/individual/announcements"
-          className="bg-white border-2 border-pink-200 rounded-xl p-6 hover:shadow-lg hover:border-pink-400 transition-all duration-300 group"
+          className="flex flex-col border border-gray-200 rounded-lg bg-white p-4 hover:border-orange-400 transition-colors"
         >
-          <div className="flex items-start justify-between mb-4">
-            <div>
-              <h3 className="font-bold text-gray-900 group-hover:text-[#008200] transition-colors">Announcements</h3>
-              <p className="text-sm text-gray-500 mt-1">Platform updates & broadcasts</p>
-            </div>
-            <span className="text-3xl">📢</span>
+          <div className="flex items-center gap-2 mb-1">
+            <Megaphone className="w-4 h-4 text-orange-400" aria-hidden="true" />
+            <span className="text-sm font-medium text-gray-900">Announcements</span>
           </div>
-          <p className="text-xs text-gray-600">→ View announcements</p>
+          <span className="text-xs text-gray-500 mb-2">Platform updates & important broadcasts</span>
+          <div className="flex items-center justify-between mt-auto pt-2 border-t border-gray-100">
+            <span className="text-xs text-gray-400">Active</span>
+            <span className="text-base font-bold text-orange-600">0</span>
+          </div>
         </Link>
       </div>
-    </div>
+    </section>
   );
 }

@@ -1,4 +1,11 @@
+
 'use client';
+
+
+import { useSession } from 'next-auth/react';
+import { useRouter } from 'next/navigation';
+import Modal from '@/components/Modal';
+import { RegisterEventForm } from '@/components/RegisterEventForm';
 
 import { useState, useEffect } from 'react';
 import Image from 'next/image';
@@ -25,6 +32,10 @@ export default function EventsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
+  const [modalOpen, setModalOpen] = useState(false);
+  const [selectedEvent, setSelectedEvent] = useState<Event | null>(null);
+  const { data: session, status } = useSession();
+  const router = useRouter();
 
   useEffect(() => {
     const fetchEvents = async () => {
@@ -231,6 +242,15 @@ export default function EventsPage() {
                   <button
                     className="w-full px-6 py-3 text-white rounded-lg hover:shadow-xl transition-all duration-300 font-bold text-sm hover:scale-105 transform active:scale-95"
                     style={{ backgroundColor: '#008200' }}
+                    onClick={() => {
+                      if (status === 'loading') return;
+                      if (!session) {
+                        router.push('/auth/signin?callbackUrl=' + encodeURIComponent(window.location.pathname));
+                        return;
+                      }
+                      setSelectedEvent(event);
+                      setModalOpen(true);
+                    }}
                   >
                     Register Now →
                   </button>
@@ -244,6 +264,26 @@ export default function EventsPage() {
             </div>
           </div>
         )}
+      <Modal open={modalOpen} onClose={() => setModalOpen(false)}>
+        <div className="text-center">
+          <h2 className="text-2xl font-bold mb-4">Register for Event</h2>
+          <p className="mb-4">You are about to register for <span className="font-semibold">{selectedEvent?.title}</span>.</p>
+          {session?.user ? (
+            <RegisterEventForm
+              eventId={selectedEvent?._id}
+              sessionUser={session.user}
+              onSuccess={() => {
+                setModalOpen(false);
+                router.push('/individual/events');
+              }}
+            />
+          ) : null}
+        </div>
+      </Modal>
+
+
+
+
       </div>
     </div>
   );

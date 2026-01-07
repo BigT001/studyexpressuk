@@ -34,7 +34,9 @@ export async function POST(req: Request) {
       email: parsed.email, 
       password: parsed.password, 
       phone: parsed.phone, 
-      role: parsed.role as unknown as UserRole
+      role: parsed.role as unknown as UserRole,
+      firstName: firstName || '',
+      lastName: lastName || '',
     });
 
     const typedUser = user as CreateUserResponse;

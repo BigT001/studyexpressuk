@@ -1,58 +1,49 @@
 'use client';
 
+
+import { Mail, BookOpen, BarChart2, UserCheck, Calendar } from 'lucide-react';
+
 export function IndividualQuickStats() {
   return (
-    <div className="grid md:grid-cols-4 gap-6">
-      {/* Active Membership Card */}
-      <div className="group relative overflow-hidden bg-white rounded-2xl shadow-md border border-gray-200 p-6 hover:shadow-lg transition-shadow duration-300">
-        <div className="absolute top-0 right-0 w-20 h-20 bg-blue-100 rounded-full -mr-10 -mt-10 opacity-50 group-hover:opacity-100 transition-opacity"></div>
-        <div className="relative z-10">
-          <div className="flex items-center justify-between mb-4">
-            <p className="text-gray-600 font-medium">Active Membership</p>
-            <span className="text-3xl">💳</span>
-          </div>
-          <p className="text-4xl font-black text-gray-900 mb-2">0</p>
-          <p className="text-sm text-gray-500">Status: Not Active</p>
+    <div className="grid md:grid-cols-4 gap-4">
+      {/* Registered Events */}
+      <div className="flex flex-col items-start border border-gray-200 rounded-lg bg-white p-4 min-h-[110px]">
+        <div className="flex items-center gap-2 mb-2">
+          <Calendar className="w-5 h-5 text-gray-400" aria-hidden="true" />
+          <span className="text-xs text-gray-500 font-medium">Registered Events</span>
         </div>
+        <span className="text-2xl font-bold text-gray-900 mb-1">0</span>
+        <span className="text-xs text-gray-400">No events registered</span>
       </div>
 
-      {/* Enrolled Courses Card */}
-      <div className="group relative overflow-hidden bg-white rounded-2xl shadow-md border border-gray-200 p-6 hover:shadow-lg transition-shadow duration-300">
-        <div className="absolute top-0 right-0 w-20 h-20 bg-emerald-100 rounded-full -mr-10 -mt-10 opacity-50 group-hover:opacity-100 transition-opacity"></div>
-        <div className="relative z-10">
-          <div className="flex items-center justify-between mb-4">
-            <p className="text-gray-600 font-medium">Enrolled Courses</p>
-            <span className="text-3xl">📚</span>
-          </div>
-          <p className="text-4xl font-black text-gray-900 mb-2">0</p>
-          <p className="text-sm text-gray-500">Courses in progress</p>
+      {/* Enrolled Courses */}
+      <div className="flex flex-col items-start border border-gray-200 rounded-lg bg-white p-4 min-h-[110px]">
+        <div className="flex items-center gap-2 mb-2">
+          <BookOpen className="w-5 h-5 text-gray-400" aria-hidden="true" />
+          <span className="text-xs text-gray-500 font-medium">Enrolled Courses</span>
         </div>
+        <span className="text-2xl font-bold text-gray-900 mb-1">0</span>
+        <span className="text-xs text-gray-400">Courses in progress</span>
       </div>
 
-      {/* Learning Progress Card */}
-      <div className="group relative overflow-hidden bg-white rounded-2xl shadow-md border border-gray-200 p-6 hover:shadow-lg transition-shadow duration-300">
-        <div className="absolute top-0 right-0 w-20 h-20 bg-purple-100 rounded-full -mr-10 -mt-10 opacity-50 group-hover:opacity-100 transition-opacity"></div>
-        <div className="relative z-10">
-          <div className="flex items-center justify-between mb-4">
-            <p className="text-gray-600 font-medium">Learning Progress</p>
-            <span className="text-3xl">📈</span>
-          </div>
-          <p className="text-4xl font-black text-gray-900 mb-2">0%</p>
-          <p className="text-sm text-gray-500">Average completion</p>
+      {/* Learning Progress */}
+      <div className="flex flex-col items-start border border-gray-200 rounded-lg bg-white p-4 min-h-[110px]">
+        <div className="flex items-center gap-2 mb-2">
+          <BarChart2 className="w-5 h-5 text-gray-400" aria-hidden="true" />
+          <span className="text-xs text-gray-500 font-medium">Learning Progress</span>
         </div>
+        <span className="text-2xl font-bold text-gray-900 mb-1">0%</span>
+        <span className="text-xs text-gray-400">Average completion</span>
       </div>
 
-      {/* Messages Card */}
-      <div className="group relative overflow-hidden bg-white rounded-2xl shadow-md border border-gray-200 p-6 hover:shadow-lg transition-shadow duration-300">
-        <div className="absolute top-0 right-0 w-20 h-20 bg-amber-100 rounded-full -mr-10 -mt-10 opacity-50 group-hover:opacity-100 transition-opacity"></div>
-        <div className="relative z-10">
-          <div className="flex items-center justify-between mb-4">
-            <p className="text-gray-600 font-medium">New Messages</p>
-            <span className="text-3xl">💬</span>
-          </div>
-          <p className="text-4xl font-black text-gray-900 mb-2">0</p>
-          <p className="text-sm text-gray-500">Unread messages</p>
+      {/* Messages */}
+      <div className="flex flex-col items-start border border-gray-200 rounded-lg bg-white p-4 min-h-[110px]">
+        <div className="flex items-center gap-2 mb-2">
+          <Mail className="w-5 h-5 text-gray-400" aria-hidden="true" />
+          <span className="text-xs text-gray-500 font-medium">New Messages</span>
         </div>
+        <span className="text-2xl font-bold text-gray-900 mb-1">0</span>
+        <span className="text-xs text-gray-400">Unread messages</span>
       </div>
     </div>
   );
