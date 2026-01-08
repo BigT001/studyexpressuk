@@ -47,7 +47,7 @@ export default async function IndividualDashboard() {
           
           {/* Right Sidebar - Notifications (Wider) */}
           <div className="lg:col-span-5 space-y-6 md:space-y-8">
-            <NotificationsSection />
+            <NotificationsSection profile={profile} userId={session.user?.id ?? ''} />
           </div>
         </div>
       </div>

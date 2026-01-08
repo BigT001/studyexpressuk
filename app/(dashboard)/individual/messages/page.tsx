@@ -1,187 +1,219 @@
-import React from 'react';
+"use client";
+import React, { useEffect, useState, useRef } from 'react';
 import Link from 'next/link';
 
-export const metadata = {
-  title: 'Messages | Individual Dashboard',
-  description: 'Your inbox and messages with administrators',
+// Type for messages from API (based on IGroupMessage)
+
+type Message = {
+  _id: string;
+  senderId?: string;
+  recipientId?: string;
+  content?: string;
+  subject?: string;
+  body?: string;
+  senderName?: string;
+  recipientGroups?: string[];
+  status?: 'draft' | 'scheduled' | 'sent' | 'failed';
+  sentAt?: string;
+  recipientCount?: number;
+  createdBy?: string;
+  createdAt: string;
+  updatedAt: string;
+  readAt?: string;
 };
 
+
+
 export default function MessagesPage() {
-  // Sample messages data
-  const messages = [
-    {
-      id: 1,
-      from: 'Admin Support',
-      subject: 'Welcome to StudyExpressUK!',
-      message: 'Thank you for registering. We are excited to have you on board.',
-      date: 'January 1, 2026',
-      isRead: false,
-      category: 'system',
-    },
-    {
-      id: 2,
-      from: 'Course Instructor',
-      subject: 'Your assignment has been reviewed',
-      message: 'Great work on your last assignment! Please see the detailed feedback in the course portal.',
-      date: 'December 30, 2025',
-      isRead: true,
-      category: 'course',
-    },
-    {
-      id: 3,
-      from: 'Membership Team',
-      subject: 'Upgrade Your Membership',
-      message: 'Unlock premium features with our Premium membership plan. Limited time offer!',
-      date: 'December 28, 2025',
-      isRead: true,
-      category: 'membership',
-    },
-    {
-      id: 4,
-      from: 'Event Management',
-      subject: 'Event Reminder: UK Study Abroad',
-      message: 'Reminder: UK Study Abroad event is tomorrow at 3:00 PM. See you there!',
-      date: 'December 25, 2025',
-      isRead: true,
-      category: 'event',
-    },
-  ];
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [announcements, setAnnouncements] = useState<Message[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  const [activeSection, setActiveSection] = useState<'messages' | 'announcements'>('messages');
+  const [activeTab, setActiveTab] = useState<'all' | 'unread' | 'chat'>('all');
+  const [chatMessages, setChatMessages] = useState<Message[]>([]);
+  const [chatInput, setChatInput] = useState('');
+  const [chatLoading, setChatLoading] = useState(false);
+  const [chatError, setChatError] = useState('');
+  const chatEndRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (activeTab !== 'chat') {
+      setLoading(true);
+      setError('');
+      Promise.all([
+        fetch('/api/messages').then(res => res.ok ? res.json() : { messages: [] }),
+        fetch('/api/announcements').then(res => res.ok ? res.json() : { announcements: [] })
+      ])
+        .then(([msgData, annData]) => {
+          setMessages(msgData.messages || []);
+          setAnnouncements(annData.announcements || []);
+        })
+        .catch(() => setError('Failed to load messages or announcements'))
+        .finally(() => setLoading(false));
+    }
+  }, [activeTab]);
+
+  const fetchChatMessages = async () => {
+    setChatLoading(true);
+    setChatError('');
+    try {
+      const res = await fetch('/api/messages');
+      if (!res.ok) throw new Error('Failed to fetch chat messages');
+      const data = await res.json();
+      const filtered = (data.messages || []).filter((msg: Message) => msg.content);
+      setChatMessages(filtered);
+    } catch (err) {
+      setChatError('Could not load chat messages');
+    } finally {
+      setChatLoading(false);
+      setTimeout(() => chatEndRef.current?.scrollIntoView({ behavior: 'smooth' }), 100);
+    }
+  };
+
+  const sendChatMessage = async () => {
+    if (!chatInput.trim()) return;
+    setChatLoading(true);
+    setChatError('');
+    try {
+      const res = await fetch('/api/messages', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ receiverId: null, content: chatInput }),
+      });
+      if (!res.ok) throw new Error('Failed to send message');
+      setChatInput('');
+      await fetchChatMessages();
+    } catch (err) {
+      setChatError('Could not send message');
+    } finally {
+      setChatLoading(false);
+      setTimeout(() => chatEndRef.current?.scrollIntoView({ behavior: 'smooth' }), 100);
+    }
+  };
+
+  useEffect(() => {
+    if (activeTab === 'chat') fetchChatMessages();
+  }, [activeTab]);
 
   return (
-    <div className="space-y-6 pb-8">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Messages</h1>
-          <p className="mt-2 text-gray-600 dark:text-gray-400">
-            View and manage your messages from administrators, instructors, and the platform
-          </p>
-        </div>
-        <Link
-          href="/individual/messages?compose=true"
-          className="inline-flex items-center rounded-lg bg-[#008200] px-6 py-2.5 text-center text-sm font-medium text-white hover:bg-[#007000] focus:outline-none focus:ring-4 focus:ring-green-300 dark:focus:ring-green-800"
+    <div className="flex min-h-screen">
+      {/* Sidebar */}
+      <div className="w-56 border-r bg-gray-50 py-8 px-4 flex flex-col gap-4">
+        <button
+          className={`w-full text-left px-4 py-2 rounded-lg font-semibold transition-colors ${activeSection === 'messages' ? 'bg-blue-100 text-blue-700' : 'hover:bg-gray-100 text-gray-700'}`}
+          onClick={() => setActiveSection('messages')}
         >
-          <svg
-            className="mr-2 h-4 w-4"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M12 4v16m8-8H4"
-            />
-          </svg>
-          New Message
-        </Link>
-      </div>
-
-      {/* Filter Tabs */}
-      <div className="flex space-x-4 border-b border-gray-200 dark:border-gray-700">
-        <button className="border-b-2 border-[#008200] px-4 py-2 text-sm font-medium text-[#008200] dark:text-[#00B300]">
-          All
+          Inbox
         </button>
-        <button className="border-b-2 border-transparent px-4 py-2 text-sm font-medium text-gray-600 hover:border-gray-300 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-300">
-          Unread
-        </button>
-        <button className="border-b-2 border-transparent px-4 py-2 text-sm font-medium text-gray-600 hover:border-gray-300 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-300">
-          System
-        </button>
-        <button className="border-b-2 border-transparent px-4 py-2 text-sm font-medium text-gray-600 hover:border-gray-300 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-300">
-          Course
+        <button
+          className={`w-full text-left px-4 py-2 rounded-lg font-semibold transition-colors ${activeSection === 'announcements' ? 'bg-emerald-100 text-emerald-700' : 'hover:bg-gray-100 text-gray-700'}`}
+          onClick={() => setActiveSection('announcements')}
+        >
+          Announcements
         </button>
       </div>
-
-      {/* Messages List */}
-      <div className="space-y-3">
-        {messages.map((msg) => (
-          <Link
-            key={msg.id}
-            href={`/individual/messages/${msg.id}`}
-            className={`block rounded-lg border p-4 transition-all hover:shadow-md ${
-              msg.isRead
-                ? 'border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800'
-                : 'border-[#00B300] bg-green-50 dark:border-[#00B300] dark:bg-green-900/20'
-            }`}
-          >
-            <div className="flex items-start justify-between">
-              <div className="flex-1">
-                <div className="flex items-center space-x-2">
-                  <h3 className={`text-base font-semibold ${msg.isRead ? 'text-gray-900 dark:text-white' : 'text-[#008200] dark:text-[#00B300]'}`}>
-                    {msg.from}
-                  </h3>
-                  {!msg.isRead && (
-                    <span className="inline-flex h-2 w-2 rounded-full bg-[#008200]"></span>
-                  )}
-                  <span className="inline-block rounded-full bg-gray-200 px-2.5 py-0.5 text-xs font-medium text-gray-700 dark:bg-gray-700 dark:text-gray-300">
-                    {msg.category}
-                  </span>
-                </div>
-                <p className="mt-1 text-sm font-medium text-gray-900 dark:text-gray-100">
-                  {msg.subject}
-                </p>
-                <p className="mt-1 text-sm text-gray-600 dark:text-gray-400 line-clamp-2">
-                  {msg.message}
-                </p>
-              </div>
-              <div className="ml-4 flex-shrink-0 text-right">
-                <p className="text-xs text-gray-500 dark:text-gray-400">{msg.date}</p>
-              </div>
-            </div>
-          </Link>
-        ))}
-      </div>
-
-      {/* Empty State */}
-      {messages.length === 0 && (
-        <div className="rounded-lg border border-gray-200 bg-gray-50 px-6 py-12 text-center dark:border-gray-700 dark:bg-gray-800">
-          <svg
-            className="mx-auto h-12 w-12 text-gray-400"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={1.5}
-              d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
-            />
-          </svg>
-          <h3 className="mt-4 text-lg font-medium text-gray-900 dark:text-white">
-            No messages yet
-          </h3>
-          <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">
-            Your messages and communications from administrators will appear here.
-          </p>
+      {/* Main Content */}
+      <div className="flex-1 flex flex-col">
+        {/* Tabs */}
+        <div className="flex border-b border-gray-200 mb-8 pt-8 px-8">
+          <button className={`border-b-2 px-6 py-2 text-base font-semibold rounded-t transition-all duration-150 ${activeTab === 'all' ? 'border-blue-600 text-blue-700 bg-blue-50' : 'border-transparent text-gray-600 bg-white hover:bg-gray-50'}`} onClick={() => setActiveTab('all')}>All</button>
+          <button className={`border-b-2 px-6 py-2 text-base font-semibold rounded-t transition-all duration-150 ${activeTab === 'unread' ? 'border-blue-600 text-blue-700 bg-blue-50' : 'border-transparent text-gray-600 bg-white hover:bg-gray-50'}`} onClick={() => setActiveTab('unread')}>Unread</button>
+          <div className="flex-1"></div>
+          <button className={`ml-auto border-b-2 px-6 py-2 text-base font-semibold rounded-t transition-all duration-150 ${activeTab === 'chat' ? 'border-blue-600 text-blue-700 bg-blue-50' : 'border-transparent text-gray-600 bg-white hover:bg-gray-50'}`} onClick={() => setActiveTab('chat')}>Chat</button>
         </div>
-      )}
-
-      {/* Help Section */}
-      <div className="rounded-lg border border-blue-200 bg-blue-50 p-4 dark:border-blue-900 dark:bg-blue-900/20">
-        <div className="flex">
-          <svg
-            className="h-5 w-5 text-blue-600 dark:text-blue-400"
-            fill="currentColor"
-            viewBox="0 0 20 20"
-          >
-            <path
-              fillRule="evenodd"
-              d="M18 5v8a2 2 0 01-2 2h-5l-5 4v-4H4a2 2 0 01-2-2V5a2 2 0 012-2h12a2 2 0 012 2zm-11-1a1 1 0 11-2 0 1 1 0 012 0zm3 1a1 1 0 100-2 1 1 0 000 2zm3 0a1 1 0 100-2 1 1 0 000 2z"
-              clipRule="evenodd"
-            />
-          </svg>
-          <div className="ml-3">
-            <h3 className="text-sm font-medium text-blue-800 dark:text-blue-200">
-              Need help?
-            </h3>
-            <p className="mt-1 text-sm text-blue-700 dark:text-blue-300">
-              Contact our support team directly through the help center or reach out to{' '}
-              <span className="font-semibold">support@studyexpressuk.com</span>
-            </p>
-          </div>
+        {/* Main message/announcement/chat content */}
+        <div className="p-8 min-h-[300px] flex-1">
+          {activeTab === 'chat' ? (
+            <div className="flex flex-col h-[400px] max-h-[60vh] w-full max-w-2xl mx-auto border border-gray-200 rounded-xl bg-white shadow-sm overflow-hidden">
+              <div className="flex-shrink-0 px-4 py-3 border-b border-gray-100 bg-blue-50">
+                <h3 className="text-lg font-bold text-blue-700">Chat with Admin</h3>
+              </div>
+              <div className="flex-1 overflow-y-auto px-4 py-2 space-y-3 bg-gray-50" style={{ minHeight: 0 }}>
+                {chatLoading ? (
+                  <div className="text-gray-400 text-center py-8">Loading...</div>
+                ) : chatError ? (
+                  <div className="text-red-400 text-center py-8">{chatError}</div>
+                ) : chatMessages.length === 0 ? (
+                  <div className="text-gray-400 text-center py-8">No messages yet. Say hello!</div>
+                ) : (
+                  chatMessages.map((msg, idx) => (
+                    <div key={msg._id || idx} className={`flex ${msg.senderName === 'StudyExpress' ? 'justify-start' : 'justify-end'}`} >
+                      <div className={`rounded-lg px-4 py-2 max-w-xs md:max-w-md text-sm ${msg.senderName === 'StudyExpress' ? 'bg-blue-100 text-blue-900' : 'bg-blue-600 text-white'}`}>
+                        {msg.content}
+                        <div className="text-[10px] text-gray-400 mt-1 text-right">{new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>
+                      </div>
+                    </div>
+                  ))
+                )}
+                <div ref={chatEndRef}></div>
+              </div>
+              <form className="flex items-center gap-2 px-4 py-3 border-t border-gray-100 bg-white" onSubmit={e => { e.preventDefault(); sendChatMessage(); }}>
+                <input
+                  type="text"
+                  className="flex-1 rounded-full border border-gray-300 px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-200"
+                  placeholder="Type your message..."
+                  value={chatInput}
+                  onChange={e => setChatInput(e.target.value)}
+                  disabled={chatLoading}
+                />
+                <button
+                  type="submit"
+                  className="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-4 py-2 rounded-full transition-all duration-150 disabled:opacity-50"
+                  disabled={chatLoading || !chatInput.trim()}
+                >Send</button>
+              </form>
+            </div>
+          ) : (
+            <>
+              <h3 className="text-lg font-bold text-gray-900 mb-4">{activeSection === 'messages' ? 'Inbox' : 'Announcements'}</h3>
+              {loading ? (
+                <div className="text-gray-400 text-center py-16">Loading...</div>
+              ) : error ? (
+                <div className="text-red-400 text-center py-16">{error}</div>
+              ) : activeSection === 'messages' ? (
+                messages.length > 0 ? (
+                  messages
+                    .filter(msg => activeTab === 'all' || !msg.readAt)
+                    .map(msg => (
+                      <div key={msg._id} className="mb-6">
+                        <div className="flex items-center gap-2 mb-2">
+                          <span className="font-semibold text-blue-700">{msg.senderName || 'StudyExpress'}</span>
+                          {msg.status && (
+                            <span className="inline-block rounded-full bg-gray-200 px-2.5 py-0.5 text-xs font-medium text-gray-700">{msg.status}</span>
+                          )}
+                        </div>
+                        {msg.content ? (
+                          <div className="text-gray-700 mb-2">{msg.content}</div>
+                        ) : (
+                          <>
+                            <div className="font-bold text-gray-900 mb-1">{msg.subject}</div>
+                            <div className="text-gray-700 mb-2">{msg.body}</div>
+                          </>
+                        )}
+                        <div className="text-xs text-gray-400">{new Date(msg.createdAt).toLocaleString()}</div>
+                      </div>
+                    ))
+                ) : (
+                  <div className="text-gray-400 text-center py-16">No messages to display.</div>
+                )
+              ) : (
+                announcements.length > 0 ? (
+                  announcements
+                    .filter(a => activeTab === 'all' || !a.readAt)
+                    .map(a => (
+                      <div key={a._id} className="mb-6">
+                        <div className="font-semibold text-emerald-700 mb-1">{a.subject}</div>
+                        <div className="text-gray-700 mb-2">{a.body}</div>
+                        <div className="text-xs text-gray-400">{new Date(a.createdAt).toLocaleString()}</div>
+                      </div>
+                    ))
+                ) : (
+                  <div className="text-gray-400 text-center py-16">No announcements to display.</div>
+                )
+              )}
+            </>
+          )}
         </div>
       </div>
     </div>

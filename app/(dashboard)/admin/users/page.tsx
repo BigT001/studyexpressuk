@@ -273,11 +273,32 @@ export default function UsersManagementPage() {
                       <td className="py-3 px-4 text-xs md:text-sm text-gray-600">
                         {new Date(user.createdAt).toLocaleDateString()}
                       </td>
-                      <td className="py-3 px-4">
-                        <button 
-                          onClick={() => setSelectedUser(user)}
-                          className="text-blue-600 hover:text-blue-800 text-xs md:text-sm font-medium">
+                      <td className="py-3 px-4 flex gap-2 items-center">
+                        <Link
+                          href={`/admin/users/${user._id}`}
+                          className="text-blue-600 hover:text-blue-800 text-xs md:text-sm font-medium"
+                        >
                           View
+                        </Link>
+                        <button
+                          className="text-red-600 hover:text-red-800 text-xs md:text-sm font-medium ml-2"
+                          disabled={actionLoading}
+                          onClick={async () => {
+                            if (!window.confirm('Are you sure you want to delete this user?')) return;
+                            setActionLoading(true);
+                            setActionError('');
+                            try {
+                              const res = await fetch(`/api/users/${user._id}`, { method: 'DELETE' });
+                              if (!res.ok) throw new Error('Failed to delete user');
+                              setUsers(users => users.filter(u => u._id !== user._id));
+                            } catch (err) {
+                              setActionError(err instanceof Error ? err.message : 'Failed to delete user');
+                            } finally {
+                              setActionLoading(false);
+                            }
+                          }}
+                        >
+                          Delete
                         </button>
                       </td>
                     </tr>
@@ -296,140 +317,7 @@ export default function UsersManagementPage() {
           )}
         </div>
 
-        {/* User Details Modal */}
-        {selectedUser && (
-          <div 
-            className="fixed inset-0 backdrop-blur-sm bg-black/20 flex items-center justify-center p-4 z-50"
-            onClick={() => setSelectedUser(null)}>
-            <div 
-              className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto"
-              onClick={(e) => e.stopPropagation()}>
-              {/* Modal Header */}
-              <div className="sticky top-0 bg-gradient-to-r from-blue-600 to-blue-700 px-6 py-4 flex justify-between items-center">
-                <h2 className="text-xl md:text-2xl font-bold text-white">User Details</h2>
-                <button 
-                  onClick={() => setSelectedUser(null)}
-                  className="text-white hover:text-gray-200 text-2xl leading-none">
-                  ×
-                </button>
-              </div>
-
-              {/* Modal Body */}
-              <div className="p-6 space-y-6">
-                {actionError && (
-                  <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-red-800 text-sm">
-                    {actionError}
-                  </div>
-                )}
-
-                {/* User Basic Info */}
-                <div className="space-y-4">
-                  <h3 className="text-lg font-semibold text-gray-900">Basic Information</h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <p className="text-xs text-gray-600 font-medium uppercase">Email</p>
-                      <p className="text-sm md:text-base text-gray-900 mt-1">{selectedUser.email}</p>
-                    </div>
-                    <div>
-                      <p className="text-xs text-gray-600 font-medium uppercase">Phone</p>
-                      <p className="text-sm md:text-base text-gray-900 mt-1">{selectedUser.phone || '-'}</p>
-                    </div>
-                    <div>
-                      <p className="text-xs text-gray-600 font-medium uppercase">Full Name</p>
-                      <p className="text-sm md:text-base text-gray-900 mt-1">
-                        {selectedUser.firstName && selectedUser.lastName 
-                          ? `${selectedUser.firstName} ${selectedUser.lastName}` 
-                          : '-'}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-xs text-gray-600 font-medium uppercase">Joined</p>
-                      <p className="text-sm md:text-base text-gray-900 mt-1">
-                        {new Date(selectedUser.createdAt).toLocaleDateString()}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-
-                {/* User Role & Status */}
-                <div className="space-y-4">
-                  <h3 className="text-lg font-semibold text-gray-900">Account Status</h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <p className="text-xs text-gray-600 font-medium uppercase">Role</p>
-                      <div className="mt-2">
-                        <span className={`inline-block px-3 py-1 rounded-full text-sm font-medium ${getRoleColor(selectedUser.role)}`}>
-                          {selectedUser.role}
-                        </span>
-                      </div>
-                    </div>
-                    <div>
-                      <p className="text-xs text-gray-600 font-medium uppercase">Current Status</p>
-                      <div className="mt-2">
-                        <span className={`inline-block px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(selectedUser.status)}`}>
-                          {getStatusLabel(selectedUser.status)}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Admin Actions */}
-                <div className="space-y-4">
-                  <h3 className="text-lg font-semibold text-gray-900">Admin Actions</h3>
-                  
-                  {/* Status Change */}
-                  <div className="space-y-2">
-                    <p className="text-sm text-gray-600 font-medium">Change Subscription Status</p>
-                    <div className="flex flex-col sm:flex-row gap-2">
-                      {['subscribed', 'not-subscribed'].map((status) => (
-                        <button
-                          key={status}
-                          onClick={() => handleStatusChange(selectedUser._id, status)}
-                          disabled={actionLoading || selectedUser.status === status}
-                          className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
-                            selectedUser.status === status
-                              ? 'bg-gray-200 text-gray-600 cursor-not-allowed'
-                              : status === 'subscribed'
-                              ? 'bg-green-600 text-white hover:bg-green-700'
-                              : 'bg-red-600 text-white hover:bg-red-700'
-                          }`}>
-                          {actionLoading ? 'Processing...' : `Set ${getStatusLabel(status)}`}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Reset Password */}
-                  <div className="space-y-2">
-                    <p className="text-sm text-gray-600 font-medium">Password Management</p>
-                    <button
-                      onClick={() => handleResetPassword(selectedUser._id)}
-                      disabled={actionLoading}
-                      className="w-full px-4 py-2 rounded-lg text-sm font-medium bg-orange-600 text-white hover:bg-orange-700 transition-all disabled:opacity-50">
-                      {actionLoading ? 'Processing...' : 'Send Password Reset Email'}
-                    </button>
-                  </div>
-
-                  {/* User ID */}
-                  <div className="bg-gray-50 rounded-lg p-4">
-                    <p className="text-xs text-gray-600 font-medium uppercase">User ID</p>
-                    <p className="text-sm text-gray-900 mt-1 font-mono break-all">{selectedUser._id}</p>
-                  </div>
-                </div>
-              </div>
-
-              {/* Modal Footer */}
-              <div className="bg-gray-50 border-t border-gray-200 px-6 py-4 flex justify-end gap-3">
-                <button
-                  onClick={() => setSelectedUser(null)}
-                  className="px-4 py-2 rounded-lg text-sm font-medium text-gray-700 bg-white border border-gray-300 hover:bg-gray-50 transition-all">
-                  Close
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
+        {/* User Details Modal removed. Now handled by /admin/users/[id] page. */}
       </div>
     </div>
   );

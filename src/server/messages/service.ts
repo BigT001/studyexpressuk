@@ -81,4 +81,22 @@ export const messageService = {
       throw error;
     }
   },
+  // Fetch all messages between two users (admin and user)
+  async getConversation(userA: string, userB: string) {
+    try {
+      // Use MessageModel for direct messages
+      const MessageModel = (await import('../db/models/message.model')).default;
+      const messages = await MessageModel.find({
+        $or: [
+          { senderId: userA, recipientId: userB },
+          { senderId: userB, recipientId: userA }
+        ]
+      })
+        .sort({ createdAt: 1 });
+      return messages;
+    } catch (error) {
+      console.error('Error fetching conversation:', error);
+      throw error;
+    }
+  }
 };
