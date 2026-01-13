@@ -13,7 +13,7 @@ export function CorporateQuickActions() {
     },
     {
       icon: BookOpen,
-      label: 'Browse Courses',
+      label: 'Manage Courses',
       href: '/corporate/courses',
       color: 'green',
     },

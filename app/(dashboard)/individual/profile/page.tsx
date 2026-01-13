@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useSession } from 'next-auth/react';
 import CloudinaryUpload from '@/components/CloudinaryUpload';
 
 interface ProfileData {
@@ -24,7 +25,7 @@ interface PasswordForm {
 function SuccessModal({ open, onClose, message }: { open: boolean; onClose: () => void; message: string }) {
   if (!open) return null;
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-20">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-transparent backdrop-blur-sm">
       <div className="bg-white rounded-xl shadow-lg p-6 max-w-xs w-full flex flex-col items-center border border-gray-100">
         <svg className="w-10 h-10 text-green-500 mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
@@ -42,6 +43,11 @@ function SuccessModal({ open, onClose, message }: { open: boolean; onClose: () =
 }
 
 export default function ProfilePage() {
+  const { data: session } = useSession();
+  const isStaff = session?.user?.role === 'STAFF';
+  const pageTitle = isStaff ? 'Staff Profile' : 'My Profile';
+  const pageDescription = isStaff ? 'Manage your staff profile and account information' : 'Manage your personal information and account settings';
+  
   const [profileData, setProfileData] = useState<ProfileData>({
     firstName: '',
     lastName: '',
@@ -80,11 +86,14 @@ export default function ProfilePage() {
       const res = await fetch('/api/users/profile');
       const result = await res.json();
 
+      console.log('[Profile Page] API Response:', result);
+
       if (!res.ok) {
         setErrorMessage(result.error || 'Failed to load profile');
         return;
       }
 
+      console.log('[Profile Page] Setting profile data:', result.data);
       setProfileData(result.data);
     } catch (error) {
       console.error('Error fetching profile:', error);
@@ -195,8 +204,8 @@ export default function ProfilePage() {
       <div className="space-y-8">
         {/* Header */}
         <div>
-          <h1 className="text-4xl font-black text-gray-900 mb-2">My Profile</h1>
-          <p className="text-gray-600">Manage your personal information and account settings</p>
+          <h1 className="text-4xl font-black text-gray-900 mb-2">{pageTitle}</h1>
+          <p className="text-gray-600">{pageDescription}</p>
         </div>
 
         {/* Messages */}
@@ -355,42 +364,44 @@ export default function ProfilePage() {
           </div>
         </div>
 
-        {/* Security & Account Settings */}
-        <div className="bg-white rounded-2xl shadow-md border border-gray-200 p-8">
-          <h3 className="text-2xl font-black text-gray-900 mb-6">Security & Account</h3>
-          <div className="space-y-4">
-            <button
-              onClick={() => setShowPasswordModal(true)}
-              className="w-full flex items-center justify-between p-5 border border-gray-200 rounded-lg hover:bg-blue-50 transition-colors group"
-            >
-              <div className="text-left">
-                <h4 className="font-bold text-gray-900 group-hover:text-[#008200] transition-colors">Change Password</h4>
-                <p className="text-sm text-gray-600">Update your account password</p>
-              </div>
-              <span className="text-3xl">🔐</span>
-            </button>
+        {/* Security & Account Settings - Only for Individual Members */}
+        {!isStaff && (
+          <div className="bg-white rounded-2xl shadow-md border border-gray-200 p-8">
+            <h3 className="text-2xl font-black text-gray-900 mb-6">Security & Account</h3>
+            <div className="space-y-4">
+              <button
+                onClick={() => setShowPasswordModal(true)}
+                className="w-full flex items-center justify-between p-5 border border-gray-200 rounded-lg hover:bg-blue-50 transition-colors group"
+              >
+                <div className="text-left">
+                  <h4 className="font-bold text-gray-900 group-hover:text-[#008200] transition-colors">Change Password</h4>
+                  <p className="text-sm text-gray-600">Update your account password</p>
+                </div>
+                <span className="text-3xl">🔐</span>
+              </button>
 
-            <button className="w-full flex items-center justify-between p-5 border border-gray-200 rounded-lg hover:bg-green-50 transition-colors group">
-              <div className="text-left">
-                <h4 className="font-bold text-gray-900 group-hover:text-[#008200] transition-colors">Two-Factor Authentication</h4>
-                <p className="text-sm text-gray-600">Enable 2FA for extra security</p>
-              </div>
-              <span className="text-3xl">🛡️</span>
-            </button>
+              <button className="w-full flex items-center justify-between p-5 border border-gray-200 rounded-lg hover:bg-green-50 transition-colors group">
+                <div className="text-left">
+                  <h4 className="font-bold text-gray-900 group-hover:text-[#008200] transition-colors">Two-Factor Authentication</h4>
+                  <p className="text-sm text-gray-600">Enable 2FA for extra security</p>
+                </div>
+                <span className="text-3xl">🛡️</span>
+              </button>
 
-            <button className="w-full flex items-center justify-between p-5 border border-gray-200 rounded-lg hover:bg-purple-50 transition-colors group">
-              <div className="text-left">
-                <h4 className="font-bold text-gray-900 group-hover:text-[#008200] transition-colors">Activity Log</h4>
-                <p className="text-sm text-gray-600">View your account activity and logins</p>
-              </div>
-              <span className="text-3xl">📊</span>
-            </button>
+              <button className="w-full flex items-center justify-between p-5 border border-gray-200 rounded-lg hover:bg-purple-50 transition-colors group">
+                <div className="text-left">
+                  <h4 className="font-bold text-gray-900 group-hover:text-[#008200] transition-colors">Activity Log</h4>
+                  <p className="text-sm text-gray-600">View your account activity and logins</p>
+                </div>
+                <span className="text-3xl">📊</span>
+              </button>
+            </div>
           </div>
-        </div>
+        )}
 
         {/* Change Password Modal */}
         {showPasswordModal && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="fixed inset-0 bg-transparent backdrop-blur-sm flex items-center justify-center p-4 z-50">
             <div className="bg-white rounded-2xl shadow-xl max-w-md w-full p-8">
               <div className="flex items-center gap-3 mb-6">
                 <span className="text-3xl">🔐</span>

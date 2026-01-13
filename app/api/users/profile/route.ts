@@ -21,6 +21,15 @@ export async function GET() {
     // Convert to plain object to ensure all fields are accessible
     const userObj = user.toObject ? user.toObject() : { ...user };
 
+    console.log('[Profile API] User data from DB:', {
+      email: userObj.email,
+      firstName: userObj.firstName,
+      lastName: userObj.lastName,
+      phone: userObj.phone,
+      bio: userObj.bio,
+      profileImage: userObj.profileImage,
+    });
+
     const responseData = {
       firstName: userObj.firstName || '',
       lastName: userObj.lastName || '',
@@ -32,6 +41,8 @@ export async function GET() {
       qualifications: userObj.qualifications || '',
       profileImage: userObj.profileImage || '',
     };
+
+    console.log('[Profile API] Sending response:', responseData);
 
     return NextResponse.json({
       success: true,

@@ -89,6 +89,19 @@ export const authOptions: NextAuthOptions = {
       }
       return session;
     },
+    async redirect({ url, baseUrl }: any) {
+      // If it's a relative URL or one of our app URLs, allow it
+      if (url.startsWith('/')) return `${baseUrl}${url}`;
+      
+      // Handle role-based redirects
+      // Parse the callbackUrl to get the intended destination
+      const callbackUrl = new URL(url).searchParams.get('callbackUrl');
+      if (callbackUrl && callbackUrl.startsWith('/')) {
+        return `${baseUrl}${callbackUrl}`;
+      }
+      
+      return url.startsWith(baseUrl) ? url : baseUrl;
+    },
   },
   pages: {
     signIn: '/auth/signin',

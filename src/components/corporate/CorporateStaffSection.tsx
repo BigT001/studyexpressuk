@@ -1,49 +1,39 @@
 'use client';
 
-import { Users, UserPlus, TrendingUp } from 'lucide-react';
 import Link from 'next/link';
+import { Users, UserPlus, TrendingUp } from 'lucide-react';
 
 export function CorporateStaffSection() {
   return (
-    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-      {/* Total Staff Card */}
-      <div className="bg-white rounded-lg border border-gray-200 p-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <p className="text-gray-600 text-sm font-medium">Total Staff</p>
-            <h3 className="text-3xl font-bold text-gray-900 mt-2">45</h3>
-          </div>
-          <Users className="w-10 h-10 text-blue-600" />
-        </div>
-        <p className="text-gray-600 text-xs mt-4">+5 members this month</p>
+    <section className="space-y-2">
+      <div className="flex items-center gap-2 mb-1">
+        <Users className="w-4 h-4 text-gray-400" aria-hidden="true" />
+        <h2 className="text-lg font-semibold text-gray-900">Staff Management</h2>
       </div>
-
-      {/* Add Staff Card */}
-      <Link
-        href="/corporate/staff"
-        className="bg-gradient-to-br from-blue-50 to-blue-100 border border-blue-200 rounded-lg p-6 hover:shadow-lg transition-shadow cursor-pointer"
-      >
-        <div className="flex items-center justify-between">
-          <div>
-            <p className="text-blue-700 text-sm font-medium">Manage Staff</p>
-            <h3 className="text-lg font-bold text-blue-900 mt-2">Add Members</h3>
+      <div className="grid md:grid-cols-2 gap-3">
+        <Link
+          href="/corporate/staff"
+          className="flex flex-col border border-blue-100 rounded-lg bg-white p-4 hover:border-blue-400 transition-colors"
+        >
+          <div className="flex items-center gap-2 mb-1">
+            <UserPlus className="w-4 h-4 text-blue-400" aria-hidden="true" />
+            <span className="text-sm font-medium text-gray-900">Add Staff Member</span>
           </div>
-          <UserPlus className="w-10 h-10 text-blue-600" />
-        </div>
-        <p className="text-blue-700 text-xs mt-4">Invite and manage your team</p>
-      </Link>
-
-      {/* Performance Card */}
-      <div className="bg-gradient-to-br from-green-50 to-green-100 border border-green-200 rounded-lg p-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <p className="text-green-700 text-sm font-medium">Avg. Performance</p>
-            <h3 className="text-3xl font-bold text-green-900 mt-2">78%</h3>
+          <span className="text-xs text-gray-500 mb-2">Invite team members to training</span>
+          <span className="text-xs text-blue-500 mt-auto">→ Manage staff</span>
+        </Link>
+        <Link
+          href="/corporate/staff"
+          className="flex flex-col border border-purple-100 rounded-lg bg-white p-4 hover:border-purple-400 transition-colors"
+        >
+          <div className="flex items-center gap-2 mb-1">
+            <TrendingUp className="w-4 h-4 text-purple-400" aria-hidden="true" />
+            <span className="text-sm font-medium text-gray-900">Staff Performance</span>
           </div>
-          <TrendingUp className="w-10 h-10 text-green-600" />
-        </div>
-        <p className="text-green-700 text-xs mt-4">Staff completion rate</p>
+          <span className="text-xs text-gray-500 mb-2">Track team progress and achievements</span>
+          <span className="text-xs text-purple-500 mt-auto">→ View analytics</span>
+        </Link>
       </div>
-    </div>
+    </section>
   );
 }

@@ -5,6 +5,7 @@ export enum UserRole {
   CORPORATE = 'CORPORATE',
   SUB_ADMIN = 'SUB_ADMIN',
   ADMIN = 'ADMIN',
+  STAFF = 'STAFF',
 }
 
 export type UserStatus = 'subscribed' | 'not-subscribed';

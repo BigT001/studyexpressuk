@@ -1,52 +1,39 @@
 'use client';
 
-import { BookOpen, Play, Award } from 'lucide-react';
 import Link from 'next/link';
+import { BookOpen, Play, Award } from 'lucide-react';
 
 export function CorporateCoursesSection() {
   return (
-    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-      {/* Browse Courses Card */}
-      <Link
-        href="/corporate/courses"
-        className="bg-gradient-to-br from-blue-50 to-blue-100 border border-blue-200 rounded-lg p-6 hover:shadow-lg transition-shadow cursor-pointer"
-      >
-        <div className="flex items-center justify-between">
-          <div>
-            <p className="text-blue-700 text-sm font-medium">Available Courses</p>
-            <h3 className="text-lg font-bold text-blue-900 mt-2">Browse Library</h3>
-          </div>
-          <BookOpen className="w-10 h-10 text-blue-600" />
-        </div>
-        <p className="text-blue-700 text-xs mt-4">Explore and assign courses to staff</p>
-      </Link>
-
-      {/* Assign Courses Card */}
-      <Link
-        href="/corporate/courses"
-        className="bg-gradient-to-br from-green-50 to-green-100 border border-green-200 rounded-lg p-6 hover:shadow-lg transition-shadow cursor-pointer"
-      >
-        <div className="flex items-center justify-between">
-          <div>
-            <p className="text-green-700 text-sm font-medium">Active Courses</p>
-            <h3 className="text-2xl font-bold text-green-900 mt-2">12</h3>
-          </div>
-          <Play className="w-10 h-10 text-green-600" />
-        </div>
-        <p className="text-green-700 text-xs mt-4">Courses your team is taking</p>
-      </Link>
-
-      {/* Completions Card */}
-      <div className="bg-gradient-to-br from-purple-50 to-purple-100 border border-purple-200 rounded-lg p-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <p className="text-purple-700 text-sm font-medium">Completions</p>
-            <h3 className="text-2xl font-bold text-purple-900 mt-2">23</h3>
-          </div>
-          <Award className="w-10 h-10 text-purple-600" />
-        </div>
-        <p className="text-purple-700 text-xs mt-4">Courses completed by staff</p>
+    <section className="space-y-2">
+      <div className="flex items-center gap-2 mb-1">
+        <BookOpen className="w-4 h-4 text-gray-400" aria-hidden="true" />
+        <h2 className="text-lg font-semibold text-gray-900">Training Hub</h2>
       </div>
-    </div>
+      <div className="grid md:grid-cols-2 gap-3">
+        <Link
+          href="/corporate/courses"
+          className="flex flex-col border border-green-100 rounded-lg bg-white p-4 hover:border-green-400 transition-colors"
+        >
+          <div className="flex items-center gap-2 mb-1">
+            <BookOpen className="w-4 h-4 text-green-400" aria-hidden="true" />
+            <span className="text-sm font-medium text-gray-900">Manage Courses</span>
+          </div>
+          <span className="text-xs text-gray-500 mb-2">Browse, register and assign courses</span>
+          <span className="text-xs text-green-500 mt-auto">→ Go to courses</span>
+        </Link>
+        <Link
+          href="/corporate/courses"
+          className="flex flex-col border border-pink-100 rounded-lg bg-white p-4 hover:border-pink-400 transition-colors"
+        >
+          <div className="flex items-center gap-2 mb-1">
+            <Award className="w-4 h-4 text-pink-400" aria-hidden="true" />
+            <span className="text-sm font-medium text-gray-900">Completions</span>
+          </div>
+          <span className="text-xs text-gray-500 mb-2">Courses completed by your staff</span>
+          <span className="text-xs text-pink-500 mt-auto">→ View certificates</span>
+        </Link>
+      </div>
+    </section>
   );
 }

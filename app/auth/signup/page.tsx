@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { signIn } from 'next-auth/react';
 import Link from 'next/link';
 
 export default function SignUp() {
@@ -65,7 +66,24 @@ export default function SignUp() {
       }
 
       if (response.status === 201) {
-        router.push('/auth/signin?message=Account created successfully. Please sign in.');
+        // Automatically sign in user and redirect based on role
+        const signInResult = await signIn('credentials', {
+          email: formData.email,
+          password: formData.password,
+          redirect: false,
+        });
+
+        if (signInResult?.ok) {
+          // Determine redirect based on user role
+          let redirectPath = '/individual';
+          if (formData.userType === 'CORPORATE') {
+            redirectPath = '/corporate';
+          }
+          router.push(redirectPath);
+        } else {
+          // If auto-signin fails, redirect to signin page
+          router.push('/auth/signin?message=Account created successfully. Please sign in.');
+        }
       }
     } catch (err: any) {
       setError(err.message || 'An error occurred. Please try again.');

@@ -15,7 +15,7 @@ import { getUserProfile } from '@/server/users/getUserProfile';
 export default async function IndividualDashboard() {
   const session = await getServerAuthSession();
 
-  if (!session || session.user?.role !== 'INDIVIDUAL') {
+  if (!session || !['INDIVIDUAL', 'STAFF'].includes(session.user?.role || '')) {
     redirect('/auth/signin');
   }
 

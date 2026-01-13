@@ -107,7 +107,7 @@ export function IndividualSidebar() {
           <>
             {/* Overlay */}
             <div 
-              className="fixed inset-0 bg-black/40 backdrop-blur-sm z-40 lg:hidden"
+              className="fixed inset-0 bg-transparent backdrop-blur-sm z-40 lg:hidden"
               onClick={() => setIsMobileMenuOpen(false)}
             />
             
@@ -168,7 +168,7 @@ export function IndividualSidebar() {
 
         {/* Logout Confirmation Modal */}
         {showLogoutModal && (
-          <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50">
+          <div className="fixed inset-0 bg-transparent backdrop-blur-sm flex items-center justify-center z-50">
             <div className="bg-white rounded-2xl shadow-2xl max-w-sm w-full mx-4 overflow-hidden animate-in fade-in zoom-in-95">
               <div className="bg-gradient-to-r from-red-500 to-red-600 px-6 py-8 text-white text-center">
                 <div className="text-5xl mb-4">👋</div>
@@ -283,7 +283,7 @@ export function IndividualSidebar() {
 
       {/* Logout Confirmation Modal */}
       {showLogoutModal && (
-        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50">
+        <div className="fixed inset-0 bg-transparent backdrop-blur-sm flex items-center justify-center z-50">
           <div className="bg-white rounded-2xl shadow-2xl max-w-sm w-full mx-4 overflow-hidden animate-in fade-in zoom-in-95">
             {/* Modal Header */}
             <div className="bg-gradient-to-r from-red-500 to-red-600 px-6 py-8 text-white text-center">

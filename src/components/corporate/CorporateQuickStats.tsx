@@ -1,59 +1,49 @@
 'use client';
 
-import { Users, BookOpen, TrendingUp, Award } from 'lucide-react';
+import { Users, BookOpen, BarChart3, TrendingUp } from 'lucide-react';
 
 export function CorporateQuickStats() {
-  const stats = [
-    {
-      icon: Users,
-      label: 'Total Staff',
-      value: '45',
-      change: '+5 this month',
-      color: 'blue',
-    },
-    {
-      icon: BookOpen,
-      label: 'Active Courses',
-      value: '12',
-      change: '3 in progress',
-      color: 'green',
-    },
-    {
-      icon: TrendingUp,
-      label: 'Completion Rate',
-      value: '78%',
-      change: '+12% from last month',
-      color: 'purple',
-    },
-    {
-      icon: Award,
-      label: 'Avg. Progress',
-      value: '65%',
-      change: 'Staff learning progress',
-      color: 'orange',
-    },
-  ];
-
   return (
-    <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-      {stats.map((stat, idx) => {
-        const Icon = stat.icon;
-        const colorClasses = {
-          blue: 'bg-blue-50 border-blue-200 text-blue-600',
-          green: 'bg-green-50 border-green-200 text-green-600',
-          purple: 'bg-purple-50 border-purple-200 text-purple-600',
-          orange: 'bg-orange-50 border-orange-200 text-orange-600',
-        };
+    <div className="grid md:grid-cols-4 gap-4">
+      {/* Total Staff */}
+      <div className="flex flex-col items-start border border-gray-200 rounded-lg bg-white p-4 min-h-[110px]">
+        <div className="flex items-center gap-2 mb-2">
+          <Users className="w-5 h-5 text-blue-400" aria-hidden="true" />
+          <span className="text-xs text-gray-500 font-medium">Total Staff</span>
+        </div>
+        <span className="text-2xl font-bold text-gray-900 mb-1">0</span>
+        <span className="text-xs text-gray-400">Team members</span>
+      </div>
 
-        return (
-          <div key={idx} className={`${colorClasses[stat.color as keyof typeof colorClasses]} rounded-lg border p-6`}>
-            <Icon className="w-8 h-8 mb-3" />
-            <p className="text-gray-600 text-sm font-medium">{stat.label}</p>
-            <p className="text-3xl font-bold text-gray-900 mt-2">{stat.value}</p>
-            <p className="text-xs text-gray-600 mt-2">{stat.change}</p>
-          </div>
-        );
-      })}
+      {/* Active Courses */}
+      <div className="flex flex-col items-start border border-gray-200 rounded-lg bg-white p-4 min-h-[110px]">
+        <div className="flex items-center gap-2 mb-2">
+          <BookOpen className="w-5 h-5 text-green-400" aria-hidden="true" />
+          <span className="text-xs text-gray-500 font-medium">Active Courses</span>
+        </div>
+        <span className="text-2xl font-bold text-gray-900 mb-1">0</span>
+        <span className="text-xs text-gray-400">In training</span>
+      </div>
+
+      {/* Completion Rate */}
+      <div className="flex flex-col items-start border border-gray-200 rounded-lg bg-white p-4 min-h-[110px]">
+        <div className="flex items-center gap-2 mb-2">
+          <TrendingUp className="w-5 h-5 text-purple-400" aria-hidden="true" />
+          <span className="text-xs text-gray-500 font-medium">Completion Rate</span>
+        </div>
+        <span className="text-2xl font-bold text-gray-900 mb-1">0%</span>
+        <span className="text-xs text-gray-400">Average progress</span>
+      </div>
+
+      {/* Overall Progress */}
+      <div className="flex flex-col items-start border border-gray-200 rounded-lg bg-white p-4 min-h-[110px]">
+        <div className="flex items-center gap-2 mb-2">
+          <BarChart3 className="w-5 h-5 text-orange-400" aria-hidden="true" />
+          <span className="text-xs text-gray-500 font-medium">Overall Progress</span>
+        </div>
+        <span className="text-2xl font-bold text-gray-900 mb-1">0%</span>
+        <span className="text-xs text-gray-400">Team learning progress</span>
+      </div>
     </div>
   );
 }

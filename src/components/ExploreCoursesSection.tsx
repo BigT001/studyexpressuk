@@ -232,7 +232,7 @@ export function ExploreEvents() {
         )}
       {/* Enrollment Modal */}
       {showModal && selectedEvent && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-transparent backdrop-blur-sm">
           <div className="bg-white rounded-lg shadow-lg max-w-md w-full p-8 relative">
             <button className="absolute top-3 right-3 text-gray-400 hover:text-gray-700" onClick={() => setShowModal(false)}>&times;</button>
             <h2 className="text-xl font-bold mb-4 text-gray-900">Enroll in {selectedEvent.title}</h2>

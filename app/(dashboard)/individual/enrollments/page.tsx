@@ -8,7 +8,7 @@ import Link from 'next/link';
 
 export default async function EnrollmentsPage() {
   const session = await getServerAuthSession();
-  if (!session || session.user?.role !== 'INDIVIDUAL') {
+  if (!session || !['INDIVIDUAL', 'STAFF'].includes(session.user?.role || '')) {
     redirect('/auth/signin');
   }
   await connectToDatabase();

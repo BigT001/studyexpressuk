@@ -3,8 +3,9 @@
 
 import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
+import { useRouter } from 'next/navigation';
 import Image from 'next/image';
-import Link from 'next/link';
+import { AlertCircle, CheckCircle, Loader } from 'lucide-react';
 
 interface Course {
   _id: string;
@@ -27,6 +28,7 @@ export default function CoursesPage() {
   const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const { data: session, status } = useSession();
+  const router = useRouter();
   const [showModal, setShowModal] = useState(false);
   const [selectedCourse, setSelectedCourse] = useState<Course | null>(null);
   const [form, setForm] = useState({
@@ -39,6 +41,7 @@ export default function CoursesPage() {
   });
   const [submitting, setSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
+  const [enrollmentError, setEnrollmentError] = useState<string | null>(null);
 
   // Fetch full user profile from /api/users/me and prefill form fields
   useEffect(() => {
@@ -59,7 +62,7 @@ export default function CoursesPage() {
               }));
             }
           }
-        } catch (err) {
+        } catch {
           // fallback: do not set fields from session.user, only keep existing form values
           setForm(f => ({ ...f }));
         }
@@ -68,8 +71,8 @@ export default function CoursesPage() {
     fetchUserProfile();
   }, [session]);
 
-  function isUserLoggedIn(session: any, status: string) {
-    return status === 'authenticated' && session && session.user && session.user.email;
+  function isUserLoggedIn(sessionData: unknown, status: string) {
+    return status === 'authenticated' && sessionData && typeof sessionData === 'object' && 'user' in sessionData;
   }
 
   const handleEnrollClick = (course: Course) => {
@@ -89,22 +92,58 @@ export default function CoursesPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setSubmitting(true);
+    setEnrollmentError(null);
+    
     try {
+      // Validate all required fields
+      if (!form.firstName.trim() || !form.lastName.trim() || !form.email.trim() || !form.phone.trim() || !form.location.trim()) {
+        setEnrollmentError('Please fill in all required fields');
+        setSubmitting(false);
+        return;
+      }
+
       // Call API to enroll user in course
       const res = await fetch('/api/enroll-course', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           courseId: selectedCourse?._id,
-          ...form
+          firstName: form.firstName,
+          lastName: form.lastName,
+          email: form.email,
+          phone: form.phone,
+          location: form.location,
+          referralCode: form.referralCode || null
         })
       });
-      if (!res.ok) throw new Error('Failed to enroll');
+
+      const data = await res.json();
+      
+      if (!res.ok) {
+        throw new Error(data.error || 'Failed to enroll. Please try again.');
+      }
+
       setSuccess(true);
-      setShowModal(false);
-      // Optionally: trigger admin update/notification
+      
+      // Show success message for 2 seconds, then redirect
+      setTimeout(() => {
+        setShowModal(false);
+        setSuccess(false);
+        // Redirect based on user role
+        const userRole = session?.user?.role?.toUpperCase();
+        if (userRole === 'INDIVIDUAL') {
+          router.push('/individual/enrollments');
+        } else if (userRole === 'CORPORATE') {
+          router.push('/corporate/courses');
+        } else if (userRole === 'STAFF') {
+          router.push('/staff/courses');
+        } else {
+          router.push('/dashboard');
+        }
+      }, 2000);
     } catch (err) {
-      alert('Enrollment failed. Please try again.');
+      const errorMsg = err instanceof Error ? err.message : 'Enrollment failed. Please try again.';
+      setEnrollmentError(errorMsg);
     } finally {
       setSubmitting(false);
     }
@@ -312,21 +351,127 @@ export default function CoursesPage() {
       </div>
       {/* Enrollment Modal */}
       {showModal && selectedCourse && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center" style={{ background: 'rgba(0,0,0,0.15)' }}>
-          <div className="bg-white rounded-lg shadow-lg max-w-md w-full p-8 relative">
-            <button className="absolute top-3 right-3 text-gray-400 hover:text-gray-700" onClick={() => setShowModal(false)}>&times;</button>
-            <h2 className="text-xl font-bold mb-4 text-gray-900">Enroll in {selectedCourse.title}</h2>
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <input name="firstName" value={form.firstName} onChange={handleFormChange} required placeholder="First Name" className="w-full border rounded px-3 py-2" autoComplete="given-name" />
-              <input name="lastName" value={form.lastName} onChange={handleFormChange} required placeholder="Last Name" className="w-full border rounded px-3 py-2" autoComplete="family-name" />
-              <input name="email" value={form.email} onChange={handleFormChange} required placeholder="Email" className="w-full border rounded px-3 py-2" type="email" autoComplete="email" />
-              <input name="phone" value={form.phone} onChange={handleFormChange} required placeholder="Phone Number" className="w-full border rounded px-3 py-2" autoComplete="tel" />
-              <input name="location" value={form.location} onChange={handleFormChange} required placeholder="Location" className="w-full border rounded px-3 py-2" />
-              <input name="referralCode" value={form.referralCode} onChange={handleFormChange} placeholder="Referral Code (optional)" className="w-full border rounded px-3 py-2" />
-              <button type="submit" disabled={submitting} className="w-full bg-green-600 text-white py-2 rounded font-bold mt-2 hover:bg-green-700 transition-colors">
-                {submitting ? 'Enrolling...' : 'Confirm Enrollment'}
-              </button>
-            </form>
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: 'rgba(0,0,0,0.5)' }}>
+          <div className="bg-white rounded-xl shadow-xl max-w-md w-full p-8 relative max-h-96 overflow-y-auto">
+            {/* Close Button */}
+            <button 
+              className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 transition-colors"
+              onClick={() => {
+                setShowModal(false);
+                setEnrollmentError(null);
+              }}
+            >
+              <span className="text-2xl">&times;</span>
+            </button>
+
+            {/* Success State */}
+            {success ? (
+              <div className="text-center py-8">
+                <CheckCircle className="w-16 h-16 text-green-600 mx-auto mb-4" />
+                <h3 className="text-2xl font-bold text-gray-900 mb-2">Enrollment Successful!</h3>
+                <p className="text-gray-600">You have been enrolled in {selectedCourse.title}. Redirecting to your learning page...</p>
+              </div>
+            ) : (
+              <>
+                {/* Header */}
+                <div className="mb-6">
+                  <h2 className="text-2xl font-bold text-gray-900">Enroll in {selectedCourse.title}</h2>
+                  <p className="text-sm text-gray-600 mt-1">Please provide your details to complete enrollment</p>
+                </div>
+
+                {/* Error Alert */}
+                {enrollmentError && (
+                  <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg flex gap-3">
+                    <AlertCircle className="w-5 h-5 text-red-600 shrink-0" />
+                    <div className="text-sm text-red-700">{enrollmentError}</div>
+                  </div>
+                )}
+
+                {/* Form */}
+                <form onSubmit={handleSubmit} className="space-y-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <input 
+                      name="firstName" 
+                      value={form.firstName} 
+                      onChange={handleFormChange} 
+                      required 
+                      placeholder="First Name" 
+                      className="border border-gray-300 rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                      autoComplete="given-name"
+                      disabled={submitting}
+                    />
+                    <input 
+                      name="lastName" 
+                      value={form.lastName} 
+                      onChange={handleFormChange} 
+                      required 
+                      placeholder="Last Name" 
+                      className="border border-gray-300 rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                      autoComplete="family-name"
+                      disabled={submitting}
+                    />
+                  </div>
+
+                  <input 
+                    name="email" 
+                    value={form.email} 
+                    onChange={handleFormChange} 
+                    required 
+                    placeholder="Email Address" 
+                    className="w-full border border-gray-300 rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                    type="email"
+                    autoComplete="email"
+                    disabled={submitting}
+                  />
+
+                  <input 
+                    name="phone" 
+                    value={form.phone} 
+                    onChange={handleFormChange} 
+                    required 
+                    placeholder="Phone Number" 
+                    className="w-full border border-gray-300 rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                    autoComplete="tel"
+                    disabled={submitting}
+                  />
+
+                  <input 
+                    name="location" 
+                    value={form.location} 
+                    onChange={handleFormChange} 
+                    required 
+                    placeholder="Address / Location" 
+                    className="w-full border border-gray-300 rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                    disabled={submitting}
+                  />
+
+                  <input 
+                    name="referralCode" 
+                    value={form.referralCode} 
+                    onChange={handleFormChange} 
+                    placeholder="Referral Code (optional)" 
+                    className="w-full border border-gray-300 rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                    disabled={submitting}
+                  />
+
+                  {/* Submit Button */}
+                  <button 
+                    type="submit" 
+                    disabled={submitting}
+                    className="w-full bg-green-600 text-white py-3 rounded-lg font-bold mt-6 hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                  >
+                    {submitting ? (
+                      <>
+                        <Loader className="w-4 h-4 animate-spin" />
+                        Enrolling...
+                      </>
+                    ) : (
+                      'Confirm Enrollment'
+                    )}
+                  </button>
+                </form>
+              </>
+            )}
           </div>
         </div>
       )}

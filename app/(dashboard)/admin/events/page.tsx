@@ -440,7 +440,7 @@ export default function EventsManagementPage() {
         {/* Create/Edit Event Modal */}
         {(modalMode === 'create' || modalMode === 'edit') && (
           <div
-            className="fixed inset-0 bg-black/20 backdrop-blur-sm flex items-center justify-center p-4 z-50"
+            className="fixed inset-0 bg-transparent backdrop-blur-sm flex items-center justify-center p-4 z-50"
             onClick={resetModal}
           >
             <div
@@ -613,7 +613,7 @@ export default function EventsManagementPage() {
         {/* Permissions Modal */}
         {modalMode === 'permissions' && selectedEvent && (
           <div
-            className="fixed inset-0 bg-black/20 backdrop-blur-sm flex items-center justify-center p-4 z-50"
+            className="fixed inset-0 bg-transparent backdrop-blur-sm flex items-center justify-center p-4 z-50"
             onClick={resetModal}
           >
             <div

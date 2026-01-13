@@ -110,7 +110,17 @@ export function Header() {
               </>
             ) : (
               <Link
-                href={session.user?.role === 'INDIVIDUAL' ? '/individual' : session.user?.role === 'CORPORATE' ? '/corporate' : session.user?.role === 'SUBADMIN' ? '/subadmin' : '/admin'}
+                href={
+                  session?.user?.role === 'INDIVIDUAL' 
+                    ? '/individual' 
+                    : session?.user?.role === 'CORPORATE' 
+                    ? '/corporate' 
+                    : session?.user?.role === 'SUBADMIN' 
+                    ? '/subadmin' 
+                    : session?.user?.role === 'STAFF'
+                    ? '/individual'
+                    : '/admin'
+                }
                 className="px-4 py-2 text-sm font-bold text-white hover:opacity-90 rounded-lg transition-colors"
                 style={{ backgroundColor: '#008200' }}
               >
@@ -180,7 +190,17 @@ export function Header() {
                 </>
               ) : (
                 <Link
-                  href={session.user?.role === 'INDIVIDUAL' ? '/individual' : session.user?.role === 'CORPORATE' ? '/corporate' : session.user?.role === 'SUBADMIN' ? '/subadmin' : '/admin'}
+                  href={
+                    session?.user?.role === 'INDIVIDUAL' 
+                      ? '/individual' 
+                      : session?.user?.role === 'CORPORATE' 
+                      ? '/corporate' 
+                      : session?.user?.role === 'SUBADMIN' 
+                      ? '/subadmin' 
+                      : session?.user?.role === 'STAFF'
+                      ? '/individual'
+                      : '/admin'
+                  }
                   className="flex-1 text-center px-4 py-2 text-sm font-bold text-white rounded transition-colors"
                   style={{ backgroundColor: '#008200' }}
                   onClick={() => setIsOpen(false)}

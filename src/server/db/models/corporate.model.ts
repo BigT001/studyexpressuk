@@ -12,6 +12,7 @@ export interface ICorporateProfile extends Document {
   employeeCount?: number;
   registrationNumber?: string; // Company registration number
   taxId?: string; // Tax identification
+  registeredCourses?: mongoose.Types.ObjectId[]; // ref: Course (courses registered by this corporate)
   status: CorporateStatus;
   approvedBy?: mongoose.Types.ObjectId; // ref: User (SubAdmin/Admin)
   approvalDate?: Date;
@@ -31,6 +32,7 @@ const CorporateProfileSchema = new Schema<ICorporateProfile>(
     employeeCount: { type: Number },
     registrationNumber: { type: String },
     taxId: { type: String },
+    registeredCourses: [{ type: Schema.Types.ObjectId, ref: 'Course' }],
     status: { type: String, enum: ['pending', 'verified', 'active', 'suspended'], default: 'pending' },
     approvedBy: { type: Schema.Types.ObjectId, ref: 'User' },
     approvalDate: { type: Date },

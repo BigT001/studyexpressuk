@@ -8,7 +8,7 @@ import EnrollmentModel from '@/server/db/models/enrollment.model';
 export async function POST(req: Request) {
   try {
     const session: any = await getServerAuthSession();
-    if (!session || !session.user?.email) {
+    if (!session || !session.user?.id) {
       return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
     }
     await connectToDatabase();
@@ -17,8 +17,8 @@ export async function POST(req: Request) {
     if (!courseId || !firstName || !lastName || !email || !phone || !location) {
       return NextResponse.json({ success: false, error: 'Missing required fields' }, { status: 400 });
     }
-    // Find user
-    const user = await UserModel.findOne({ email }).lean();
+    // Find user by ID from session
+    const user = await UserModel.findById(session.user.id).lean();
     if (!user) {
       return NextResponse.json({ success: false, error: 'User not found' }, { status: 404 });
     }
@@ -35,7 +35,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ success: false, error: 'Already enrolled' }, { status: 409 });
     }
     // Create enrollment
-    await EnrollmentModel.create({
+    const enrollment = await EnrollmentModel.create({
       userId: user._id,
       eventId: courseIdToUse,
       status: 'enrolled',
@@ -48,8 +48,9 @@ export async function POST(req: Request) {
         referralCode: referralCode || null
       }
     });
-    return NextResponse.json({ success: true, message: 'Enrollment successful' });
+    return NextResponse.json({ success: true, message: 'Enrollment successful', enrollment });
   } catch (err: any) {
+    console.error('Enrollment error:', err);
     return NextResponse.json({ success: false, error: err.message || 'Enrollment failed' }, { status: 500 });
   }
 }

@@ -7,3 +7,4 @@ export { CorporateStaffSection } from './CorporateStaffSection';
 export { CorporateCoursesSection } from './CorporateCoursesSection';
 export { CorporateCommunicationSection } from './CorporateCommunicationSection';
 export { CorporateNotificationsSection } from './CorporateNotificationsSection';
+export { CorporateProfileCard } from './CorporateProfileCard';

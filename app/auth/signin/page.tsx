@@ -33,56 +33,34 @@ function SignInForm() {
     setIsLoading(true);
 
     try {
-      // Create a timeout promise
-      const timeoutPromise = new Promise((_, reject) =>
-        setTimeout(() => reject(new Error('Signin timeout')), 50000) // 50 second timeout for production MongoDB latency
-      );
-
-      const signInPromise = signIn('credentials', {
+      console.log('[SignIn] Starting signin with email:', email);
+      
+      const result = await signIn('credentials', {
         email,
         password,
         redirect: false,
       });
 
-      const result = await Promise.race([signInPromise, timeoutPromise]);
+      console.log('[SignIn] Result:', result);
 
-      if ((result as any)?.error) {
+      if (result?.error) {
+        console.log('[SignIn] Auth error:', result.error);
         setError('Invalid email or password. Please try again.');
         setIsLoading(false);
-      } else if ((result as any)?.ok) {
-        console.log('[SignIn] Auth successful, redirecting to:', callbackUrl);
-        // Determine redirect based on user role if no callbackUrl provided
-        let redirectUrl = callbackUrl;
-        if (callbackUrl === '/individual') {
-          // Fetch user data to check role
-          try {
-            const sessionResponse = await fetch('/api/auth/session');
-            const session = await sessionResponse.json();
-            if (session?.user?.role === 'CORPORATE') {
-              redirectUrl = '/corporate';
-            } else if (session?.user?.role === 'SUB_ADMIN') {
-              redirectUrl = '/subadmin';
-            } else if (session?.user?.role === 'ADMIN') {
-              redirectUrl = '/admin';
-            }
-          } catch (e) {
-            console.log('Could not fetch session, using default redirect');
-          }
-        }
-        // Use setTimeout to ensure state updates are processed
-        setTimeout(() => router.push(redirectUrl), 100);
+      } else if (result?.ok) {
+        console.log('[SignIn] Auth successful, redirecting to:', email);
+        // Wait briefly for session cookie to be set
+        setTimeout(() => {
+          window.location.href = '/individual';
+        }, 500);
       } else {
+        console.log('[SignIn] Unexpected response:', result);
         setError('Signin failed. Please try again.');
         setIsLoading(false);
       }
     } catch (err: unknown) {
-      const errorMsg = err instanceof Error ? err.message : 'An error occurred';
-      if (errorMsg.includes('timeout')) {
-        setError('Request timed out. Please check your connection and try again.');
-      } else {
-        setError('An error occurred. Please try again.');
-      }
-      console.error('Signin error:', err);
+      console.error('[SignIn] Caught error:', err);
+      setError('An error occurred. Please try again.');
       setIsLoading(false);
     }
   };
