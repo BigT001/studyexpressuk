@@ -6,6 +6,7 @@ import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import Modal from '@/components/Modal';
 import { RegisterEventForm } from '@/components/RegisterEventForm';
+import { EventRegistrationConfirmation } from '@/components/EventRegistrationConfirmation';
 
 import { useState, useEffect } from 'react';
 import Image from 'next/image';
@@ -32,8 +33,11 @@ export default function EventsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
+  const [showConfirmation, setShowConfirmation] = useState(false);
   const [modalOpen, setModalOpen] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState<Event | null>(null);
+  const [isRegistering, setIsRegistering] = useState(false);
+  const [registrationError, setRegistrationError] = useState<string | null>(null);
   const { data: session, status } = useSession();
   const router = useRouter();
 
@@ -77,6 +81,48 @@ export default function EventsPage() {
     if (!date) return '';
     const d = new Date(date);
     return d.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+  };
+
+  const handleConfirmRegistration = async () => {
+    if (!selectedEvent) return;
+
+    setIsRegistering(true);
+    try {
+      const response = await fetch('/api/register-event', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          eventId: selectedEvent._id,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to register for event');
+      }
+
+      // Show success notification
+      setShowConfirmation(false);
+      const notification = document.createElement('div');
+      notification.className =
+        'fixed top-4 right-4 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg z-50 animate-fade-in';
+      notification.textContent = `Successfully registered for ${selectedEvent.title}!`;
+      document.body.appendChild(notification);
+
+      setTimeout(() => {
+        notification.remove();
+        // Redirect to individual events page
+        window.location.href = '/individual/events';
+      }, 2000);
+    } catch (err) {
+      const errorMessage =
+        err instanceof Error ? err.message : 'Registration failed. Please try again.';
+      setRegistrationError(errorMessage);
+      setShowConfirmation(false);
+    } finally {
+      setIsRegistering(false);
+    }
   };
 
   // Filter events based on search
@@ -249,7 +295,7 @@ export default function EventsPage() {
                         return;
                       }
                       setSelectedEvent(event);
-                      setModalOpen(true);
+                      setShowConfirmation(true);
                     }}
                   >
                     Register Now →
@@ -264,25 +310,28 @@ export default function EventsPage() {
             </div>
           </div>
         )}
-      <Modal open={modalOpen} onClose={() => setModalOpen(false)}>
-        <div className="text-center">
-          <h2 className="text-2xl font-bold mb-4">Register for Event</h2>
-          <p className="mb-4">You are about to register for <span className="font-semibold">{selectedEvent?.title}</span>.</p>
-          {session?.user ? (
-            <RegisterEventForm
-              eventId={selectedEvent?._id}
-              sessionUser={session.user}
-              onSuccess={() => {
-                setModalOpen(false);
-                router.push('/individual/events');
-              }}
-            />
-          ) : null}
+      
+      {/* Event Registration Confirmation Modal */}
+      <EventRegistrationConfirmation
+        isOpen={showConfirmation}
+        eventName={selectedEvent?.title || 'this event'}
+        onConfirm={handleConfirmRegistration}
+        onCancel={() => setShowConfirmation(false)}
+        isLoading={isRegistering}
+      />
+
+      {/* Registration Error Toast */}
+      {registrationError && (
+        <div className="fixed bottom-4 right-4 bg-red-500 text-white px-6 py-3 rounded-lg shadow-lg max-w-sm z-50">
+          <p className="text-sm font-semibold">{registrationError}</p>
+          <button
+            onClick={() => setRegistrationError(null)}
+            className="mt-2 text-xs underline hover:no-underline"
+          >
+            Dismiss
+          </button>
         </div>
-      </Modal>
-
-
-
+      )}
 
       </div>
     </div>

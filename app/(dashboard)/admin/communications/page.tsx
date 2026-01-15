@@ -314,8 +314,6 @@ export default function CommunicationsPage() {
                       style={{ borderColor: '#008200' }}
                     >
                       <option value="info">ℹ️ Info</option>
-                      <option value="success">✅ Success</option>
-                      <option value="warning">⚠️ Warning</option>
                       <option value="urgent">🚨 Urgent</option>
                     </select>
                   </div>

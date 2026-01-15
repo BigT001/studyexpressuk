@@ -4,9 +4,11 @@ export type NotificationStatus = 'unread' | 'read' | 'archived';
 
 export interface INotification extends Document {
   userId: mongoose.Types.ObjectId; // recipient
-  type: string; // e.g., 'membership', 'message', 'system'
+  type: string; // e.g., 'announcement', 'message', 'system'
   title?: string;
   body?: string;
+  content?: string;
+  priority?: 'normal' | 'high' | 'urgent';
   metadata?: Record<string, any>;
   status: NotificationStatus;
   readAt?: Date;
@@ -20,6 +22,8 @@ const NotificationSchema = new Schema<INotification>(
     type: { type: String, required: true },
     title: { type: String },
     body: { type: String },
+    content: { type: String },
+    priority: { type: String, enum: ['normal', 'high', 'urgent'], default: 'normal' },
     metadata: { type: Schema.Types.Mixed },
     status: { type: String, enum: ['unread', 'read', 'archived'], default: 'unread' },
     readAt: { type: Date },

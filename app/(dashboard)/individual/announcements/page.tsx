@@ -1,208 +1,253 @@
-import React from 'react';
-import Link from 'next/link';
+'use client';
 
-export const metadata = {
-  title: 'Announcements | Individual Dashboard',
-  description: 'Platform announcements and broadcasts',
-};
+import React, { useEffect, useState } from 'react';
+import { AlertCircle } from 'lucide-react';
 
 export default function AnnouncementsPage() {
-  // Sample announcements data
-  const announcements = [
-    {
-      id: 1,
-      title: 'New Course: Advanced UK Immigration Law',
-      content:
-        'We are excited to announce a brand new course covering advanced topics in UK immigration law. Perfect for professionals and students interested in this field.',
-      date: 'January 1, 2026',
-      author: 'Admin Team',
-      type: 'course',
-      priority: 'high',
-      image: '📚',
-    },
-    {
-      id: 2,
-      title: 'Platform Maintenance Scheduled',
-      content:
-        'Our platform will undergo scheduled maintenance on January 5, 2026 from 2:00 AM to 4:00 AM GMT. We apologize for any inconvenience.',
-      date: 'December 30, 2025',
-      author: 'System',
-      type: 'maintenance',
-      priority: 'medium',
-      image: '🔧',
-    },
-    {
-      id: 3,
-      title: 'Upcoming Webinar: Study in UK 2026',
-      content:
-        'Join us for an exclusive webinar featuring university representatives from top UK institutions. Learn about admission requirements, scholarships, and student life.',
-      date: 'December 28, 2025',
-      author: 'Events Team',
-      type: 'event',
-      priority: 'high',
-      image: '🎓',
-    },
-    {
-      id: 4,
-      title: 'Member Spotlight: Success Stories',
-      content:
-        'Read inspiring stories from our community members who have successfully studied in the UK. Learn from their experiences and get tips for your own journey.',
-      date: 'December 25, 2025',
-      author: 'Community',
-      type: 'news',
-      priority: 'normal',
-      image: '⭐',
-    },
-    {
-      id: 5,
-      title: 'Limited Time: 50% Off Premium Membership',
-      content:
-        'Upgrade to Premium membership and get 50% off your first year. Unlock exclusive courses, priority support, and much more. Offer valid until December 31, 2025.',
-      date: 'December 20, 2025',
-      author: 'Marketing',
-      type: 'promotion',
-      priority: 'high',
-      image: '🎉',
-    },
-  ];
+  const [announcements, setAnnouncements] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [selectedAnnouncement, setSelectedAnnouncement] = useState<any | null>(null);
+  const [activeTab, setActiveTab] = useState<'all' | 'urgent'>('all');
 
-  const getTypeColor = (type: string) => {
-    const colors: Record<string, string> = {
-      course: 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200',
-      event: 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200',
-      maintenance: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200',
-      news: 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200',
-      promotion: 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200',
-    };
-    return colors[type] || colors.news;
+  useEffect(() => {
+    fetchAnnouncements();
+  }, []);
+
+  const fetchAnnouncements = async () => {
+    try {
+      const res = await fetch('/api/user/notifications');
+      const data = await res.json();
+      if (data.success) {
+        // Filter for only announcements
+        const announcementsList = data.notifications
+          .filter((n: any) => n.type === 'announcement')
+          .sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+        setAnnouncements(announcementsList);
+      }
+    } catch (error) {
+      console.error('Error fetching announcements:', error);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const getPriorityBadge = (priority: string) => {
-    if (priority === 'high') {
-      return (
-        <span className="inline-flex items-center rounded-full bg-red-100 px-3 py-1 text-xs font-medium text-red-800 dark:bg-red-900 dark:text-red-200">
-          <span className="mr-1 h-2 w-2 rounded-full bg-red-600"></span>
-          Urgent
-        </span>
-      );
-    }
-    if (priority === 'medium') {
-      return (
-        <span className="inline-flex items-center rounded-full bg-orange-100 px-3 py-1 text-xs font-medium text-orange-800 dark:bg-orange-900 dark:text-orange-200">
-          <span className="mr-1 h-2 w-2 rounded-full bg-orange-600"></span>
-          Important
-        </span>
-      );
-    }
-    return null;
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    return date.toLocaleString('en-US', { 
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: true
+    });
   };
+
+  const getCategoryColor = (priority: string) => {
+    switch (priority) {
+      case 'urgent':
+        return 'bg-red-100 text-red-900 dark:bg-red-900 dark:text-red-200';
+      case 'high':
+        return 'bg-orange-100 text-orange-900 dark:bg-orange-900 dark:text-orange-200';
+      default:
+        return 'bg-blue-100 text-blue-900 dark:bg-blue-900 dark:text-blue-200';
+    }
+  };
+
+  const getPriorityDisplay = (announcement: any) => {
+    const priority = announcement.priority || (announcement.type === 'urgent' ? 'urgent' : announcement.type === 'warning' ? 'high' : 'normal');
+    return priority === 'urgent' ? 'Urgent' : priority === 'high' ? 'High' : 'Normal';
+  };
+
+  // Filter announcements based on active tab - check priority OR type field for backward compatibility
+  const filteredAnnouncements = activeTab === 'urgent' 
+    ? announcements.filter((a: any) => (a.priority === 'urgent' || a.type === 'urgent'))
+    : announcements;
+
+  // Function to calculate unread announcements count
+  const getUnreadCount = () => {
+    return announcements.filter((a: any) => a.status === 'unread').length;
+  };
+
+  // Function to calculate unread urgent announcements count
+  const getUnreadUrgentCount = () => {
+    return announcements.filter((a: any) => (a.priority === 'urgent' || a.type === 'urgent') && a.status === 'unread').length;
+  };
+
+  const unreadCount = getUnreadCount();
+  const urgentCount = getUnreadUrgentCount();
+
+  // Function to mark announcement as read when opened/clicked
+  const markAsRead = async (announcementId: string) => {
+    try {
+      // Optimistically update local state immediately for instant UI feedback
+      const updatedAnnouncements = announcements.map((a: any) =>
+        a._id === announcementId ? { ...a, status: 'read' } : a
+      );
+      setAnnouncements(updatedAnnouncements);
+
+      // Send API request to persist the change
+      await fetch('/api/user/notifications', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'read', notificationId: announcementId }),
+      });
+    } catch (error) {
+      console.error('Error marking announcement as read:', error);
+      // Revert on error
+      setAnnouncements(announcements);
+    }
+  };
+
+  // Function to handle announcement selection and mark as read
+  const handleSelectAnnouncement = (announcement: any) => {
+    setSelectedAnnouncement(announcement);
+    // Mark as read when selected - this will trigger count to decrease
+    if (announcement.status === 'unread') {
+      markAsRead(announcement._id);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600"></div>
+      </div>
+    );
+  }
 
   return (
-    <div className="space-y-6 pb-8">
+    <div className="space-y-8 p-6">
       {/* Header */}
       <div>
         <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Announcements</h1>
-        <p className="mt-2 text-gray-600 dark:text-gray-400">
-          Stay updated with the latest announcements and broadcasts from StudyExpressUK
-        </p>
+        <p className="text-gray-600 dark:text-gray-400 mt-1">Stay updated with important announcements from the platform</p>
       </div>
 
-      {/* Filter Tabs */}
-      <div className="flex space-x-4 border-b border-gray-200 overflow-x-auto dark:border-gray-700">
-        <button className="border-b-2 border-[#008200] px-4 py-2 text-sm font-medium text-[#008200] whitespace-nowrap dark:text-[#00B300]">
-          All
+      {/* Tab Navigation */}
+      <div className="flex space-x-2 bg-white dark:bg-gray-800 rounded-lg shadow p-1">
+        <button
+          onClick={() => setActiveTab('all')}
+          className={`px-4 py-2 rounded font-semibold transition-colors flex items-center gap-2 ${
+            activeTab === 'all'
+              ? 'bg-green-600 text-white'
+              : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
+          }`}
+        >
+          📢 All Announcements
+          {unreadCount > 0 && (
+            <span className="bg-red-500 text-white text-xs font-bold rounded-full px-2 py-0.5">
+              {unreadCount}
+            </span>
+          )}
         </button>
-        <button className="border-b-2 border-transparent px-4 py-2 text-sm font-medium text-gray-600 hover:border-gray-300 hover:text-gray-900 whitespace-nowrap dark:text-gray-400 dark:hover:text-gray-300">
-          Courses
-        </button>
-        <button className="border-b-2 border-transparent px-4 py-2 text-sm font-medium text-gray-600 hover:border-gray-300 hover:text-gray-900 whitespace-nowrap dark:text-gray-400 dark:hover:text-gray-300">
-          Events
-        </button>
-        <button className="border-b-2 border-transparent px-4 py-2 text-sm font-medium text-gray-600 hover:border-gray-300 hover:text-gray-900 whitespace-nowrap dark:text-gray-400 dark:hover:text-gray-300">
-          News
-        </button>
-        <button className="border-b-2 border-transparent px-4 py-2 text-sm font-medium text-gray-600 hover:border-gray-300 hover:text-gray-900 whitespace-nowrap dark:text-gray-400 dark:hover:text-gray-300">
-          Promotions
+        <button
+          onClick={() => setActiveTab('urgent')}
+          className={`px-4 py-2 rounded font-semibold transition-colors flex items-center gap-2 ${
+            activeTab === 'urgent'
+              ? 'bg-red-600 text-white'
+              : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
+          }`}
+        >
+          🚨 Urgent
+          {urgentCount > 0 && (
+            <span className="bg-white text-red-600 text-xs font-bold rounded-full px-2 py-0.5">
+              {urgentCount}
+            </span>
+          )}
         </button>
       </div>
 
-      {/* Announcements List */}
-      <div className="grid gap-4 md:gap-6">
-        {announcements.map((announcement) => (
-          <Link
-            key={announcement.id}
-            href={`/individual/announcements/${announcement.id}`}
-            className="group block rounded-lg border border-gray-200 bg-white p-6 transition-all hover:border-[#00B300] hover:shadow-lg dark:border-gray-700 dark:bg-gray-800 dark:hover:border-[#00B300]"
-          >
-            <div className="flex items-start space-x-4">
-              {/* Icon */}
-              <div className="flex-shrink-0 text-2xl">{announcement.image}</div>
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Announcements Feed */}
+        <div className="lg:col-span-2">
+          <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm overflow-hidden">
+            <div className="bg-gradient-to-r from-blue-50 to-blue-100 dark:from-blue-900 dark:to-blue-800 p-6 border-b border-gray-200 dark:border-gray-700">
+              <div className="flex items-center gap-3">
+                <span className="text-2xl">📢</span>
+                <h2 className="text-2xl font-bold text-gray-900 dark:text-white">All Announcements</h2>
+              </div>
+            </div>
 
-              {/* Content */}
-              <div className="flex-1 min-w-0">
-                <div className="flex flex-wrap items-center gap-2 mb-2">
-                  <span
-                    className={`inline-block rounded-full px-3 py-1 text-xs font-medium ${getTypeColor(announcement.type)}`}
+            {announcements.length === 0 ? (
+              <div className="p-8 text-center">
+                <AlertCircle className="w-12 h-12 text-gray-300 mx-auto mb-4" />
+                <p className="text-gray-600 dark:text-gray-400">No announcements at this time</p>
+              </div>
+            ) : filteredAnnouncements.length === 0 ? (
+              <div className="p-8 text-center">
+                <AlertCircle className="w-12 h-12 text-gray-300 mx-auto mb-4" />
+                <p className="text-gray-600 dark:text-gray-400">No {activeTab === 'urgent' ? 'urgent' : ''} announcements</p>
+              </div>
+            ) : (
+              <div className="divide-y divide-gray-200 dark:divide-gray-700">
+                {filteredAnnouncements.map((announcement: any) => (
+                  <div
+                    key={announcement._id}
+                    onClick={() => handleSelectAnnouncement(announcement)}
+                    className={`p-6 cursor-pointer transition-colors hover:bg-gray-50 dark:hover:bg-gray-700 ${
+                      selectedAnnouncement?._id === announcement._id ? 'bg-blue-50 dark:bg-blue-900' : ''
+                    }`}
                   >
-                    {announcement.type.charAt(0).toUpperCase() + announcement.type.slice(1)}
-                  </span>
-                  {getPriorityBadge(announcement.priority)}
-                </div>
+                    <div className="flex items-start gap-4">
+                      {/* Priority Indicator */}
+                      <div className="flex-shrink-0">
+                        <div className={`w-6 h-6 rounded-full ${
+                          (announcement.priority === 'urgent' || announcement.type === 'urgent')
+                            ? 'bg-red-500'
+                            : (announcement.priority === 'high' || announcement.type === 'warning')
+                            ? 'bg-orange-500'
+                            : 'bg-blue-500'
+                        }`} />
+                      </div>
 
-                <h3 className="text-lg font-semibold text-gray-900 group-hover:text-[#008200] dark:text-white dark:group-hover:text-[#00B300] transition-colors">
-                  {announcement.title}
-                </h3>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center justify-between gap-2 mb-1">
+                          <h3 className="font-bold text-gray-900 dark:text-white text-lg">{announcement.title}</h3>
+                          <span className={`px-2 py-1 rounded text-xs font-medium whitespace-nowrap ${getCategoryColor(announcement.priority || (announcement.type === 'urgent' ? 'urgent' : announcement.type === 'warning' ? 'high' : 'normal'))}`}>
+                            {getPriorityDisplay(announcement)}
+                          </span>
+                        </div>
 
-                <p className="mt-2 text-gray-600 dark:text-gray-400 line-clamp-2">
-                  {announcement.content}
-                </p>
+                        <p className="text-gray-700 dark:text-gray-300 mt-2 line-clamp-2">{announcement.content}</p>
 
-                <div className="mt-4 flex items-center justify-between text-sm text-gray-500 dark:text-gray-400">
-                  <span>By {announcement.author}</span>
-                  <span>{announcement.date}</span>
-                </div>
+                        <div className="mt-3 flex items-center gap-4 text-sm text-gray-600 dark:text-gray-400 flex-wrap">
+                          <div className="flex items-center gap-1">
+                            <span>🕐</span>
+                            {formatDate(announcement.createdAt)}
+                          </div>
+                          <div className="flex items-center gap-1">
+                            <span>📧</span>
+                            From {announcement.sender || 'Admin Team'}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Announcement Details */}
+        <div className="lg:col-span-1">
+          {selectedAnnouncement ? (
+            <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm overflow-hidden">
+              <div className="bg-gradient-to-r from-green-50 to-green-100 dark:from-green-900 dark:to-green-800 p-6 border-b border-gray-200 dark:border-gray-700">
+                <h3 className="font-bold text-gray-900 dark:text-white">Message</h3>
               </div>
 
-              {/* Arrow */}
-              <svg
-                className="h-5 w-5 flex-shrink-0 text-gray-400 group-hover:text-[#008200] transition-colors dark:group-hover:text-[#00B300]"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M9 5l7 7-7 7"
-                />
-              </svg>
+              <div className="p-6">
+                <p className="text-gray-700 dark:text-gray-300 leading-relaxed">{selectedAnnouncement.content}</p>
+              </div>
             </div>
-          </Link>
-        ))}
-      </div>
-
-      {/* Subscribe Section */}
-      <div className="rounded-lg border border-[#008200] bg-green-50 p-6 dark:border-[#00B300] dark:bg-green-900/20">
-        <div className="flex items-start space-x-4">
-          <svg
-            className="h-6 w-6 flex-shrink-0 text-[#008200] dark:text-[#00B300]"
-            fill="currentColor"
-            viewBox="0 0 20 20"
-          >
-            <path d="M2.5 3A1.5 1.5 0 001 4.5v.006c0 .023 0 .045.003.068A1.5 1.5 0 002.5 6h15A1.5 1.5 0 0019 4.574v-.006A1.5 1.5 0 0017.5 3h-15zm0 2.5h15v8A1.5 1.5 0 0117.5 15h-15A1.5 1.5 0 012.5 13.5v-8z" />
-          </svg>
-          <div>
-            <h3 className="text-base font-semibold text-gray-900 dark:text-white">
-              Get Notifications
-            </h3>
-            <p className="mt-1 text-sm text-gray-600 dark:text-gray-300">
-              Enable notifications to receive announcements directly in your dashboard. You can manage notification preferences in your account settings.
-            </p>
-            <button className="mt-4 inline-flex items-center rounded-lg bg-[#008200] px-4 py-2 text-sm font-medium text-white hover:bg-[#007000] focus:outline-none focus:ring-4 focus:ring-green-300 dark:focus:ring-green-800 transition-colors">
-              Enable Notifications
-            </button>
-          </div>
+          ) : (
+            <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm p-8 text-center">
+              <span className="text-5xl block mb-3 text-gray-400">📢</span>
+              <p className="text-gray-600 dark:text-gray-400">Select an announcement to view details</p>
+            </div>
+          )}
         </div>
       </div>
     </div>

@@ -50,11 +50,6 @@ const navItems: NavItem[] = [
     href: '/individual/announcements',
   },
   {
-    icon: '🔔',
-    label: 'Notifications',
-    href: '/individual/notifications',
-  },
-  {
     icon: '⚙️',
     label: 'Settings',
     href: '/individual/settings',

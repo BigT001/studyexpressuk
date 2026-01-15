@@ -3,9 +3,10 @@
 
 import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
-import { useRouter } from 'next/navigation';
 import Image from 'next/image';
-import { AlertCircle, CheckCircle, Loader } from 'lucide-react';
+import { LoginPrompt } from '@/components/LoginPrompt';
+import { EnrollmentConfirmation } from '@/components/EnrollmentConfirmation';
+import { useEnrollment } from '@/hooks/useEnrollment';
 
 interface Course {
   _id: string;
@@ -27,127 +28,19 @@ export default function CoursesPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
-  const { data: session, status } = useSession();
-  const router = useRouter();
-  const [showModal, setShowModal] = useState(false);
+  const { status } = useSession();
+
+  // Login prompt state
+  const [showLoginPrompt, setShowLoginPrompt] = useState(false);
   const [selectedCourse, setSelectedCourse] = useState<Course | null>(null);
-  const [form, setForm] = useState({
-    firstName: '',
-    lastName: '',
-    email: '',
-    phone: '',
-    location: '',
-    referralCode: ''
-  });
-  const [submitting, setSubmitting] = useState(false);
-  const [success, setSuccess] = useState(false);
   const [enrollmentError, setEnrollmentError] = useState<string | null>(null);
+  const [showConfirmation, setShowConfirmation] = useState(false);
+  const [isEnrolling, setIsEnrolling] = useState(false);
 
-  // Fetch full user profile from /api/users/me and prefill form fields
-  useEffect(() => {
-    async function fetchUserProfile() {
-      if (session?.user) {
-        try {
-          const res = await fetch('/api/users/me');
-          if (res.ok) {
-            const data = await res.json();
-            if (data.success && data.user) {
-              setForm(f => ({
-                ...f,
-                firstName: data.user.firstName || f.firstName || '',
-                lastName: data.user.lastName || f.lastName || '',
-                email: data.user.email || f.email || '',
-                phone: data.user.phone || f.phone || '',
-                location: data.user.location || f.location || '',
-              }));
-            }
-          }
-        } catch {
-          // fallback: do not set fields from session.user, only keep existing form values
-          setForm(f => ({ ...f }));
-        }
-      }
-    }
-    fetchUserProfile();
-  }, [session]);
-
-  function isUserLoggedIn(sessionData: unknown, status: string) {
-    return status === 'authenticated' && sessionData && typeof sessionData === 'object' && 'user' in sessionData;
-  }
-
-  const handleEnrollClick = (course: Course) => {
-    if (status === 'loading') return;
-    if (!isUserLoggedIn(session, status)) {
-      window.location.href = '/auth/signin';
-      return;
-    }
-    setSelectedCourse(course);
-    setShowModal(true);
-  };
-
-  const handleFormChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setForm({ ...form, [e.target.name]: e.target.value });
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setSubmitting(true);
-    setEnrollmentError(null);
-    
-    try {
-      // Validate all required fields
-      if (!form.firstName.trim() || !form.lastName.trim() || !form.email.trim() || !form.phone.trim() || !form.location.trim()) {
-        setEnrollmentError('Please fill in all required fields');
-        setSubmitting(false);
-        return;
-      }
-
-      // Call API to enroll user in course
-      const res = await fetch('/api/enroll-course', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          courseId: selectedCourse?._id,
-          firstName: form.firstName,
-          lastName: form.lastName,
-          email: form.email,
-          phone: form.phone,
-          location: form.location,
-          referralCode: form.referralCode || null
-        })
-      });
-
-      const data = await res.json();
-      
-      if (!res.ok) {
-        throw new Error(data.error || 'Failed to enroll. Please try again.');
-      }
-
-      setSuccess(true);
-      
-      // Show success message for 2 seconds, then redirect
-      setTimeout(() => {
-        setShowModal(false);
-        setSuccess(false);
-        // Redirect based on user role
-        const userRole = session?.user?.role?.toUpperCase();
-        if (userRole === 'INDIVIDUAL') {
-          router.push('/individual/enrollments');
-        } else if (userRole === 'CORPORATE') {
-          router.push('/corporate/courses');
-        } else if (userRole === 'STAFF') {
-          router.push('/staff/courses');
-        } else {
-          router.push('/dashboard');
-        }
-      }, 2000);
-    } catch (err) {
-      const errorMsg = err instanceof Error ? err.message : 'Enrollment failed. Please try again.';
-      setEnrollmentError(errorMsg);
-    } finally {
-      setSubmitting(false);
-    }
-  };
+  // Use enrollment hook
+  const { isUserActive } = useEnrollment({
+    onError: (err: string) => setEnrollmentError(err),
+  });
 
   useEffect(() => {
     const fetchCourses = async () => {
@@ -194,6 +87,74 @@ export default function CoursesPage() {
           color: '#008200'
         };
     }
+  };
+
+  /**
+   * Handle enroll button click
+   * Shows login prompt if not authenticated
+   * Shows confirmation if authenticated
+   */
+  const handleEnrollClick = async (course: Course) => {
+    if (status === 'loading') return;
+
+    setSelectedCourse(course);
+    setEnrollmentError(null);
+
+    // Check if user is logged in
+    if (!isUserActive()) {
+      setShowLoginPrompt(true);
+      return;
+    }
+
+    // User is logged in - show confirmation modal
+    setShowConfirmation(true);
+  };
+
+  const handleConfirmEnrollment = async () => {
+    if (!selectedCourse) return;
+
+    setIsEnrolling(true);
+    try {
+      const response = await fetch('/api/enroll-course', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          courseId: selectedCourse._id,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to enroll in course');
+      }
+
+      // Show success notification
+      setShowConfirmation(false);
+      const notification = document.createElement('div');
+      notification.className =
+        'fixed top-4 right-4 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg z-50 animate-fade-in';
+      notification.textContent = `Successfully enrolled in ${selectedCourse.title}!`;
+      document.body.appendChild(notification);
+
+      setTimeout(() => {
+        notification.remove();
+        // Redirect to individual enrollments page
+        window.location.href = '/individual/enrollments';
+      }, 2000);
+    } catch (err) {
+      const errorMessage =
+        err instanceof Error ? err.message : 'Enrollment failed. Please try again.';
+      setEnrollmentError(errorMessage);
+      setShowConfirmation(false);
+    } finally {
+      setIsEnrolling(false);
+    }
+  };
+
+  const handleLoginClick = () => {
+    setShowLoginPrompt(false);
+    window.location.href = '/auth/signin';
   };
 
   return (
@@ -349,130 +310,34 @@ export default function CoursesPage() {
           )}
         </div>
       </div>
-      {/* Enrollment Modal */}
-      {showModal && selectedCourse && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: 'rgba(0,0,0,0.5)' }}>
-          <div className="bg-white rounded-xl shadow-xl max-w-md w-full p-8 relative max-h-96 overflow-y-auto">
-            {/* Close Button */}
-            <button 
-              className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 transition-colors"
-              onClick={() => {
-                setShowModal(false);
-                setEnrollmentError(null);
-              }}
-            >
-              <span className="text-2xl">&times;</span>
-            </button>
 
-            {/* Success State */}
-            {success ? (
-              <div className="text-center py-8">
-                <CheckCircle className="w-16 h-16 text-green-600 mx-auto mb-4" />
-                <h3 className="text-2xl font-bold text-gray-900 mb-2">Enrollment Successful!</h3>
-                <p className="text-gray-600">You have been enrolled in {selectedCourse.title}. Redirecting to your learning page...</p>
-              </div>
-            ) : (
-              <>
-                {/* Header */}
-                <div className="mb-6">
-                  <h2 className="text-2xl font-bold text-gray-900">Enroll in {selectedCourse.title}</h2>
-                  <p className="text-sm text-gray-600 mt-1">Please provide your details to complete enrollment</p>
-                </div>
+      {/* Login Prompt Modal */}
+      <LoginPrompt
+        isOpen={showLoginPrompt}
+        courseName={selectedCourse?.title || 'this course'}
+        onLogin={handleLoginClick}
+        onClose={() => setShowLoginPrompt(false)}
+      />
 
-                {/* Error Alert */}
-                {enrollmentError && (
-                  <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg flex gap-3">
-                    <AlertCircle className="w-5 h-5 text-red-600 shrink-0" />
-                    <div className="text-sm text-red-700">{enrollmentError}</div>
-                  </div>
-                )}
+      {/* Enrollment Confirmation Modal */}
+      <EnrollmentConfirmation
+        isOpen={showConfirmation}
+        courseName={selectedCourse?.title || 'this course'}
+        onConfirm={handleConfirmEnrollment}
+        onCancel={() => setShowConfirmation(false)}
+        isLoading={isEnrolling}
+      />
 
-                {/* Form */}
-                <form onSubmit={handleSubmit} className="space-y-4">
-                  <div className="grid grid-cols-2 gap-4">
-                    <input 
-                      name="firstName" 
-                      value={form.firstName} 
-                      onChange={handleFormChange} 
-                      required 
-                      placeholder="First Name" 
-                      className="border border-gray-300 rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                      autoComplete="given-name"
-                      disabled={submitting}
-                    />
-                    <input 
-                      name="lastName" 
-                      value={form.lastName} 
-                      onChange={handleFormChange} 
-                      required 
-                      placeholder="Last Name" 
-                      className="border border-gray-300 rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                      autoComplete="family-name"
-                      disabled={submitting}
-                    />
-                  </div>
-
-                  <input 
-                    name="email" 
-                    value={form.email} 
-                    onChange={handleFormChange} 
-                    required 
-                    placeholder="Email Address" 
-                    className="w-full border border-gray-300 rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                    type="email"
-                    autoComplete="email"
-                    disabled={submitting}
-                  />
-
-                  <input 
-                    name="phone" 
-                    value={form.phone} 
-                    onChange={handleFormChange} 
-                    required 
-                    placeholder="Phone Number" 
-                    className="w-full border border-gray-300 rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                    autoComplete="tel"
-                    disabled={submitting}
-                  />
-
-                  <input 
-                    name="location" 
-                    value={form.location} 
-                    onChange={handleFormChange} 
-                    required 
-                    placeholder="Address / Location" 
-                    className="w-full border border-gray-300 rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                    disabled={submitting}
-                  />
-
-                  <input 
-                    name="referralCode" 
-                    value={form.referralCode} 
-                    onChange={handleFormChange} 
-                    placeholder="Referral Code (optional)" 
-                    className="w-full border border-gray-300 rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                    disabled={submitting}
-                  />
-
-                  {/* Submit Button */}
-                  <button 
-                    type="submit" 
-                    disabled={submitting}
-                    className="w-full bg-green-600 text-white py-3 rounded-lg font-bold mt-6 hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-                  >
-                    {submitting ? (
-                      <>
-                        <Loader className="w-4 h-4 animate-spin" />
-                        Enrolling...
-                      </>
-                    ) : (
-                      'Confirm Enrollment'
-                    )}
-                  </button>
-                </form>
-              </>
-            )}
-          </div>
+      {/* Enrollment Error Toast */}
+      {enrollmentError && (
+        <div className="fixed bottom-4 right-4 bg-red-500 text-white px-6 py-3 rounded-lg shadow-lg max-w-sm z-50">
+          <p className="text-sm font-semibold">{enrollmentError}</p>
+          <button
+            onClick={() => setEnrollmentError(null)}
+            className="mt-2 text-xs underline hover:no-underline"
+          >
+            Dismiss
+          </button>
         </div>
       )}
     </>
