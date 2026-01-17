@@ -39,11 +39,11 @@ const CorporateStaffSchema = new Schema<ICorporateStaff>(
     certifications: [{ type: String }],
     metadata: { type: Schema.Types.Mixed },
   },
-  { timestamps: true }
+  { timestamps: true, collection: 'corporatestaffs' }
 );
 
 const CorporateStaffModel =
   (mongoose.models.CorporateStaff as mongoose.Model<ICorporateStaff>) ||
-  mongoose.model<ICorporateStaff>('CorporateStaff', CorporateStaffSchema);
+  mongoose.model<ICorporateStaff>('CorporateStaff', CorporateStaffSchema, 'corporatestaffs');
 
 export default CorporateStaffModel;

@@ -25,17 +25,20 @@ interface PasswordForm {
 function SuccessModal({ open, onClose, message }: { open: boolean; onClose: () => void; message: string }) {
   if (!open) return null;
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-transparent backdrop-blur-sm">
-      <div className="bg-white rounded-xl shadow-lg p-6 max-w-xs w-full flex flex-col items-center border border-gray-100">
-        <svg className="w-10 h-10 text-green-500 mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-        </svg>
-        <div className="text-base font-semibold text-gray-900 mb-1 text-center">{message}</div>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+      <div className="bg-white rounded-2xl shadow-2xl p-8 max-w-sm w-full flex flex-col items-center border border-green-100">
+        <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mb-4">
+          <svg className="w-8 h-8 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+          </svg>
+        </div>
+        <div className="text-lg font-bold text-gray-900 mb-1 text-center">{message}</div>
+        <p className="text-sm text-gray-500 text-center mb-6">All changes have been saved successfully</p>
         <button
-          className="mt-4 px-4 py-1.5 bg-gray-100 text-gray-700 rounded-md font-medium hover:bg-gray-200 transition"
+          className="w-full px-4 py-2.5 bg-gradient-to-r from-[#008200] to-[#00B300] text-white rounded-lg font-semibold hover:shadow-lg transition-all"
           onClick={onClose}
         >
-          OK
+          Got it!
         </button>
       </div>
     </div>
@@ -180,9 +183,10 @@ export default function ProfilePage() {
       }
 
       setSuccessMessage('Password changed successfully!');
+      setShowSuccessModal(true);
       setPasswordForm({ currentPassword: '', newPassword: '', confirmPassword: '' });
       setShowPasswordModal(false);
-      setTimeout(() => setSuccessMessage(''), 3000);
+      setTimeout(() => setShowPasswordModal(false), 1500);
     } catch (error) {
       console.error('Error changing password:', error);
       setErrorMessage('Failed to change password');
@@ -202,29 +206,33 @@ export default function ProfilePage() {
   return (
     <>
       <div className="space-y-8">
-        {/* Header */}
-        <div>
-          <h1 className="text-4xl font-black text-gray-900 mb-2">{pageTitle}</h1>
-          <p className="text-gray-600">{pageDescription}</p>
+        {/* Header Section */}
+        <div className="bg-gradient-to-r from-blue-600 to-blue-700 rounded-2xl p-8 text-white shadow-lg">
+          <h1 className="text-4xl font-black mb-2">{pageTitle}</h1>
+          <p className="text-blue-100 text-lg">{pageDescription}</p>
         </div>
 
         {/* Messages */}
         {successMessage && (
-          <div className="bg-green-50 border border-green-200 rounded-lg p-4 text-green-800 flex items-center gap-3">
-            <span className="text-xl">✓</span>
-            <span className="font-semibold">{successMessage}</span>
+          <div className="bg-green-50 border border-green-200 rounded-xl p-4 text-green-800 flex items-center gap-3 shadow-sm">
+            <svg className="w-5 h-5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+              <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+            </svg>
+            <span className="font-semibold flex-1">{successMessage}</span>
           </div>
         )}
 
         {errorMessage && (
-          <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-red-800 flex items-center gap-3">
-            <span className="text-xl">✕</span>
-            <span className="font-semibold">{errorMessage}</span>
+          <div className="bg-red-50 border border-red-200 rounded-xl p-4 text-red-800 flex items-center gap-3 shadow-sm">
+            <svg className="w-5 h-5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+              <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+            </svg>
+            <span className="font-semibold flex-1">{errorMessage}</span>
           </div>
         )}
 
         {/* Profile Card */}
-        <div className="bg-white rounded-2xl shadow-md border border-gray-200 p-8">
+        <div className="bg-white rounded-2xl shadow-md border border-gray-200 p-8 overflow-hidden">
           {/* Profile Image Upload */}
           <div className="mb-8 pb-8 border-b border-gray-200">
             <CloudinaryUpload
@@ -244,17 +252,22 @@ export default function ProfilePage() {
           <div className="grid md:grid-cols-2 gap-8">
             {/* Personal Details Section */}
             <div className="space-y-6">
-              <h3 className="text-xl font-bold text-gray-900">Personal Details</h3>
+              <div className="flex items-center gap-2 mb-4">
+                <div className="p-2 bg-blue-100 rounded-lg">
+                  <span className="text-xl">👤</span>
+                </div>
+                <h3 className="text-xl font-bold text-gray-900">Personal Details</h3>
+              </div>
 
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-2">First Name</label>
                 <input
                   type="text"
                   value={profileData.firstName}
-                  onChange={(e) => handleProfileChange('firstName', e.target.value)}
-                  placeholder="Enter first name"
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#008200] focus:border-transparent"
+                  disabled
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-gray-100 text-gray-600 cursor-not-allowed"
                 />
+                <p className="text-xs text-gray-500 mt-1">Name cannot be changed</p>
               </div>
 
               <div>
@@ -262,10 +275,10 @@ export default function ProfilePage() {
                 <input
                   type="text"
                   value={profileData.lastName}
-                  onChange={(e) => handleProfileChange('lastName', e.target.value)}
-                  placeholder="Enter last name"
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#008200] focus:border-transparent"
+                  disabled
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-gray-100 text-gray-600 cursor-not-allowed"
                 />
+                <p className="text-xs text-gray-500 mt-1">Name cannot be changed</p>
               </div>
 
               <div>
@@ -303,7 +316,12 @@ export default function ProfilePage() {
 
             {/* Additional Information Section */}
             <div className="space-y-6">
-              <h3 className="text-xl font-bold text-gray-900">Additional Information</h3>
+              <div className="flex items-center gap-2 mb-4">
+                <div className="p-2 bg-purple-100 rounded-lg">
+                  <span className="text-xl">📋</span>
+                </div>
+                <h3 className="text-xl font-bold text-gray-900">Additional Information</h3>
+              </div>
 
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-2">Bio / About You</label>
@@ -344,20 +362,28 @@ export default function ProfilePage() {
           </div>
 
           {/* Action Buttons */}
-          <div className="flex gap-4 mt-8 pt-8 border-t border-gray-200">
+          <div className="flex gap-3 mt-8 pt-8 border-t border-gray-200">
             <button
               onClick={handleSaveProfile}
               disabled={isSaving || !hasChanges}
-              className="px-6 py-3 bg-gradient-to-r from-[#008200] to-[#00B300] text-white font-bold rounded-lg hover:shadow-lg transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="flex-1 px-6 py-3 bg-gradient-to-r from-[#008200] to-[#00B300] text-white font-bold rounded-lg hover:shadow-lg transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
             >
-              {isSaving ? 'Saving...' : 'Save Changes'}
+              {isSaving ? (
+                <>
+                  <span className="animate-spin">⏳</span> Saving...
+                </>
+              ) : (
+                <>
+                  <span>✓</span> Save Changes
+                </>
+              )}
             </button>
             <button
               onClick={() => {
                 fetchProfileData();
                 setHasChanges(false);
               }}
-              className="px-6 py-3 bg-gray-200 text-gray-900 font-bold rounded-lg hover:bg-gray-300 transition-all duration-300"
+              className="px-6 py-3 bg-gray-100 text-gray-900 font-bold rounded-lg hover:bg-gray-200 transition-all duration-300"
             >
               Reset
             </button>
@@ -367,7 +393,12 @@ export default function ProfilePage() {
         {/* Security & Account Settings - Only for Individual Members */}
         {!isStaff && (
           <div className="bg-white rounded-2xl shadow-md border border-gray-200 p-8">
-            <h3 className="text-2xl font-black text-gray-900 mb-6">Security & Account</h3>
+            <div className="flex items-center gap-3 mb-6">
+              <div className="p-2 bg-red-100 rounded-lg">
+                <span className="text-2xl">🔒</span>
+              </div>
+              <h3 className="text-2xl font-black text-gray-900">Security & Account</h3>
+            </div>
             <div className="space-y-4">
               <button
                 onClick={() => setShowPasswordModal(true)}
@@ -379,34 +410,26 @@ export default function ProfilePage() {
                 </div>
                 <span className="text-3xl">🔐</span>
               </button>
-
-              <button className="w-full flex items-center justify-between p-5 border border-gray-200 rounded-lg hover:bg-green-50 transition-colors group">
-                <div className="text-left">
-                  <h4 className="font-bold text-gray-900 group-hover:text-[#008200] transition-colors">Two-Factor Authentication</h4>
-                  <p className="text-sm text-gray-600">Enable 2FA for extra security</p>
-                </div>
-                <span className="text-3xl">🛡️</span>
-              </button>
-
-              <button className="w-full flex items-center justify-between p-5 border border-gray-200 rounded-lg hover:bg-purple-50 transition-colors group">
-                <div className="text-left">
-                  <h4 className="font-bold text-gray-900 group-hover:text-[#008200] transition-colors">Activity Log</h4>
-                  <p className="text-sm text-gray-600">View your account activity and logins</p>
-                </div>
-                <span className="text-3xl">📊</span>
-              </button>
             </div>
           </div>
         )}
 
         {/* Change Password Modal */}
         {showPasswordModal && (
-          <div className="fixed inset-0 bg-transparent backdrop-blur-sm flex items-center justify-center p-4 z-50">
-            <div className="bg-white rounded-2xl shadow-xl max-w-md w-full p-8">
+          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+            <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-8 border border-gray-100">
               <div className="flex items-center gap-3 mb-6">
-                <span className="text-3xl">🔐</span>
-                <h3 className="text-2xl font-bold text-gray-900">Change Password</h3>
+                <div className="p-2 bg-blue-100 rounded-lg">
+                  <span className="text-2xl">🔐</span>
+                </div>
+                <h3 className="text-2xl font-black text-gray-900">Change Password</h3>
               </div>
+
+              {errorMessage && (
+                <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm font-medium">
+                  {errorMessage}
+                </div>
+              )}
 
               <div className="space-y-4">
                 <div>
@@ -414,9 +437,12 @@ export default function ProfilePage() {
                   <input
                     type="password"
                     value={passwordForm.currentPassword}
-                    onChange={(e) => setPasswordForm({ ...passwordForm, currentPassword: e.target.value })}
+                    onChange={(e) => {
+                      setPasswordForm({ ...passwordForm, currentPassword: e.target.value });
+                      setErrorMessage('');
+                    }}
                     placeholder="Enter current password"
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#008200]"
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   />
                 </div>
 
@@ -425,10 +451,14 @@ export default function ProfilePage() {
                   <input
                     type="password"
                     value={passwordForm.newPassword}
-                    onChange={(e) => setPasswordForm({ ...passwordForm, newPassword: e.target.value })}
-                    placeholder="Enter new password (min 8 chars)"
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#008200]"
+                    onChange={(e) => {
+                      setPasswordForm({ ...passwordForm, newPassword: e.target.value });
+                      setErrorMessage('');
+                    }}
+                    placeholder="Enter new password (min 8 characters)"
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   />
+                  <p className="text-xs text-gray-500 mt-1">Must be at least 8 characters long</p>
                 </div>
 
                 <div>
@@ -436,30 +466,39 @@ export default function ProfilePage() {
                   <input
                     type="password"
                     value={passwordForm.confirmPassword}
-                    onChange={(e) => setPasswordForm({ ...passwordForm, confirmPassword: e.target.value })}
+                    onChange={(e) => {
+                      setPasswordForm({ ...passwordForm, confirmPassword: e.target.value });
+                      setErrorMessage('');
+                    }}
                     placeholder="Confirm new password"
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#008200]"
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   />
                 </div>
               </div>
 
-              <div className="flex gap-3 mt-6 pt-6 border-t border-gray-200">
+              <div className="flex gap-3 mt-8 pt-6 border-t border-gray-200">
                 <button
                   onClick={() => {
                     setShowPasswordModal(false);
                     setPasswordForm({ currentPassword: '', newPassword: '', confirmPassword: '' });
                     setErrorMessage('');
                   }}
-                  className="flex-1 px-4 py-3 bg-gray-200 text-gray-900 font-bold rounded-lg hover:bg-gray-300 transition-colors"
+                  className="flex-1 px-4 py-3 bg-gray-100 text-gray-900 font-bold rounded-lg hover:bg-gray-200 transition-colors"
                 >
                   Cancel
                 </button>
                 <button
                   onClick={handleChangePassword}
                   disabled={isChangingPassword}
-                  className="flex-1 px-4 py-3 bg-gradient-to-r from-[#008200] to-[#00B300] text-white font-bold rounded-lg hover:shadow-lg transition-all disabled:opacity-50"
+                  className="flex-1 px-4 py-3 bg-gradient-to-r from-blue-600 to-blue-700 text-white font-bold rounded-lg hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  {isChangingPassword ? 'Changing...' : 'Change Password'}
+                  {isChangingPassword ? (
+                    <span className="flex items-center justify-center gap-2">
+                      <span className="animate-spin">⏳</span> Changing...
+                    </span>
+                  ) : (
+                    'Change Password'
+                  )}
                 </button>
               </div>
             </div>

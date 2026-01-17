@@ -15,25 +15,22 @@ export async function GET() {
 
     await connectToDatabase();
 
-    const corporate = await CorporateProfileModel.findOne({ ownerId: session.user.id })
-      .populate('registeredCourses');
+    const corporate = await CorporateProfileModel.findOne({ ownerId: session.user.id }).lean();
     
     if (!corporate) {
       console.error('Corporate profile not found for ownerId:', session.user.id);
       return NextResponse.json({ error: 'Corporate profile not found' }, { status: 404 });
     }
 
-    console.log('Corporate found:', corporate._id, 'Registered courses:', corporate.registeredCourses);
+    console.log('Corporate found:', corporate._id, 'Registered courses IDs:', corporate.registeredCourses);
 
-    // Initialize registeredCourses if it doesn't exist (for existing documents)
-    if (!corporate.registeredCourses) {
-      console.log('Initializing registeredCourses array');
-      corporate.registeredCourses = [];
-      await corporate.save();
+    // Fetch full course details for registered courses
+    const courses = await CourseModel.find({ _id: { $in: corporate.registeredCourses || [] } }).lean();
+    if (corporate.registeredCourses && corporate.registeredCourses.length > 0) {
+      console.log('Fetched course details:', courses.length, 'courses');
+    } else {
+      console.log('No registered courses found');
     }
-
-    const courses = corporate.registeredCourses || [];
-    console.log('Returning courses:', courses.length, 'courses');
 
     return NextResponse.json({ 
       success: true, 

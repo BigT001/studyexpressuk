@@ -47,9 +47,14 @@ const navItems: NavItem[] = [
     href: '/admin/memberships',
   },
   {
-    icon: '💬',
-    label: 'Communications',
+    icon: '�',
+    label: 'Announcements',
     href: '/admin/communications',
+  },
+  {
+    icon: '💬',
+    label: 'Messages',
+    href: '/admin/messages',
   },
   {
     icon: '💰',

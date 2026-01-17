@@ -1,13 +1,11 @@
 import { getServerAuthSession } from '@/server/auth/session';
 import { redirect } from 'next/navigation';
 import {
-  IndividualDashboardHeader,
   IndividualQuickStats,
   ProfileSection,
   MembershipSection,
   LearningSection,
   CommunicationSection,
-  NotificationsSection,
 } from '@/components/individual';
 import { UserProfileCard } from '@/components/individual/UserProfileCard';
 import { getUserProfile } from '@/server/users/getUserProfile';
@@ -15,11 +13,11 @@ import { getUserProfile } from '@/server/users/getUserProfile';
 export default async function IndividualDashboard() {
   const session = await getServerAuthSession();
 
-  if (!session || !['INDIVIDUAL', 'STAFF'].includes(session.user?.role || '')) {
+  // Only INDIVIDUAL users - STAFF users go to /staff
+  if (!session || session.user?.role !== 'INDIVIDUAL') {
     redirect('/auth/signin');
   }
 
-  const userName = session.user?.email?.split('@')[0] || 'Member';
   const profile = session.user?.email ? await getUserProfile(session.user.email) : null;
 
   return (
@@ -47,7 +45,7 @@ export default async function IndividualDashboard() {
           
           {/* Right Sidebar - Notifications (Wider) */}
           <div className="lg:col-span-5 space-y-6 md:space-y-8">
-            <NotificationsSection profile={profile} userId={session.user?.id ?? ''} />
+            {/* Notifications section temporarily disabled */}
           </div>
         </div>
       </div>

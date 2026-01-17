@@ -92,6 +92,8 @@ export const messageService = {
           { senderId: userB, recipientId: userA }
         ]
       })
+        .populate('senderId', 'firstName lastName email role profileImage')
+        .populate('recipientId', 'firstName lastName email role profileImage')
         .sort({ createdAt: 1 });
       return messages;
     } catch (error) {

@@ -8,7 +8,7 @@ type Message = {
   senderName: string;
   body: string;
   createdAt: string;
-  senderId?: { role?: string; name?: string };
+  senderId?: { _id?: string; role?: string; name?: string };
 };
 
 export default function MessageThreadPage({ params }: { params: { id: string } }) {
@@ -18,7 +18,24 @@ export default function MessageThreadPage({ params }: { params: { id: string } }
   const [error, setError] = useState('');
   const [reply, setReply] = useState('');
   const [sending, setSending] = useState(false);
+  const [currentUserId, setCurrentUserId] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  // Fetch current user ID
+  useEffect(() => {
+    async function fetchCurrentUser() {
+      try {
+        const res = await fetch('/api/user/me');
+        const data = await res.json();
+        if (data.success && data.user?.id) {
+          setCurrentUserId(data.user.id);
+        }
+      } catch (err) {
+        console.error('Failed to fetch current user:', err);
+      }
+    }
+    fetchCurrentUser();
+  }, []);
 
   useEffect(() => {
     async function fetchThread() {
@@ -68,6 +85,12 @@ export default function MessageThreadPage({ params }: { params: { id: string } }
     }
   }
 
+  const isSentMessage = (msg: Message): boolean => {
+    if (!msg.senderId) return false;
+    const senderId = typeof msg.senderId === 'string' ? msg.senderId : (msg.senderId._id || '');
+    return senderId === currentUserId;
+  };
+
   return (
     <div className="max-w-2xl mx-auto py-8">
       <Link href="/individual/messages" className="text-blue-600 hover:underline mb-4 block">← Back to Messages</Link>
@@ -80,15 +103,22 @@ export default function MessageThreadPage({ params }: { params: { id: string } }
         <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4 mb-6">
           {thread.length > 0 ? (
             <div className="space-y-4">
-              {thread.map((msg, idx) => (
-                <div key={msg._id || idx} className={`flex flex-col ${msg.senderId?.role === 'ADMIN' ? 'items-start' : 'items-end'}`}>
-                  <div className={`inline-block px-4 py-2 rounded-lg ${msg.senderId?.role === 'ADMIN' ? 'bg-blue-100 text-blue-900 dark:bg-blue-900 dark:text-blue-100' : 'bg-green-100 text-green-900 dark:bg-green-900 dark:text-green-100'}`}>
-                    <div className="text-xs font-semibold mb-1">{msg.senderName || (msg.senderId?.role === 'ADMIN' ? 'Admin' : 'You')}</div>
-                    <div>{msg.body}</div>
+              {thread.map((msg, idx) => {
+                const isSent = isSentMessage(msg);
+                return (
+                  <div key={msg._id || idx} className={`flex flex-col ${isSent ? 'items-end' : 'items-start'}`}>
+                    <div className={`inline-block px-4 py-2 rounded-lg ${
+                      isSent 
+                        ? 'bg-green-600 text-white rounded-br-none' 
+                        : 'bg-blue-100 text-blue-900 dark:bg-blue-900 dark:text-blue-100 rounded-bl-none'
+                    }`}>
+                      <div className="text-xs font-semibold mb-1">{msg.senderName || (isSent ? 'You' : 'Admin')}</div>
+                      <div>{msg.body}</div>
+                    </div>
+                    <div className={`text-xs mt-1 ${isSent ? 'text-green-600' : 'text-gray-500'}`}>{new Date(msg.createdAt).toLocaleString()}</div>
                   </div>
-                  <div className="text-xs text-gray-500 mt-1">{new Date(msg.createdAt).toLocaleString()}</div>
-                </div>
-              ))}
+                );
+              })}
               <div ref={messagesEndRef} />
             </div>
           ) : (

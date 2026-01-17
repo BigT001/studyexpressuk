@@ -50,19 +50,19 @@ export default function CommunicationsPage() {
     targetAudience: 'all' as const,
   });
 
+  // Email form state
+  const [emailForm, setEmailForm] = useState({
+    subject: '',
+    htmlContent: '',
+    recipients: ['all'],
+  });
+
   // Message form state
   const [messageForm, setMessageForm] = useState({
     subject: '',
     body: '',
     senderName: '',
     recipientGroups: ['all'],
-  });
-
-  // Email form state
-  const [emailForm, setEmailForm] = useState({
-    subject: '',
-    htmlContent: '',
-    recipients: ['all'],
   });
 
   // Fetch all data on mount
@@ -73,19 +73,14 @@ export default function CommunicationsPage() {
   const fetchAllData = async () => {
     try {
       setLoading(true);
-      const [announcementsRes, messagesRes, emailsRes] = await Promise.all([
+      const [announcementsRes, emailsRes] = await Promise.all([
         fetch('/api/announcements'),
-        fetch('/api/messages'),
         fetch('/api/emails'),
       ]);
 
       if (announcementsRes.ok) {
         const data = await announcementsRes.json();
         setAnnouncements(data.announcements || []);
-      }
-      if (messagesRes.ok) {
-        const data = await messagesRes.json();
-        setMessages(data.messages || []);
       }
       if (emailsRes.ok) {
         const data = await emailsRes.json();
@@ -260,17 +255,7 @@ export default function CommunicationsPage() {
               : 'text-gray-700 hover:bg-gray-100'
           }`}
         >
-          💬 Messages
-        </button>
-        <button
-          onClick={() => setSelectedTab(2)}
-          className={`px-6 py-3 font-bold rounded transition-colors ${
-            selectedTab === 2
-              ? 'bg-green-600 text-white'
-              : 'text-gray-700 hover:bg-gray-100'
-          }`}
-        >
-          📧 Emails
+           Emails
         </button>
       </div>
 
@@ -407,136 +392,8 @@ export default function CommunicationsPage() {
         </div>
       )}
 
-      {/* Messages Tab */}
-      {selectedTab === 1 && (
-        <div className="space-y-6 mt-6">
-          <div className="bg-white rounded-lg shadow p-6">
-            <h3 className="text-xl font-bold mb-6">Send Group Message</h3>
-            <form onSubmit={handleSendMessage} className="space-y-4">
-              <div>
-                <label className="block text-sm font-bold text-gray-700 mb-2">
-                  Subject
-                </label>
-                <input
-                  type="text"
-                  value={messageForm.subject}
-                  onChange={(e) =>
-                    setMessageForm({ ...messageForm, subject: e.target.value })
-                  }
-                  required
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:border-transparent"
-                  style={{ borderColor: '#008200' }}
-                  placeholder="Message subject"
-                />
-              </div>
-
-              <div className="grid md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-bold text-gray-700 mb-2">
-                    Sender Name
-                  </label>
-                  <input
-                    type="text"
-                    value={messageForm.senderName}
-                    onChange={(e) =>
-                      setMessageForm({ ...messageForm, senderName: e.target.value })
-                    }
-                    required
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:border-transparent"
-                    style={{ borderColor: '#008200' }}
-                    placeholder="Your name"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-bold text-gray-700 mb-2">
-                    Recipient Group
-                  </label>
-                  <select
-                    value={messageForm.recipientGroups[0] || 'all'}
-                    onChange={(e) =>
-                      setMessageForm({
-                        ...messageForm,
-                        recipientGroups: [e.target.value],
-                      })
-                    }
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:border-transparent"
-                    style={{ borderColor: '#008200' }}
-                  >
-                    <option value="all">👥 Everyone</option>
-                    <option value="students">🎓 Students</option>
-                    <option value="corporate">🏢 Corporate</option>
-                    <option value="subadmin">👤 Sub Admin</option>
-                  </select>
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-sm font-bold text-gray-700 mb-2">
-                  Message Content
-                </label>
-                <textarea
-                  value={messageForm.body}
-                  onChange={(e) =>
-                    setMessageForm({ ...messageForm, body: e.target.value })
-                  }
-                  required
-                  rows={4}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:border-transparent"
-                  style={{ borderColor: '#008200' }}
-                  placeholder="Message content"
-                />
-              </div>
-
-              <button
-                type="submit"
-                className="w-full px-6 py-3 text-white rounded-lg hover:opacity-90 transition-opacity font-bold"
-                style={{ backgroundColor: '#008200' }}
-              >
-                💬 Send Message
-              </button>
-            </form>
-          </div>
-
-          <div className="bg-white rounded-lg shadow p-6">
-            <h3 className="text-xl font-bold mb-4">Message History</h3>
-            <div className="space-y-3 max-h-96 overflow-y-auto">
-              {messages.length === 0 ? (
-                <p className="text-gray-600">No messages sent</p>
-              ) : (
-                messages.map((msg) => (
-                  <div key={msg._id} className="p-4 border border-gray-200 rounded-lg">
-                    <div className="flex justify-between items-start">
-                      <div className="flex-grow">
-                        <h4 className="font-bold">{msg.subject}</h4>
-                        <p className="text-sm text-gray-600 mt-1">
-                          From: {msg.senderName}
-                        </p>
-                        <div className="flex gap-2 mt-2">
-                          <span className={`text-xs px-2 py-1 rounded ${getStatusColor(msg.status)}`}>
-                            {msg.status}
-                          </span>
-                          <span className="text-xs px-2 py-1 bg-gray-100 rounded">
-                            {msg.recipientGroups.join(', ')}
-                          </span>
-                        </div>
-                      </div>
-                      <button
-                        onClick={() => handleDeleteMessage(msg._id)}
-                        className="text-red-600 hover:text-red-800 font-bold"
-                      >
-                        ✕
-                      </button>
-                    </div>
-                  </div>
-                ))
-              )}
-            </div>
-          </div>
-        </div>
-      )}
-
       {/* Emails Tab */}
-      {selectedTab === 2 && (
+      {selectedTab === 1 && (
         <div className="space-y-6 mt-6">
           <div className="bg-white rounded-lg shadow p-6">
             <h3 className="text-xl font-bold mb-6">Send Email Notification</h3>

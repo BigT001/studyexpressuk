@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useSidebar } from '@/context/SidebarContext';
 import CorporateLogoutButton from '@/components/corporate/CorporateLogoutButton';
 
@@ -10,6 +10,7 @@ interface NavItem {
   icon: string;
   label: string;
   href: string;
+  badge?: 'messages' | 'announcements';
 }
 
 const navItems: NavItem[] = [
@@ -39,14 +40,21 @@ const navItems: NavItem[] = [
     href: '/corporate/courses',
   },
   {
-    icon: '💬',
+    icon: '�',
+    label: 'Events',
+    href: '/corporate/events',
+  },
+  {
+    icon: '�💬',
     label: 'Messages',
     href: '/corporate/messages',
+    badge: 'messages',
   },
   {
     icon: '📢',
     label: 'Announcements',
     href: '/corporate/announcements',
+    badge: 'announcements',
   },
   {
     icon: '🔔',
@@ -64,6 +72,34 @@ export function CorporateSidebar() {
   const pathname = usePathname();
   const { isCollapsed, setIsCollapsed } = useSidebar();
   const [showLogoutModal, setShowLogoutModal] = useState(false);
+  const [messageBadge, setMessageBadge] = useState(0);
+  const [announcementBadge, setAnnouncementBadge] = useState(0);
+
+  useEffect(() => {
+    const fetchBadges = async () => {
+      try {
+        const [messagesRes, announcementsRes] = await Promise.all([
+          fetch('/api/corporate/messages/count'),
+          fetch('/api/corporate/announcements/count'),
+        ]);
+
+        if (messagesRes.ok) {
+          const data = await messagesRes.json();
+          setMessageBadge(data.count || 0);
+        }
+        if (announcementsRes.ok) {
+          const data = await announcementsRes.json();
+          setAnnouncementBadge(data.count || 0);
+        }
+      } catch (error) {
+        console.error('Error fetching badge counts:', error);
+      }
+    };
+
+    fetchBadges();
+    const interval = setInterval(fetchBadges, 5000); // Update every 5 seconds
+    return () => clearInterval(interval);
+  }, []);
 
   const handleLogout = () => {
     window.location.href = '/api/auth/signout';
@@ -106,6 +142,15 @@ export function CorporateSidebar() {
             const isActive = item.href === '/corporate' 
               ? pathname === item.href 
               : (pathname === item.href || pathname.startsWith(item.href + '/'));
+            
+            // Determine badge count
+            let badgeCount = 0;
+            if (item.badge === 'messages') {
+              badgeCount = messageBadge;
+            } else if (item.badge === 'announcements') {
+              badgeCount = announcementBadge;
+            }
+
             return (
               <Link
                 key={item.href}
@@ -119,7 +164,14 @@ export function CorporateSidebar() {
               >
                 <span className="text-lg flex-shrink-0">{item.icon}</span>
                 {!isCollapsed && (
-                  <span className="font-medium">{item.label}</span>
+                  <>
+                    <span className="font-medium flex-1">{item.label}</span>
+                    {badgeCount > 0 && (
+                      <span className="inline-flex items-center justify-center w-6 h-6 text-xs font-bold text-white bg-red-500 rounded-full ml-auto">
+                        {badgeCount > 99 ? '99+' : badgeCount}
+                      </span>
+                    )}
+                  </>
                 )}
               </Link>
             );

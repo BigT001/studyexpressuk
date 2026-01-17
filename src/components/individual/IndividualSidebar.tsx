@@ -13,7 +13,7 @@ interface NavItem {
   badge?: number;
 }
 
-const navItems: NavItem[] = [
+const baseNavItems: NavItem[] = [
   {
     icon: '🏠',
     label: 'Dashboard',
@@ -62,6 +62,9 @@ export function IndividualSidebar() {
   const [showLogoutModal, setShowLogoutModal] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
+  const [navItems, setNavItems] = useState<NavItem[]>(baseNavItems);
+  const [unreadMessages, setUnreadMessages] = useState(0);
+  const [unreadAnnouncements, setUnreadAnnouncements] = useState(0);
 
   useEffect(() => {
     const checkMobile = () => {
@@ -71,6 +74,47 @@ export function IndividualSidebar() {
     checkMobile();
     window.addEventListener('resize', checkMobile);
     return () => window.removeEventListener('resize', checkMobile);
+  }, []);
+
+  // Fetch unread counts
+  useEffect(() => {
+    const fetchCounts = async () => {
+      try {
+        const [messagesRes, announcementsRes] = await Promise.all([
+          fetch('/api/individual/messages/unread'),
+          fetch('/api/individual/announcements/unread'),
+        ]);
+
+        const messagesData = await messagesRes.json();
+        const announcementsData = await announcementsRes.json();
+
+        const messageCount = messagesData.count || 0;
+        const announcementCount = announcementsData.count || 0;
+
+        setUnreadMessages(messageCount);
+        setUnreadAnnouncements(announcementCount);
+
+        // Update nav items with badges
+        setNavItems(baseNavItems.map(item => {
+          if (item.href === '/individual/messages' && messageCount > 0) {
+            return { ...item, badge: messageCount };
+          }
+          if (item.href === '/individual/announcements' && announcementCount > 0) {
+            return { ...item, badge: announcementCount };
+          }
+          return item;
+        }));
+      } catch (error) {
+        console.error('Error fetching counts:', error);
+      }
+    };
+
+    fetchCounts();
+
+    // Poll for updates every 3 seconds
+    const interval = setInterval(fetchCounts, 3000);
+
+    return () => clearInterval(interval);
   }, []);
 
   const handleLogout = async () => {

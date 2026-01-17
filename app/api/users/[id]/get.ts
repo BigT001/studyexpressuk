@@ -8,14 +8,14 @@ import EnrollmentModel from '@/server/db/models/enrollment.model';
 import EventModel from '@/server/db/models/event.model';
 import CourseModel from '@/server/db/models/course.model';
 
-export async function GET(req: Request, { params }: { params: { id: string } }) {
+export async function GET(req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
+    const { id } = await params;
     const session = await getServerAuthSession();
     if (!session || session.user.role !== 'ADMIN') {
       return NextResponse.json({ success: false, error: 'Forbidden' }, { status: 403 });
     }
     await connectToDatabase();
-    const { id } = params;
     const user = await UserModel.findById(id).lean();
     if (!user) {
       return NextResponse.json({ success: false, error: 'User not found' }, { status: 404 });

@@ -11,6 +11,7 @@ export interface IAnnouncement {
   updatedAt: Date;
   expiresAt?: Date;
   isActive: boolean;
+  readBy?: mongoose.Types.ObjectId[]; // Track which users have read this announcement
 }
 
 const announcementSchema = new mongoose.Schema<IAnnouncement>(
@@ -30,6 +31,7 @@ const announcementSchema = new mongoose.Schema<IAnnouncement>(
     createdBy: { type: String, required: true },
     expiresAt: { type: Date },
     isActive: { type: Boolean, default: true },
+    readBy: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }], // Users who have read this
   },
   { timestamps: true }
 );

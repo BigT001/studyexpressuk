@@ -1,13 +1,26 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { AlertCircle, MessageSquare, Info } from 'lucide-react';
+import { AlertCircle } from 'lucide-react';
+
+interface Announcement {
+  _id: string;
+  title: string;
+  content: string;
+  type: 'info' | 'warning' | 'success' | 'urgent';
+  targetAudience: string;
+  createdBy: string;
+  createdAt: string;
+  readBy?: string[];
+  isActive: boolean;
+}
 
 export default function CorporateAnnouncementsPage() {
-  const [announcements, setAnnouncements] = useState<any[]>([]);
+  const [announcements, setAnnouncements] = useState<Announcement[]>([]);
   const [loading, setLoading] = useState(true);
-  const [selectedAnnouncement, setSelectedAnnouncement] = useState<any | null>(null);
+  const [selectedAnnouncement, setSelectedAnnouncement] = useState<Announcement | null>(null);
   const [activeTab, setActiveTab] = useState<'all' | 'urgent'>('all');
+  const [readIds, setReadIds] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     fetchAnnouncements();
@@ -15,14 +28,10 @@ export default function CorporateAnnouncementsPage() {
 
   const fetchAnnouncements = async () => {
     try {
-      const res = await fetch('/api/user/notifications');
+      const res = await fetch('/api/announcements');
       const data = await res.json();
       if (data.success) {
-        // Filter for only announcements
-        const announcementsList = data.notifications
-          .filter((n: any) => n.type === 'announcement')
-          .sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-        setAnnouncements(announcementsList);
+        setAnnouncements(data.announcements || []);
       }
     } catch (error) {
       console.error('Error fetching announcements:', error);
@@ -43,67 +52,73 @@ export default function CorporateAnnouncementsPage() {
     });
   };
 
-  const getCategoryColor = (priority: string) => {
-    switch (priority) {
+  const getTypeColor = (type: string) => {
+    switch (type) {
       case 'urgent':
         return 'bg-red-100 text-red-900';
-      case 'high':
+      case 'warning':
         return 'bg-orange-100 text-orange-900';
+      case 'success':
+        return 'bg-green-100 text-green-900';
       default:
         return 'bg-blue-100 text-blue-900';
     }
   };
 
-  const getPriorityDisplay = (announcement: any) => {
-    const priority = announcement.priority || (announcement.type === 'urgent' ? 'urgent' : announcement.type === 'warning' ? 'high' : 'normal');
-    return priority === 'urgent' ? 'Urgent' : priority === 'high' ? 'High' : 'Normal';
+  const getTypeDisplay = (type: string) => {
+    return type.charAt(0).toUpperCase() + type.slice(1);
   };
 
-  // Filter announcements based on active tab - check priority OR type field for backward compatibility
+  // Filter announcements based on active tab
   const filteredAnnouncements = activeTab === 'urgent' 
-    ? announcements.filter((a: any) => (a.priority === 'urgent' || a.type === 'urgent'))
+    ? announcements.filter((a) => a.type === 'urgent')
     : announcements;
 
-  // Function to calculate unread announcements count
+  // Get unread count
   const getUnreadCount = () => {
-    return announcements.filter((a: any) => a.status === 'unread').length;
+    return announcements.filter((a) => !readIds.has(a._id)).length;
   };
 
-  // Function to calculate unread urgent announcements count
+  // Get unread urgent count
   const getUnreadUrgentCount = () => {
-    return announcements.filter((a: any) => (a.priority === 'urgent' || a.type === 'urgent') && a.status === 'unread').length;
+    return announcements.filter((a) => a.type === 'urgent' && !readIds.has(a._id)).length;
   };
 
   const unreadCount = getUnreadCount();
   const urgentCount = getUnreadUrgentCount();
 
-  // Function to mark announcement as read when opened/clicked
+  // Function to mark announcement as read
   const markAsRead = async (announcementId: string) => {
     try {
-      // Optimistically update local state immediately for instant UI feedback
-      const updatedAnnouncements = announcements.map((a: any) =>
-        a._id === announcementId ? { ...a, status: 'read' } : a
-      );
-      setAnnouncements(updatedAnnouncements);
+      // Add to local read set for immediate UI update
+      setReadIds((prev) => new Set(prev).add(announcementId));
 
-      // Send API request to persist the change
-      await fetch('/api/user/notifications', {
-        method: 'PATCH',
+      // Call API to persist the read status
+      const res = await fetch('/api/corporate/announcements/mark-read', {
+        method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'read', notificationId: announcementId }),
+        body: JSON.stringify({ announcementId }),
       });
+
+      if (!res.ok) {
+        console.error('Failed to mark announcement as read');
+        // Revert on error
+        setReadIds((prev) => {
+          const newSet = new Set(prev);
+          newSet.delete(announcementId);
+          return newSet;
+        });
+      }
     } catch (error) {
       console.error('Error marking announcement as read:', error);
-      // Revert on error
-      setAnnouncements(announcements);
     }
   };
 
   // Function to handle announcement selection and mark as read
-  const handleSelectAnnouncement = (announcement: any) => {
+  const handleSelectAnnouncement = (announcement: Announcement) => {
     setSelectedAnnouncement(announcement);
     // Mark as read when selected - this will trigger count to decrease
-    if (announcement.status === 'unread') {
+    if (!readIds.has(announcement._id)) {
       markAsRead(announcement._id);
     }
   };
@@ -181,7 +196,7 @@ export default function CorporateAnnouncementsPage() {
               </div>
             ) : (
               <div className="divide-y divide-gray-200 dark:divide-gray-700">
-                {filteredAnnouncements.map((announcement: any) => (
+                {filteredAnnouncements.map((announcement: Announcement) => (
                   <div
                     key={announcement._id}
                     onClick={() => handleSelectAnnouncement(announcement)}
@@ -190,36 +205,49 @@ export default function CorporateAnnouncementsPage() {
                     }`}
                   >
                     <div className="flex items-start gap-4">
-                      {/* Priority Indicator */}
+                      {/* Type Indicator Dot */}
                       <div className="flex-shrink-0">
                         <div className={`w-6 h-6 rounded-full ${
-                          (announcement.priority === 'urgent' || announcement.type === 'urgent')
+                          announcement.type === 'urgent'
                             ? 'bg-red-500'
-                            : (announcement.priority === 'high' || announcement.type === 'warning')
+                            : announcement.type === 'warning'
                             ? 'bg-orange-500'
+                            : announcement.type === 'success'
+                            ? 'bg-green-500'
                             : 'bg-blue-500'
                         }`} />
                       </div>
 
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center justify-between gap-2 mb-1">
-                          <h3 className="font-bold text-gray-900 dark:text-white text-lg">{announcement.title}</h3>
-                          <span className={`px-2 py-1 rounded text-xs font-medium whitespace-nowrap ${getCategoryColor(announcement.priority || (announcement.type === 'urgent' ? 'urgent' : announcement.type === 'warning' ? 'high' : 'normal'))}`}>
-                            {getPriorityDisplay(announcement)}
+                          <h3 className={`font-bold text-lg ${
+                            readIds.has(announcement._id)
+                              ? 'text-gray-500 dark:text-gray-400'
+                              : 'text-gray-900 dark:text-white font-bold'
+                          }`}>
+                            {announcement.title}
+                          </h3>
+                          <span className={`px-2 py-1 rounded text-xs font-medium whitespace-nowrap ${getTypeColor(announcement.type)}`}>
+                            {getTypeDisplay(announcement.type)}
                           </span>
                         </div>
 
-                        <p className="text-gray-700 dark:text-gray-300 mt-2 line-clamp-2">{announcement.content}</p>
+                        <p className={`mt-2 line-clamp-2 ${
+                          readIds.has(announcement._id)
+                            ? 'text-gray-600 dark:text-gray-500'
+                            : 'text-gray-700 dark:text-gray-300'
+                        }`}>
+                          {announcement.content}
+                        </p>
 
                         <div className="mt-3 flex items-center gap-4 text-sm text-gray-600 dark:text-gray-400 flex-wrap">
                           <div className="flex items-center gap-1">
                             <span>🕐</span>
                             {formatDate(announcement.createdAt)}
                           </div>
-                          <div className="flex items-center gap-1">
-                            <span>📧</span>
-                            From {announcement.sender || 'Admin Team'}
-                          </div>
+                          {!readIds.has(announcement._id) && (
+                            <span className="inline-block w-2 h-2 bg-blue-500 rounded-full"></span>
+                          )}
                         </div>
                       </div>
                     </div>

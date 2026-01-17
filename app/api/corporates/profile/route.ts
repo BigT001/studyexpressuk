@@ -54,6 +54,7 @@ export async function PUT(request: NextRequest) {
         taxId: body.taxId,
         logo: body.logo,
         contactPerson: body.contactPerson,
+        bio: body.bio,
       },
       { new: true, upsert: true }
     ).lean();

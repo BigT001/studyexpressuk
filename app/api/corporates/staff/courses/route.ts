@@ -112,14 +112,25 @@ export async function GET(request: NextRequest) {
     const staffUserIds = staffMembers.map(s => s.userId);
 
     const enrollments = await EnrollmentModel.find({ userId: { $in: staffUserIds } })
-      .populate('eventId')
+      .populate({
+        path: 'eventId',
+        model: 'Event',
+        select: 'title description category level duration price instructor'
+      })
       .populate({
         path: 'userId',
         select: 'firstName lastName email',
       })
       .sort({ createdAt: -1 });
 
-    return NextResponse.json({ success: true, enrollments });
+    // Normalize eventId to courseId for consistency with frontend
+    // Also handle cases where eventId might not be populated (if it's a Course ID, not Event ID)
+    const normalizedEnrollments = enrollments.map(e => ({
+      ...e.toObject?.() || e,
+      courseId: e.eventId, // Add courseId alias for eventId
+    }));
+
+    return NextResponse.json({ success: true, enrollments: normalizedEnrollments });
   } catch (error) {
     console.error('Error fetching staff enrollments:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });

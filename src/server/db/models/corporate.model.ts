@@ -8,11 +8,13 @@ export interface ICorporateProfile extends Document {
   address?: string;
   website?: string;
   logo?: string; // Cloudinary URL
+  bio?: string; // Company description/bio
   industry?: string; // e.g., 'Technology', 'Finance', 'Healthcare'
   employeeCount?: number;
   registrationNumber?: string; // Company registration number
   taxId?: string; // Tax identification
   registeredCourses?: mongoose.Types.ObjectId[]; // ref: Course (courses registered by this corporate)
+  registeredEvents?: mongoose.Types.ObjectId[]; // ref: Event (events registered by this corporate)
   status: CorporateStatus;
   approvedBy?: mongoose.Types.ObjectId; // ref: User (SubAdmin/Admin)
   approvalDate?: Date;
@@ -28,11 +30,13 @@ const CorporateProfileSchema = new Schema<ICorporateProfile>(
     address: { type: String },
     website: { type: String },
     logo: { type: String },
+    bio: { type: String },
     industry: { type: String },
     employeeCount: { type: Number },
     registrationNumber: { type: String },
     taxId: { type: String },
     registeredCourses: [{ type: Schema.Types.ObjectId, ref: 'Course' }],
+    registeredEvents: [{ type: Schema.Types.ObjectId, ref: 'Event' }],
     status: { type: String, enum: ['pending', 'verified', 'active', 'suspended'], default: 'pending' },
     approvedBy: { type: Schema.Types.ObjectId, ref: 'User' },
     approvalDate: { type: Date },

@@ -42,9 +42,43 @@ export async function POST(req: Request) {
 
 export async function GET(req: Request) {
   try {
+    const url = new URL(req.url);
+    const countOnly = url.searchParams.get('countOnly') === 'true';
+
+    const session = await getServerAuthSession();
+    
     const announcements = await announcementService.listAnnouncements();
+    
+    // Filter by isActive status
+    const activeAnnouncements = announcements.filter((a: any) => a.isActive === true);
+
+    // Count unread announcements for current user if user is logged in
+    let unreadCount = 0;
+    if (session?.user?.email) {
+      const { connectToDatabase } = await import('@/server/db/mongoose');
+      const UserModel = (await import('@/server/db/models/user.model')).default;
+      const { Announcement } = await import('@/server/db/models/announcement.model');
+      
+      await connectToDatabase();
+      const user = await UserModel.findOne({ email: session.user.email });
+      
+      if (user) {
+        unreadCount = await Announcement.countDocuments({
+          isActive: true,
+          readBy: { $ne: user._id }
+        });
+      }
+    }
+
+    if (countOnly) {
+      return NextResponse.json(
+        { success: true, count: unreadCount },
+        { status: 200 }
+      );
+    }
+
     return NextResponse.json(
-      { success: true, announcements },
+      { success: true, announcements: activeAnnouncements, count: activeAnnouncements.length, unreadCount },
       { status: 200 }
     );
   } catch (error) {

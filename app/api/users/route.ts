@@ -41,11 +41,11 @@ export async function GET(req: Request) {
 
     await connectToDatabase();
 
-    // Build query - exclude ADMIN and SUB_ADMIN
+    // Build query - exclude ADMIN and SUB_ADMIN, include all messaging users
     const query: any = {
-      role: { $in: ['INDIVIDUAL', 'CORPORATE'] }  // Only fetch individual and corporate users
+      role: { $in: ['INDIVIDUAL', 'CORPORATE', 'STAFF'] }  // Fetch individual, corporate, and staff users
     };
-    if (role && ['INDIVIDUAL', 'CORPORATE'].includes(role)) query.role = role;
+    if (role && ['INDIVIDUAL', 'CORPORATE', 'STAFF'].includes(role)) query.role = role;
     if (status) query.status = status;
 
     // Fetch users
@@ -65,6 +65,7 @@ export async function GET(req: Request) {
         } else if (user.role === 'CORPORATE') {
           profile = await CorporateProfileModel.findOne({ ownerId: user._id }).lean();
         }
+        // STAFF users don't need profile lookup - use firstName/lastName from user model
 
         // Normalize status: convert old values to new ones
         let normalizedStatus = user.status;
@@ -79,8 +80,9 @@ export async function GET(req: Request) {
           role: user.role,
           status: normalizedStatus,
           createdAt: user.createdAt,
-          firstName: profile?.firstName || profile?.companyName || '-',
-          lastName: profile?.lastName || '-',
+          firstName: user.firstName || profile?.firstName || profile?.companyName || '-',
+          lastName: user.lastName || profile?.lastName || '-',
+          profileImage: user.profileImage,
         };
       })
     );

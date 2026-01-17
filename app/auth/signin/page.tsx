@@ -14,8 +14,8 @@ function SignInForm() {
   const [isLoading, setIsLoading] = useState(false);
 
   const message = searchParams?.get('message');
-  // Default to /individual for regular users, but allow callbackUrl override
-  const callbackUrl = searchParams?.get('callbackUrl') || '/individual';
+  // Default redirect based on user role (will be set after auth)
+  const callbackUrl = searchParams?.get('callbackUrl') || null;
 
   const handleEmailChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setEmail(e.target.value);
@@ -48,10 +48,37 @@ function SignInForm() {
         setError('Invalid email or password. Please try again.');
         setIsLoading(false);
       } else if (result?.ok) {
-        console.log('[SignIn] Auth successful, redirecting to:', email);
-        // Wait briefly for session cookie to be set
-        setTimeout(() => {
-          window.location.href = '/individual';
+        console.log('[SignIn] Auth successful, redirecting based on role');
+        // Wait briefly for session cookie to be set, then fetch user info
+        setTimeout(async () => {
+          try {
+            const response = await fetch('/api/users/me');
+            const data = await response.json();
+            
+            if (data.success && data.user) {
+              const userRole = data.user.role;
+              console.log('[SignIn] User role:', userRole);
+              
+              // Redirect based on user role
+              let redirectPath = '/individual'; // default for INDIVIDUAL
+              if (userRole === 'STAFF') {
+                redirectPath = '/staff';
+              } else if (userRole === 'CORPORATE') {
+                redirectPath = '/corporate';
+              } else if (userRole === 'ADMIN') {
+                redirectPath = '/admin';
+              }
+              
+              window.location.href = callbackUrl || redirectPath;
+            } else {
+              // Fallback if user fetch fails
+              window.location.href = callbackUrl || '/individual';
+            }
+          } catch (err) {
+            console.error('[SignIn] Error fetching user:', err);
+            // Fallback to individual if fetch fails
+            window.location.href = callbackUrl || '/individual';
+          }
         }, 500);
       } else {
         console.log('[SignIn] Unexpected response:', result);

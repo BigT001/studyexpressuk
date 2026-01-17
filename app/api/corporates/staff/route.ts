@@ -112,7 +112,7 @@ export async function GET(request: NextRequest) {
 
     // Get all staff members for this corporate
     const staff = await CorporateStaffModel.find({ corporateId: corporate._id })
-      .populate('userId', 'email firstName lastName')
+      .populate('userId', 'email firstName lastName profileImage')
       .sort({ createdAt: -1 });
 
     console.log('[STAFF-LIST-API] Found staff:', staff.map(s => ({ _id: s._id.toString(), email: (s.userId as any).email })));

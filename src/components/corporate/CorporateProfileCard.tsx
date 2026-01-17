@@ -1,25 +1,23 @@
 'use client';
 
 import Image from 'next/image';
-import { Building2, Users, Mail, Globe } from 'lucide-react';
+import { Building2 } from 'lucide-react';
 
 interface CorporateProfileCardProps {
   companyName?: string;
-  contactPerson?: string;
   email?: string;
-  staffCount?: number;
+  bio?: string;
   logo?: string;
 }
 
 export function CorporateProfileCard({
   companyName = 'Company Name',
-  contactPerson = 'Contact Person',
   email = 'contact@company.com',
-  staffCount = 0,
+  bio = 'Welcome to our company dashboard',
   logo,
 }: CorporateProfileCardProps) {
   return (
-    <div className="flex items-center gap-6 mb-6">
+    <div className="flex items-start gap-6 mb-6">
       {/* Company Logo/Icon */}
       <div className="flex-shrink-0 flex items-center justify-center w-44 h-44 rounded-full bg-gradient-to-br from-blue-100 to-blue-50 border-4 border-blue-200 shadow-lg overflow-hidden">
         {logo ? (
@@ -37,25 +35,11 @@ export function CorporateProfileCard({
       </div>
       
       {/* Company Info */}
-      <div className="flex-1">
-        <h1 className="font-bold text-2xl text-gray-900 mb-3">{companyName}</h1>
+      <div className="flex-1 min-w-0">
+        <h1 className="font-bold text-3xl text-gray-900 mb-2">{companyName}</h1>
+        <p className="text-sm text-gray-600 mb-3">{email}</p>
         
-        <div className="space-y-2 mb-4">
-          <div className="flex items-center gap-3">
-            <Users className="w-4 h-4 text-gray-400" />
-            <span className="text-gray-700 text-sm">
-              <span className="font-semibold text-gray-900">{staffCount}</span> staff members
-            </span>
-          </div>
-          <div className="flex items-center gap-3">
-            <Mail className="w-4 h-4 text-gray-400" />
-            <span className="text-gray-700 text-sm">{email}</span>
-          </div>
-          <div className="flex items-center gap-3">
-            <Globe className="w-4 h-4 text-gray-400" />
-            <span className="text-gray-700 text-sm">{contactPerson}</span>
-          </div>
-        </div>
+        <p className="text-sm text-gray-700 line-clamp-4 leading-relaxed">{bio}</p>
       </div>
     </div>
   );

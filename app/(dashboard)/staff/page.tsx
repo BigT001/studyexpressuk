@@ -1,32 +1,6 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { BookOpen, Calendar, User, LogOut } from 'lucide-react';
-
-interface EnrolledCourse {
-  _id: string;
-  courseId: {
-    _id: string;
-    title: string;
-    description?: string;
-  };
-  progress: number;
-  status: 'enrolled' | 'in_progress' | 'completed';
-  enrollmentDate: string;
-  completionDate?: string;
-}
-
-interface EnrolledEvent {
-  _id: string;
-  eventId: {
-    _id: string;
-    title: string;
-    date?: string;
-    description?: string;
-  };
-  registrationDate: string;
-  status: 'registered' | 'attended' | 'cancelled';
-}
 
 interface StaffProfile {
   _id: string;
@@ -39,8 +13,12 @@ interface StaffProfile {
 
 export default function StaffDashboard() {
   const [profile, setProfile] = useState<StaffProfile | null>(null);
-  const [enrolledCourses, setEnrolledCourses] = useState<EnrolledCourse[]>([]);
-  const [enrolledEvents, setEnrolledEvents] = useState<EnrolledEvent[]>([]);
+  const [stats, setStats] = useState({
+    tasksAssigned: 8,
+    tasksCompleted: 5,
+    teamMembers: 12,
+    reportsPending: 2,
+  });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
@@ -59,20 +37,6 @@ export default function StaffDashboard() {
         setProfile(profileData.user);
       }
 
-      // Fetch enrolled courses
-      const coursesRes = await fetch('/api/staff/enrollments/courses');
-      const coursesData = await coursesRes.json();
-      if (coursesData.success) {
-        setEnrolledCourses(coursesData.enrollments || []);
-      }
-
-      // Fetch enrolled events
-      const eventsRes = await fetch('/api/staff/enrollments/events');
-      const eventsData = await eventsRes.json();
-      if (eventsData.success) {
-        setEnrolledEvents(eventsData.enrollments || []);
-      }
-
       setError('');
     } catch (err) {
       setError('Failed to load staff dashboard');
@@ -84,8 +48,9 @@ export default function StaffDashboard() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-gray-50">
+      <div className="flex items-center justify-center min-h-screen">
         <div className="text-center">
+          <div className="w-12 h-12 bg-gray-200 rounded-full animate-pulse mx-auto mb-4"></div>
           <p className="text-gray-600">Loading your dashboard...</p>
         </div>
       </div>
@@ -93,12 +58,15 @@ export default function StaffDashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Header */}
+        {/* Staff Dashboard Header - Unique to Staff */}
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">Welcome, {profile?.firstName || 'Staff Member'}</h1>
-          <p className="text-gray-600 mt-1">{profile?.role} • {profile?.department || 'General'}</p>
+          <div className="flex items-center justify-between mb-2">
+            <h1 className="text-4xl font-bold text-gray-900">Staff Dashboard</h1>
+            <span className="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm font-medium">Staff Member</span>
+          </div>
+          <p className="text-gray-600">Welcome, {profile?.firstName || 'Staff Member'} — Manage your responsibilities and team coordination</p>
         </div>
 
         {error && (
@@ -107,181 +75,186 @@ export default function StaffDashboard() {
           </div>
         )}
 
-        {/* Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-          <div className="bg-white rounded-lg shadow p-6">
+        {/* Staff Statistics Cards - Different from Individual */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+          {/* Tasks Assigned */}
+          <div className="bg-white rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-gray-600 text-sm font-medium">Enrolled Courses</p>
-                <p className="text-3xl font-bold text-gray-900 mt-2">{enrolledCourses.length}</p>
+                <p className="text-gray-600 text-sm font-medium">Tasks Assigned</p>
+                <p className="text-3xl font-bold text-gray-900 mt-2">{stats.tasksAssigned}</p>
               </div>
-              <BookOpen className="w-12 h-12 text-blue-100" />
+              <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
+                <span className="text-blue-600 text-xl">📋</span>
+              </div>
             </div>
           </div>
 
-          <div className="bg-white rounded-lg shadow p-6">
+          {/* Tasks Completed */}
+          <div className="bg-white rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-gray-600 text-sm font-medium">Registered Events</p>
-                <p className="text-3xl font-bold text-gray-900 mt-2">{enrolledEvents.length}</p>
-              </div>
-              <Calendar className="w-12 h-12 text-green-100" />
-            </div>
-          </div>
-
-          <div className="bg-white rounded-lg shadow p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-gray-600 text-sm font-medium">Completed Courses</p>
-                <p className="text-3xl font-bold text-gray-900 mt-2">
-                  {enrolledCourses.filter(c => c.status === 'completed').length}
-                </p>
+                <p className="text-gray-600 text-sm font-medium">Tasks Completed</p>
+                <p className="text-3xl font-bold text-gray-900 mt-2">{stats.tasksCompleted}</p>
               </div>
               <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
-                <span className="text-green-600 text-lg">✓</span>
+                <span className="text-green-600 text-xl">✓</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Team Members */}
+          <div className="bg-white rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-gray-600 text-sm font-medium">Team Members</p>
+                <p className="text-3xl font-bold text-gray-900 mt-2">{stats.teamMembers}</p>
+              </div>
+              <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center">
+                <span className="text-purple-600 text-xl">👥</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Reports Pending */}
+          <div className="bg-white rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-gray-600 text-sm font-medium">Reports Pending</p>
+                <p className="text-3xl font-bold text-gray-900 mt-2">{stats.reportsPending}</p>
+              </div>
+              <div className="w-12 h-12 bg-orange-100 rounded-lg flex items-center justify-center">
+                <span className="text-orange-600 text-xl">📊</span>
               </div>
             </div>
           </div>
         </div>
 
-        {/* Enrolled Courses */}
-        <div className="mb-8">
-          <h2 className="text-2xl font-bold text-gray-900 mb-6">Enrolled Courses</h2>
-          
-          {enrolledCourses.length === 0 ? (
-            <div className="bg-white rounded-lg shadow p-8 text-center">
-              <BookOpen className="w-12 h-12 text-gray-300 mx-auto mb-3" />
-              <p className="text-gray-600">You are not enrolled in any courses yet.</p>
-              <p className="text-sm text-gray-500 mt-2">Your organization will assign courses to you.</p>
+        {/* Main Content Grid */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          {/* Left Column - Main Sections */}
+          <div className="lg:col-span-2 space-y-8">
+            {/* Quick Actions */}
+            <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+              <h2 className="text-lg font-bold text-gray-900 mb-4">Quick Actions</h2>
+              <div className="grid grid-cols-2 gap-4">
+                <button className="p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors text-left">
+                  <span className="text-2xl mb-2 block">📨</span>
+                  <p className="font-medium text-gray-900 text-sm">Send Message</p>
+                  <p className="text-xs text-gray-500">Contact admin or team</p>
+                </button>
+                <button className="p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors text-left">
+                  <span className="text-2xl mb-2 block">📋</span>
+                  <p className="font-medium text-gray-900 text-sm">View Tasks</p>
+                  <p className="text-xs text-gray-500">Check assignments</p>
+                </button>
+                <button className="p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors text-left">
+                  <span className="text-2xl mb-2 block">👥</span>
+                  <p className="font-medium text-gray-900 text-sm">Team View</p>
+                  <p className="text-xs text-gray-500">See your team</p>
+                </button>
+                <button className="p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors text-left">
+                  <span className="text-2xl mb-2 block">📊</span>
+                  <p className="font-medium text-gray-900 text-sm">View Reports</p>
+                  <p className="text-xs text-gray-500">Check statistics</p>
+                </button>
+              </div>
             </div>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {enrolledCourses.map((course) => (
-                <div key={course._id} className="bg-white rounded-lg shadow p-6 hover:shadow-lg transition-shadow">
-                  <div className="flex items-start justify-between mb-4">
-                    <div>
-                      <h3 className="text-lg font-semibold text-gray-900">{course.courseId.title}</h3>
-                      <p className="text-sm text-gray-600 mt-1">{course.courseId.description}</p>
-                    </div>
-                    <span className={`px-3 py-1 rounded-full text-xs font-medium ${
-                      course.status === 'completed' ? 'bg-green-100 text-green-800' :
-                      course.status === 'in_progress' ? 'bg-blue-100 text-blue-800' :
-                      'bg-gray-100 text-gray-800'
-                    }`}>
-                      {course.status === 'completed' ? '✓ Completed' :
-                       course.status === 'in_progress' ? 'In Progress' :
-                       'Enrolled'}
-                    </span>
-                  </div>
 
-                  <div className="mb-4">
-                    <div className="flex items-center justify-between mb-2">
-                      <span className="text-sm font-medium text-gray-700">Progress</span>
-                      <span className="text-sm font-medium text-gray-900">{course.progress}%</span>
-                    </div>
-                    <div className="w-full bg-gray-200 rounded-full h-2">
-                      <div
-                        className="bg-green-600 h-2 rounded-full transition-all duration-300"
-                        style={{ width: `${course.progress}%` }}
-                      ></div>
-                    </div>
+            {/* Recent Activity */}
+            <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+              <h2 className="text-lg font-bold text-gray-900 mb-4">Recent Activity</h2>
+              <div className="space-y-4">
+                <div className="flex gap-4 pb-4 border-b border-gray-100">
+                  <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                    <span className="text-blue-600">📌</span>
                   </div>
-
-                  <div className="text-xs text-gray-500">
-                    Enrolled on {new Date(course.enrollmentDate).toLocaleDateString()}
-                    {course.completionDate && (
-                      <> • Completed on {new Date(course.completionDate).toLocaleDateString()}</>
-                    )}
+                  <div>
+                    <p className="font-medium text-gray-900 text-sm">New task assigned</p>
+                    <p className="text-xs text-gray-500 mt-1">You received a new task from your manager</p>
+                    <p className="text-xs text-gray-400 mt-2">2 hours ago</p>
                   </div>
                 </div>
-              ))}
-            </div>
-          )}
-        </div>
-
-        {/* Registered Events */}
-        <div className="mb-8">
-          <h2 className="text-2xl font-bold text-gray-900 mb-6">Registered Events</h2>
-          
-          {enrolledEvents.length === 0 ? (
-            <div className="bg-white rounded-lg shadow p-8 text-center">
-              <Calendar className="w-12 h-12 text-gray-300 mx-auto mb-3" />
-              <p className="text-gray-600">You are not registered for any events yet.</p>
-              <p className="text-sm text-gray-500 mt-2">Your organization will register you for events.</p>
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {enrolledEvents.map((event) => (
-                <div key={event._id} className="bg-white rounded-lg shadow p-6 hover:shadow-lg transition-shadow">
-                  <div className="flex items-start justify-between mb-4">
-                    <div>
-                      <h3 className="text-lg font-semibold text-gray-900">{event.eventId.title}</h3>
-                      <p className="text-sm text-gray-600 mt-1">{event.eventId.description}</p>
-                    </div>
-                    <span className={`px-3 py-1 rounded-full text-xs font-medium ${
-                      event.status === 'attended' ? 'bg-green-100 text-green-800' :
-                      event.status === 'cancelled' ? 'bg-red-100 text-red-800' :
-                      'bg-blue-100 text-blue-800'
-                    }`}>
-                      {event.status === 'attended' ? '✓ Attended' :
-                       event.status === 'cancelled' ? 'Cancelled' :
-                       'Registered'}
-                    </span>
+                <div className="flex gap-4 pb-4 border-b border-gray-100">
+                  <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                    <span className="text-green-600">✓</span>
                   </div>
-
-                  {event.eventId.date && (
-                    <div className="text-sm text-gray-600 mb-4">
-                      <Calendar className="w-4 h-4 inline mr-2" />
-                      {new Date(event.eventId.date).toLocaleDateString()}
-                    </div>
-                  )}
-
-                  <div className="text-xs text-gray-500">
-                    Registered on {new Date(event.registrationDate).toLocaleDateString()}
+                  <div>
+                    <p className="font-medium text-gray-900 text-sm">Task completed</p>
+                    <p className="text-xs text-gray-500 mt-1">You marked a task as complete</p>
+                    <p className="text-xs text-gray-400 mt-2">1 day ago</p>
                   </div>
                 </div>
-              ))}
-            </div>
-          )}
-        </div>
-
-        {/* Profile Section */}
-        <div className="bg-white rounded-lg shadow p-6">
-          <h2 className="text-xl font-bold text-gray-900 mb-6 flex items-center gap-2">
-            <User className="w-5 h-5" />
-            Your Profile
-          </h2>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div>
-              <p className="text-sm text-gray-600">Email Address</p>
-              <p className="text-lg font-medium text-gray-900 mt-1">{profile?.email}</p>
-            </div>
-
-            <div>
-              <p className="text-sm text-gray-600">Role</p>
-              <p className="text-lg font-medium text-gray-900 mt-1">{profile?.role}</p>
-            </div>
-
-            <div>
-              <p className="text-sm text-gray-600">Department</p>
-              <p className="text-lg font-medium text-gray-900 mt-1">{profile?.department || '—'}</p>
-            </div>
-
-            <div>
-              <p className="text-sm text-gray-600">Full Name</p>
-              <p className="text-lg font-medium text-gray-900 mt-1">
-                {profile?.firstName || 'Not set'} {profile?.lastName || ''}
-              </p>
+                <div className="flex gap-4">
+                  <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                    <span className="text-purple-600">💬</span>
+                  </div>
+                  <div>
+                    <p className="font-medium text-gray-900 text-sm">New message</p>
+                    <p className="text-xs text-gray-500 mt-1">Admin sent you an important message</p>
+                    <p className="text-xs text-gray-400 mt-2">2 days ago</p>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
 
-          <div className="mt-6 pt-6 border-t border-gray-200">
-            <p className="text-sm text-gray-600 mb-3">Limited Access</p>
-            <p className="text-gray-700 text-sm">
-              As a staff member, you have access to view and track your assigned courses and events. 
-              Your organization controls what you can access. Contact your organization administrator for more information.
-            </p>
+          {/* Right Column - Profile & Info */}
+          <div className="space-y-8">
+            {/* Profile Card */}
+            <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl border border-blue-200 p-6">
+              <div className="mb-4">
+                <div className="w-16 h-16 bg-blue-500 rounded-full flex items-center justify-center text-white text-2xl font-bold mb-4">
+                  {profile?.firstName?.charAt(0)}{profile?.lastName?.charAt(0)}
+                </div>
+                <h3 className="text-lg font-bold text-gray-900">{profile?.firstName} {profile?.lastName}</h3>
+                <p className="text-sm text-gray-600 mt-1">{profile?.email}</p>
+              </div>
+              <div className="space-y-3 pt-4 border-t border-blue-200">
+                <div>
+                  <p className="text-xs text-gray-600 uppercase tracking-wide">Role</p>
+                  <p className="text-sm font-medium text-gray-900 mt-1">Staff Member</p>
+                </div>
+                <div>
+                  <p className="text-xs text-gray-600 uppercase tracking-wide">Department</p>
+                  <p className="text-sm font-medium text-gray-900 mt-1">{profile?.department || 'Not assigned'}</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Access Information */}
+            <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+              <h3 className="font-bold text-gray-900 mb-4">Your Access</h3>
+              <div className="space-y-3 text-sm">
+                <div className="flex items-start gap-3">
+                  <span className="text-green-600 text-lg mt-0.5">✓</span>
+                  <div>
+                    <p className="font-medium text-gray-900">Team Messages</p>
+                    <p className="text-xs text-gray-500">Message admin & colleagues</p>
+                  </div>
+                </div>
+                <div className="flex items-start gap-3">
+                  <span className="text-green-600 text-lg mt-0.5">✓</span>
+                  <div>
+                    <p className="font-medium text-gray-900">Task Management</p>
+                    <p className="text-xs text-gray-500">View & complete tasks</p>
+                  </div>
+                </div>
+                <div className="flex items-start gap-3">
+                  <span className="text-green-600 text-lg mt-0.5">✓</span>
+                  <div>
+                    <p className="font-medium text-gray-900">Team Reports</p>
+                    <p className="text-xs text-gray-500">Access team analytics</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Important Notes */}
+            <div className="bg-amber-50 rounded-xl border border-amber-200 p-4">
+              <p className="text-sm font-medium text-amber-900 mb-2">💡 Tip</p>
+              <p className="text-xs text-amber-800">Use the Messages section to communicate with your team and admin. This is your primary communication channel.</p>
+            </div>
           </div>
         </div>
       </div>

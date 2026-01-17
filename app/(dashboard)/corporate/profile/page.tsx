@@ -16,6 +16,7 @@ interface CorporateProfileData {
   registrationNumber: string;
   taxId: string;
   logo: string;
+  bio: string;
 }
 
 export default function CorporateProfilePage() {
@@ -31,6 +32,7 @@ export default function CorporateProfilePage() {
     registrationNumber: '',
     taxId: '',
     logo: '',
+    bio: '',
   });
   const [originalData, setOriginalData] = useState<CorporateProfileData | null>(null);
 
@@ -60,6 +62,7 @@ export default function CorporateProfilePage() {
           registrationNumber: data.profile?.registrationNumber || '',
           taxId: data.profile?.taxId || '',
           logo: data.profile?.logo || '',
+          bio: data.profile?.bio || '',
         };
         
         setProfileData(newProfileData);
@@ -124,6 +127,7 @@ export default function CorporateProfilePage() {
           taxId: profileData.taxId,
           logo: profileData.logo,
           contactPerson: profileData.phone,
+          bio: profileData.bio,
         }),
       });
 
@@ -239,11 +243,10 @@ export default function CorporateProfilePage() {
               <input
                 type="text"
                 value={profileData.companyName}
-                onChange={(e) => handleInputChange('companyName', e.target.value)}
-                placeholder="Enter your company name"
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#008200] focus:border-transparent transition-all"
-                required
+                disabled
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-gray-100 text-gray-600 cursor-not-allowed"
               />
+              <p className="text-xs text-gray-500 mt-1">Company name cannot be changed</p>
             </div>
 
             <div>
@@ -280,6 +283,18 @@ export default function CorporateProfilePage() {
                   <option key={ind} value={ind}>{ind}</option>
                 ))}
               </select>
+            </div>
+
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">Company Bio</label>
+              <textarea
+                value={profileData.bio}
+                onChange={(e) => handleInputChange('bio', e.target.value)}
+                placeholder="Describe your company, mission, and values..."
+                rows={4}
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#008200] focus:border-transparent transition-all resize-none"
+              />
+              <p className="text-xs text-gray-500 mt-1">This bio will be displayed on your company dashboard</p>
             </div>
           </div>
 

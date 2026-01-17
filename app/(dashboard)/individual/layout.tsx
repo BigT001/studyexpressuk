@@ -7,7 +7,8 @@ import IndividualLayoutClient from './layout-client';
 export default async function IndividualLayout({ children }: { children: React.ReactNode }) {
   const session = await getServerAuthSession();
 
-  if (!session || !['INDIVIDUAL', 'STAFF'].includes(session.user?.role || '')) {
+  // Only allow INDIVIDUAL role - staff has their own dashboard at /staff
+  if (!session || session.user?.role !== 'INDIVIDUAL') {
     redirect('/auth/signin');
   }
 
