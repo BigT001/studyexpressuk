@@ -79,6 +79,24 @@ export default function CorporateMessagesPage() {
     fetchUserInfo();
   }, []);
 
+  // Mark ALL unread messages as read when page loads
+  useEffect(() => {
+    if (!userId) return;
+
+    const markAllAsRead = async () => {
+      try {
+        await fetch('/api/corporate/messages/mark-all-read', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+        });
+      } catch (err) {
+        console.error('Failed to mark all messages as read:', err);
+      }
+    };
+
+    markAllAsRead();
+  }, [userId]);
+
   // Fetch staff members under this corporate
   useEffect(() => {
     if (!userId) return;
@@ -90,10 +108,34 @@ export default function CorporateMessagesPage() {
         const data = await res.json();
         
         if (data.success && data.staff) {
-          setStaffList(data.staff);
+          // Fetch admin user
+          const adminRes = await fetch('/api/admin/user');
+          const adminData = adminRes.ok ? await adminRes.json() : null;
+          
+          let staffWithAdmin = data.staff;
+          
+          // Add admin at the top if available
+          if (adminData?.user) {
+            const adminStaffEntry: Staff = {
+              _id: adminData.user._id,
+              userId: {
+                _id: adminData.user._id,
+                firstName: adminData.user.firstName,
+                lastName: adminData.user.lastName,
+                email: adminData.user.email,
+                role: 'ADMIN',
+                profileImage: adminData.user.profileImage,
+              },
+              role: 'ADMIN',
+              department: 'Administration',
+            };
+            staffWithAdmin = [adminStaffEntry, ...data.staff];
+          }
+          
+          setStaffList(staffWithAdmin);
           // Auto-select first staff if available
-          if (data.staff.length > 0 && !selectedStaff) {
-            setSelectedStaff(data.staff[0]);
+          if (staffWithAdmin.length > 0 && !selectedStaff) {
+            setSelectedStaff(staffWithAdmin[0]);
           }
         }
       } catch (err) {
@@ -120,6 +162,23 @@ export default function CorporateMessagesPage() {
         
         if (data.success && data.messages) {
           setMessages(data.messages);
+          
+          // Mark all unread messages from this conversation as read
+          const unreadMessages = data.messages.filter(
+            (msg: Message) => !msg.readAt && msg.recipientId._id === userId
+          );
+          
+          for (const msg of unreadMessages) {
+            try {
+              await fetch('/api/corporate/messages/mark-read', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ messageId: msg._id }),
+              });
+            } catch (err) {
+              console.error('Failed to mark message as read:', err);
+            }
+          }
         }
       } catch (err) {
         console.error('Failed to fetch messages:', err);

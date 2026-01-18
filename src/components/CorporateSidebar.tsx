@@ -40,12 +40,12 @@ const navItems: NavItem[] = [
     href: '/corporate/courses',
   },
   {
-    icon: '�',
+    icon: '📅',
     label: 'Events',
     href: '/corporate/events',
   },
   {
-    icon: '�💬',
+    icon: '💬',
     label: 'Messages',
     href: '/corporate/messages',
     badge: 'messages',
@@ -55,11 +55,6 @@ const navItems: NavItem[] = [
     label: 'Announcements',
     href: '/corporate/announcements',
     badge: 'announcements',
-  },
-  {
-    icon: '🔔',
-    label: 'Notifications',
-    href: '/corporate/notifications',
   },
   {
     icon: '⚙️',

@@ -12,11 +12,7 @@ interface Announcement {
   createdAt: string;
 }
 
-interface CorporateNotificationsSectionProps {
-  userId: string;
-}
-
-export function CorporateNotificationsSection({ userId }: CorporateNotificationsSectionProps) {
+export function IndividualNotificationsSection() {
   const [announcements, setAnnouncements] = useState<Announcement[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -114,7 +110,7 @@ export function CorporateNotificationsSection({ userId }: CorporateNotifications
       )}
 
       <div className="pt-2">
-        <Link href="/corporate/announcements" className="w-full block px-3 py-2 text-center text-xs font-medium text-blue-700 hover:bg-blue-50 rounded transition-colors">
+        <Link href="/individual/announcements" className="w-full block px-3 py-2 text-center text-xs font-medium text-blue-700 hover:bg-blue-50 rounded transition-colors">
           View all announcements &rarr;
         </Link>
       </div>

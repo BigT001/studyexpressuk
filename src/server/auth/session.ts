@@ -5,6 +5,7 @@ import { NextAuthOptions } from 'next-auth';
 import { connectToDatabase } from '../db/mongoose';
 import UserModel from '../db/models/user.model';
 import bcrypt from 'bcryptjs';
+import { updateUserActivity } from '../utils/login-tracker';
 
 export const authOptions: NextAuthOptions = {
   providers: [
@@ -49,6 +50,15 @@ export const authOptions: NextAuthOptions = {
           }
           
           console.log(`[Auth] Login successful for: ${credentials.email}`);
+          
+          // Update last login and activity timestamps using utility function (isLoginEvent = true)
+          try {
+            await updateUserActivity((user as any)._id.toString(), true);
+          } catch (updateErr) {
+            console.warn('[Auth] Failed to update login/activity:', updateErr);
+            // Don't fail login if we can't update activity
+          }
+          
           return {
             id: (user as any)._id.toString(),
             email: user.email,

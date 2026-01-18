@@ -32,6 +32,10 @@ export default function CorporateAnnouncementsPage() {
       const data = await res.json();
       if (data.success) {
         setAnnouncements(data.announcements || []);
+        // Load which announcements the user has already read
+        if (data.readAnnouncementIds && Array.isArray(data.readAnnouncementIds)) {
+          setReadIds(new Set(data.readAnnouncementIds));
+        }
       }
     } catch (error) {
       console.error('Error fetching announcements:', error);

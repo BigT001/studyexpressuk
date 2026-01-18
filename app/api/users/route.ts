@@ -30,8 +30,10 @@ export async function GET(req: Request) {
   try {
     // Require admin role to list users
     const session: any = await getServerAuthSession();
+    console.log('[Users API] Session:', session ? `User: ${session.user?.email}, Role: ${session.user?.role}` : 'No session');
     if (!session || session.user.role !== 'ADMIN') {
-      return NextResponse.json({ success: false, error: 'Forbidden' }, { status: 403 });
+      console.error('[Users API] Access denied - not admin:', session ? `role: ${session.user.role}` : 'no session');
+      return NextResponse.json({ success: false, error: 'Forbidden - Admin role required' }, { status: 403 });
     }
 
     const { searchParams } = new URL(req.url);
@@ -89,7 +91,11 @@ export async function GET(req: Request) {
 
     return NextResponse.json({ success: true, users: enrichedUsers });
   } catch (err: any) {
-    console.error('Error fetching users:', err);
-    return NextResponse.json({ success: false, error: err.message || 'Failed to fetch users' }, { status: 500 });
+    console.error('[Users API] Error fetching users:', err.message, err);
+    return NextResponse.json({ 
+      success: false, 
+      error: err.message || 'Failed to fetch users',
+      details: process.env.NODE_ENV === 'development' ? err.stack : undefined
+    }, { status: 500 });
   }
 }

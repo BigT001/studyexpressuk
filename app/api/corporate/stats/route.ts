@@ -4,6 +4,7 @@ import { connectToDatabase } from '@/server/db/mongoose';
 import CorporateStaffModel from '@/server/db/models/staff.model';
 import CourseModel from '@/server/db/models/course.model';
 import EventModel from '@/server/db/models/event.model';
+import EnrollmentModel from '@/server/db/models/enrollment.model';
 import CorporateProfileModel from '@/server/db/models/corporate.model';
 
 export async function GET() {
@@ -45,9 +46,16 @@ export async function GET() {
       status: { $in: ['active', 'published'] },
     });
 
-    // Count total events
+    // Count active events for this corporate user
+    // Get user's event enrollments
+    const enrollments = await EnrollmentModel.find({
+      userId: session.user.id
+    }).lean();
+    const eventIds = enrollments.map((e: any) => e.eventId);
+    
+    // Count all enrolled events (regardless of status)
     const totalEvents = await EventModel.countDocuments({
-      corporateId: corporateProfile._id,
+      _id: { $in: eventIds }
     });
 
     return NextResponse.json({

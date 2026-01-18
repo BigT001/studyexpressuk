@@ -30,6 +30,11 @@ const navItems: NavItem[] = [
     href: '/staff/reports',
   },
   {
+    icon: '�',
+    label: 'Events',
+    href: '/staff/events',
+  },
+  {
     icon: '💬',
     label: 'Messages',
     href: '/staff/messages',

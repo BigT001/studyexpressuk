@@ -69,6 +69,24 @@ export default function IndividualMessagesPage() {
     fetchUserInfo();
   }, []);
 
+  // Mark ALL unread messages as read when page loads
+  useEffect(() => {
+    if (!userId) return;
+
+    const markAllAsRead = async () => {
+      try {
+        await fetch('/api/individual/messages/mark-all-read', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+        });
+      } catch (err) {
+        console.error('Failed to mark all messages as read:', err);
+      }
+    };
+
+    markAllAsRead();
+  }, [userId]);
+
   // Fetch admin info and messages - only once on mount
   useEffect(() => {
     if (!userId) return;

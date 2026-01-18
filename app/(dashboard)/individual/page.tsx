@@ -6,6 +6,7 @@ import {
   MembershipSection,
   LearningSection,
   CommunicationSection,
+  IndividualNotificationsSection,
 } from '@/components/individual';
 import { UserProfileCard } from '@/components/individual/UserProfileCard';
 import { getUserProfile } from '@/server/users/getUserProfile';
@@ -45,7 +46,7 @@ export default async function IndividualDashboard() {
           
           {/* Right Sidebar - Notifications (Wider) */}
           <div className="lg:col-span-5 space-y-6 md:space-y-8">
-            {/* Notifications section temporarily disabled */}
+            <IndividualNotificationsSection />
           </div>
         </div>
       </div>

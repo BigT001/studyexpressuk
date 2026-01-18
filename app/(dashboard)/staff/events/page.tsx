@@ -14,7 +14,6 @@ interface Event {
   location?: string;
   format?: string;
   status?: string;
-  createdAt?: string;
 }
 
 interface Enrollment {
@@ -25,7 +24,7 @@ interface Enrollment {
   progress?: number;
 }
 
-export default function CorporateEventsPage() {
+export default function StaffEventsPage() {
   const [enrollments, setEnrollments] = useState<Enrollment[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -35,7 +34,7 @@ export default function CorporateEventsPage() {
       try {
         setLoading(true);
         setError(null);
-        const response = await fetch('/api/corporates/events');
+        const response = await fetch('/api/staff/enrollments/events');
         
         if (!response.ok) {
           throw new Error('Failed to fetch events');
@@ -90,7 +89,7 @@ export default function CorporateEventsPage() {
         {!loading && !error && (
           <EventsDisplaySection 
             enrollments={enrollments}
-            role="CORPORATE"
+            role="STAFF"
             browseEventsPath="/events"
           />
         )}

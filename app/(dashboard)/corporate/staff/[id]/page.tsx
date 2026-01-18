@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
-import { ArrowLeft, BookOpen, Mail, FileText, Award, Briefcase } from 'lucide-react';
+import { ArrowLeft, BookOpen, Mail, FileText, Award, Briefcase, Zap, CheckCircle2, AlertCircle, TrendingUp } from 'lucide-react';
 import Image from 'next/image';
 
 interface StaffDetail {
@@ -32,6 +32,14 @@ interface Enrollment {
   status: string;
   progress: number;
   completionDate?: string;
+  createdAt?: string;
+}
+
+interface ProgressUpdate {
+  enrollmentId: string;
+  oldProgress: number;
+  newProgress: number;
+  timestamp: string;
 }
 
 export default function StaffDetailPage() {
@@ -44,6 +52,9 @@ export default function StaffDetailPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [updatingProgress, setUpdatingProgress] = useState(false);
+  const [progressHistory, setProgressHistory] = useState<Map<string, ProgressUpdate[]>>(new Map());
+  const [selectedEnrollmentId, setSelectedEnrollmentId] = useState<string | null>(null);
+  const [customProgressInput, setCustomProgressInput] = useState<Map<string, number>>(new Map());
 
   useEffect(() => {
     if (staffId) {
@@ -94,6 +105,9 @@ export default function StaffDetailPage() {
   };
 
   const updateProgress = async (enrollmentId: string, progress: number) => {
+    const currentEnrollment = enrollments.find(e => e._id === enrollmentId);
+    if (!currentEnrollment) return;
+
     try {
       setUpdatingProgress(true);
       const response = await fetch(`/api/corporates/staff/courses/${enrollmentId}`, {
@@ -103,14 +117,35 @@ export default function StaffDetailPage() {
       });
 
       if (response.ok) {
+        const oldProgress = currentEnrollment.progress;
         setEnrollments(enrollments.map(e => 
           e._id === enrollmentId ? { ...e, progress } : e
         ));
+        
+        // Track progress history
+        const history = progressHistory.get(enrollmentId) || [];
+        history.push({
+          enrollmentId,
+          oldProgress,
+          newProgress: progress,
+          timestamp: new Date().toISOString()
+        });
+        progressHistory.set(enrollmentId, history);
+        setProgressHistory(new Map(progressHistory));
       }
     } catch (err) {
       console.error('Error updating progress:', err);
     } finally {
       setUpdatingProgress(false);
+    }
+  };
+
+  const handleCustomProgressUpdate = async (enrollmentId: string) => {
+    const value = customProgressInput.get(enrollmentId);
+    if (value !== undefined && value >= 0 && value <= 100) {
+      await updateProgress(enrollmentId, Math.round(value));
+      customProgressInput.delete(enrollmentId);
+      setCustomProgressInput(new Map(customProgressInput));
     }
   };
 
@@ -350,10 +385,20 @@ export default function StaffDetailPage() {
 
       {/* Enrolled Courses/Events */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-        <h2 className="text-2xl font-bold text-gray-900 mb-6 flex items-center gap-3">
-          <BookOpen className="w-6 h-6 text-green-600" />
-          Assigned Courses & Events
-        </h2>
+        <div className="flex items-center justify-between mb-8">
+          <h2 className="text-2xl font-bold text-gray-900 flex items-center gap-3">
+            <BookOpen className="w-6 h-6 text-green-600" />
+            Assigned Courses & Events
+          </h2>
+          {enrollments.length > 0 && (
+            <div className="flex items-center gap-2 px-4 py-2 bg-blue-50 rounded-lg border border-blue-200">
+              <TrendingUp className="w-4 h-4 text-blue-600" />
+              <span className="text-sm font-semibold text-blue-900">
+                Avg Progress: {Math.round(enrollments.reduce((sum, e) => sum + e.progress, 0) / enrollments.length)}%
+              </span>
+            </div>
+          )}
+        </div>
 
         {enrollments.length === 0 ? (
           <div className="text-center py-12 bg-gray-50 rounded-lg border border-gray-200">
@@ -362,65 +407,173 @@ export default function StaffDetailPage() {
           </div>
         ) : (
           <div className="space-y-4">
-            {enrollments.map((enrollment) => (
-              <div
-                key={enrollment._id}
-                className="border border-gray-200 rounded-xl p-6 hover:shadow-md hover:border-green-200 transition-all"
-              >
-                <div className="flex items-start justify-between mb-4">
-                  <div className="flex-1">
-                    <h4 className="text-lg font-bold text-gray-900">{enrollment.eventId.title}</h4>
-                    {enrollment.eventId.description && (
-                      <p className="text-sm text-gray-600 mt-2 line-clamp-2">{enrollment.eventId.description}</p>
+            {enrollments.map((enrollment) => {
+              const isCompleted = enrollment.progress === 100;
+              const progressPercentage = enrollment.progress;
+              const history = progressHistory.get(enrollment._id) || [];
+              
+              return (
+                <div
+                  key={enrollment._id}
+                  className={`border rounded-xl p-6 transition-all ${
+                    selectedEnrollmentId === enrollment._id
+                      ? 'border-green-400 bg-green-50 shadow-md'
+                      : 'border-gray-200 hover:border-green-200 hover:shadow-md'
+                  }`}
+                >
+                  <div className="flex items-start justify-between mb-5">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-3 mb-2">
+                        <h4 className="text-lg font-bold text-gray-900">{enrollment.eventId.title}</h4>
+                        {isCompleted && (
+                          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 bg-green-100 text-green-800 text-xs font-semibold rounded-full">
+                            <CheckCircle2 className="w-3.5 h-3.5" />
+                            Completed
+                          </span>
+                        )}
+                      </div>
+                      {enrollment.eventId.description && (
+                        <p className="text-sm text-gray-600 line-clamp-2">{enrollment.eventId.description}</p>
+                      )}
+                    </div>
+                    <button
+                      onClick={() => removeEnrollment(enrollment._id)}
+                      className="ml-4 px-3 py-2 hover:bg-red-50 rounded-lg transition-colors text-red-600 hover:text-red-700 font-medium text-sm whitespace-nowrap"
+                    >
+                      Remove
+                    </button>
+                  </div>
+
+                  {/* Progress Section */}
+                  <div className="space-y-5 bg-white -mx-6 -mb-6 px-6 py-5 rounded-b-xl border-t border-gray-100">
+                    {/* Progress Bar with Stats */}
+                    <div>
+                      <div className="flex items-center justify-between mb-3">
+                        <span className="text-sm font-semibold text-gray-700">Progress Tracking</span>
+                        <div className="flex items-center gap-4">
+                          <span className="text-2xl font-bold text-green-600">{progressPercentage}%</span>
+                          {enrollment.status === 'completed' && enrollment.completionDate && (
+                            <span className="text-xs text-gray-500 font-medium">
+                              Completed: {new Date(enrollment.completionDate).toLocaleDateString()}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                      <div className="w-full bg-gray-200 rounded-full h-3">
+                        <div
+                          className={`h-3 rounded-full transition-all duration-300 ${
+                            progressPercentage < 50 ? 'bg-red-500' :
+                            progressPercentage < 80 ? 'bg-yellow-500' :
+                            'bg-green-600'
+                          }`}
+                          style={{ width: `${progressPercentage}%` }}
+                        ></div>
+                      </div>
+                    </div>
+
+                    {/* Quick Progress Buttons */}
+                    <div className="grid grid-cols-5 gap-2">
+                      {[0, 25, 50, 75, 100].map((value) => (
+                        <button
+                          key={value}
+                          onClick={() => updateProgress(enrollment._id, value)}
+                          disabled={updatingProgress}
+                          className={`px-3 py-2.5 text-xs font-bold rounded-lg transition-all ${
+                            progressPercentage === value
+                              ? 'bg-green-600 text-white shadow-md ring-2 ring-green-300'
+                              : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                          } ${updatingProgress ? 'opacity-50 cursor-not-allowed' : ''}`}
+                        >
+                          {value}%
+                        </button>
+                      ))}
+                    </div>
+
+                    {/* Custom Progress Input */}
+                    <div className="flex gap-2">
+                      <input
+                        type="number"
+                        min="0"
+                        max="100"
+                        placeholder="Custom %"
+                        value={customProgressInput.get(enrollment._id) ?? ''}
+                        onChange={(e) => {
+                          const val = e.target.value ? parseInt(e.target.value) : undefined;
+                          if (val !== undefined) {
+                            customProgressInput.set(enrollment._id, val);
+                          } else {
+                            customProgressInput.delete(enrollment._id);
+                          }
+                          setCustomProgressInput(new Map(customProgressInput));
+                        }}
+                        onKeyPress={(e) => {
+                          if (e.key === 'Enter') {
+                            handleCustomProgressUpdate(enrollment._id);
+                          }
+                        }}
+                        className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
+                      />
+                      <button
+                        onClick={() => handleCustomProgressUpdate(enrollment._id)}
+                        disabled={updatingProgress}
+                        className="px-4 py-2 bg-blue-600 text-white text-sm font-semibold rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50"
+                      >
+                        Update
+                      </button>
+                    </div>
+
+                    {/* Status & Details */}
+                    <div className="grid grid-cols-2 gap-4 pt-3 border-t border-gray-100">
+                      <div className="space-y-1">
+                        <p className="text-xs text-gray-500 font-semibold uppercase tracking-wide">Status</p>
+                        <p className={`text-sm font-bold capitalize ${
+                          enrollment.status === 'completed' ? 'text-green-600' :
+                          enrollment.status === 'in_progress' ? 'text-blue-600' :
+                          'text-gray-600'
+                        }`}>
+                          {enrollment.status.replace('_', ' ')}
+                        </p>
+                      </div>
+                      <div className="space-y-1">
+                        <p className="text-xs text-gray-500 font-semibold uppercase tracking-wide">Enrolled</p>
+                        <p className="text-sm font-medium text-gray-700">
+                          {enrollment.createdAt ? new Date(enrollment.createdAt).toLocaleDateString() : 'N/A'}
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Progress History */}
+                    {history.length > 0 && (
+                      <div className="pt-3 border-t border-gray-100">
+                        <button
+                          onClick={() => setSelectedEnrollmentId(
+                            selectedEnrollmentId === enrollment._id ? null : enrollment._id
+                          )}
+                          className="flex items-center gap-2 text-sm font-semibold text-gray-700 hover:text-gray-900 transition-colors mb-2"
+                        >
+                          <Zap className="w-4 h-4" />
+                          Update History ({history.length} {history.length === 1 ? 'update' : 'updates'})
+                        </button>
+                        {selectedEnrollmentId === enrollment._id && (
+                          <div className="mt-3 max-h-48 overflow-y-auto space-y-2">
+                            {[...history].reverse().map((update, idx) => (
+                              <div key={idx} className="flex items-center justify-between text-xs bg-gray-50 p-2 rounded">
+                                <span className="text-gray-600">
+                                  {update.oldProgress}% → <span className="font-bold text-green-600">{update.newProgress}%</span>
+                                </span>
+                                <span className="text-gray-500">
+                                  {new Date(update.timestamp).toLocaleDateString()} {new Date(update.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                </span>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
                     )}
                   </div>
-                  <button
-                    onClick={() => removeEnrollment(enrollment._id)}
-                    className="ml-4 px-3 py-2 hover:bg-red-50 rounded-lg transition-colors text-red-600 hover:text-red-700 font-medium text-sm whitespace-nowrap"
-                  >
-                    Remove
-                  </button>
                 </div>
-
-                <div className="space-y-4">
-                  <div>
-                    <div className="flex items-center justify-between mb-2">
-                      <span className="text-sm font-semibold text-gray-700">Progress</span>
-                      <span className="text-sm font-bold text-green-600">{enrollment.progress}%</span>
-                    </div>
-                    <div className="w-full bg-gray-200 rounded-full h-2.5">
-                      <div
-                        className="bg-green-600 h-2.5 rounded-full transition-all duration-300"
-                        style={{ width: `${enrollment.progress}%` }}
-                      ></div>
-                    </div>
-                  </div>
-
-                  <div className="flex gap-2 flex-wrap">
-                    {[25, 50, 75, 100].map((value) => (
-                      <button
-                        key={value}
-                        onClick={() => updateProgress(enrollment._id, value)}
-                        disabled={updatingProgress}
-                        className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition-all ${
-                          enrollment.progress === value
-                            ? 'bg-green-600 text-white shadow-md'
-                            : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                        } ${updatingProgress ? 'opacity-50 cursor-not-allowed' : ''}`}
-                      >
-                        {value}%
-                      </button>
-                    ))}
-                  </div>
-
-                  {enrollment.status === 'completed' && (
-                    <div className="text-sm text-green-700 font-medium pt-3 border-t border-green-200 mt-3">
-                      ✓ Completed on {new Date(enrollment.completionDate!).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })}
-                    </div>
-                  )}
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </div>

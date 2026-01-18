@@ -139,12 +139,7 @@ export default function AnnouncementsPage() {
               : 'bg-white text-gray-700 border border-gray-200 hover:border-gray-300 hover:shadow-md'
           }`}
         >
-          🚨 Urgent ({announcements.filter((a: any) => a.type === 'urgent').length})
-          {unreadUrgentCount > 0 && (
-            <span className="bg-red-500 text-white text-xs font-bold rounded-full px-2.5 py-0.5 ml-1">
-              {unreadUrgentCount}
-            </span>
-          )}
+          🚨 Urgent
         </button>
       </div>
 

@@ -65,16 +65,16 @@ export function CorporateQuickStats() {
         <span className="text-xs text-gray-400">In training</span>
       </div>
 
-      {/* Total Events */}
+      {/* Active Events */}
       <div className="flex flex-col items-start border border-gray-200 rounded-lg bg-white p-4 min-h-27.5">
         <div className="flex items-center gap-2 mb-2">
           <Calendar className="w-5 h-5 text-orange-400" aria-hidden="true" />
-          <span className="text-xs text-gray-500 font-medium">Total Events</span>
+          <span className="text-xs text-gray-500 font-medium">Active Events</span>
         </div>
         <span className="text-2xl font-bold text-gray-900 mb-1">
           {loading ? '-' : stats.totalEvents}
         </span>
-        <span className="text-xs text-gray-400">Scheduled events</span>
+        <span className="text-xs text-gray-400">Ongoing events</span>
       </div>
     </div>
   );

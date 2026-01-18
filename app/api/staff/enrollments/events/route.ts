@@ -1,33 +1,25 @@
+import { NextResponse } from 'next/server';
 import { getServerAuthSession } from '@/server/auth/session';
 import { connectToDatabase } from '@/server/db/mongoose';
 import UserModel from '@/server/db/models/user.model';
 import EnrollmentModel from '@/server/db/models/enrollment.model';
 import EventModel from '@/server/db/models/event.model';
-import { NextRequest, NextResponse } from 'next/server';
 
-export async function GET(request: NextRequest) {
+export async function GET(req: Request) {
   try {
     const session: any = await getServerAuthSession();
-
-    if (!session || !session.user?.email) {
-      return NextResponse.json(
-        { success: false, error: 'Unauthorized' },
-        { status: 401 }
-      );
+    if (!session || session.user?.role !== 'STAFF') {
+      return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
     }
 
     await connectToDatabase();
 
-    // Find user by email (more reliable than ID)
-    const user = await UserModel.findOne({ email: session.user.email });
+    const user = await UserModel.findById(session.user?.id);
     if (!user) {
-      return NextResponse.json(
-        { success: false, error: 'User not found' },
-        { status: 404 }
-      );
+      return NextResponse.json({ success: false, error: 'User not found' }, { status: 404 });
     }
 
-    // Get all event enrollments for this corporate user
+    // Get all event enrollments for this staff member
     const enrollments = await EnrollmentModel.find({ userId: user._id }).lean();
     
     // Filter for events only and populate event details
@@ -42,14 +34,14 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    return NextResponse.json(
-      { success: true, enrollments: eventEnrollments },
-      { status: 200 }
-    );
+    return NextResponse.json({
+      success: true,
+      enrollments: eventEnrollments,
+    });
   } catch (error) {
-    console.error('Error fetching corporate events:', error);
+    console.error('Error fetching staff events:', error);
     return NextResponse.json(
-      { success: false, error: 'Internal server error' },
+      { success: false, error: 'Failed to fetch staff events' },
       { status: 500 }
     );
   }

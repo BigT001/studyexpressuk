@@ -44,12 +44,7 @@ const navItems: NavItem[] = [
     href: '/subadmin/announcements',
   },
   {
-    emoji: '🔔',
-    label: 'Notifications',
-    href: '/subadmin/notifications',
-  },
-  {
-    emoji: '📈',
+    emoji: '',
     label: 'Reports',
     href: '/subadmin/reports',
   },

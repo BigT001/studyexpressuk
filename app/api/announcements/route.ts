@@ -52,6 +52,12 @@ export async function GET(req: Request) {
     // Filter by isActive status
     const activeAnnouncements = announcements.filter((a: any) => a.isActive === true);
 
+    // Serialize readBy arrays to strings for easier client-side comparison
+    const serializedAnnouncements = activeAnnouncements.map((a: any) => ({
+      ...a.toObject?.() || a,
+      readBy: (a.readBy || []).map((id: any) => id.toString())
+    }));
+
     // Count unread announcements for current user if user is logged in
     let unreadCount = 0;
     if (session?.user?.email) {
@@ -70,6 +76,25 @@ export async function GET(req: Request) {
       }
     }
 
+    // Create a list of announcement IDs that the user has read
+    let readAnnouncementIds: string[] = [];
+    if (session?.user?.id) {
+      const { connectToDatabase } = await import('@/server/db/mongoose');
+      const UserModel = (await import('@/server/db/models/user.model')).default;
+      const { Announcement } = await import('@/server/db/models/announcement.model');
+      
+      await connectToDatabase();
+      const user = await UserModel.findOne({ email: session.user.email });
+      
+      if (user) {
+        const readAnnouncements = await Announcement.find({
+          isActive: true,
+          readBy: user._id
+        }).select('_id');
+        readAnnouncementIds = readAnnouncements.map((a: any) => a._id.toString());
+      }
+    }
+
     if (countOnly) {
       return NextResponse.json(
         { success: true, count: unreadCount },
@@ -78,7 +103,7 @@ export async function GET(req: Request) {
     }
 
     return NextResponse.json(
-      { success: true, announcements: activeAnnouncements, count: activeAnnouncements.length, unreadCount },
+      { success: true, announcements: serializedAnnouncements, count: serializedAnnouncements.length, unreadCount, readAnnouncementIds },
       { status: 200 }
     );
   } catch (error) {

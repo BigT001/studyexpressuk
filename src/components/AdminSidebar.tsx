@@ -27,11 +27,6 @@ const navItems: NavItem[] = [
     href: '/admin/users',
   },
   {
-    icon: '🏢',
-    label: 'Corporate',
-    href: '/admin/corporate',
-  },
-  {
     icon: '📅',
     label: 'Events',
     href: '/admin/events',

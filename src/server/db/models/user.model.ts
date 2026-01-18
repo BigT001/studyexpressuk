@@ -24,6 +24,8 @@ export interface IUser extends Document {
   passwordHash?: string;
   role: UserRole;
   status: UserStatus;
+  lastLogin?: Date;
+  lastActivity?: Date;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -43,6 +45,8 @@ const UserSchema = new Schema<IUser>(
     passwordHash: { type: String, required: false },
     role: { type: String, enum: Object.values(UserRole), default: UserRole.INDIVIDUAL },
     status: { type: String, enum: ['subscribed', 'not-subscribed'], default: 'not-subscribed' },
+    lastLogin: { type: Date, required: false },
+    lastActivity: { type: Date, required: false },
   },
   { timestamps: true }
 );

@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getServerAuthSession } from '@/server/auth/session';
+import { updateUserActivity } from '@/server/utils/login-tracker';
 
 export async function GET(req: Request) {
   try {
@@ -9,6 +10,15 @@ export async function GET(req: Request) {
         { success: false, error: 'Not authenticated' },
         { status: 401 }
       );
+    }
+
+    // Track user activity (non-blocking)
+    try {
+      updateUserActivity((session.user as any).id, false).catch(() => {
+        // Silently fail
+      });
+    } catch (err) {
+      console.error('[ActivityTracking] Error:', err);
     }
 
     return NextResponse.json(

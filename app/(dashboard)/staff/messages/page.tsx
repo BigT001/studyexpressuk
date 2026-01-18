@@ -91,6 +91,24 @@ export default function StaffMessagesPage() {
     fetchStaffInfo();
   }, []);
 
+  // Mark ALL unread messages as read when page loads
+  useEffect(() => {
+    if (!staffId) return;
+
+    const markAllAsRead = async () => {
+      try {
+        await fetch('/api/staff/messages/mark-all-read', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+        });
+      } catch (err) {
+        console.error('Failed to mark all messages as read:', err);
+      }
+    };
+
+    markAllAsRead();
+  }, [staffId]);
+
   // Fetch users that staff can contact
   useEffect(() => {
     if (!staffId) return;

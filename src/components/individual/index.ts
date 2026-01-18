@@ -6,3 +6,4 @@ export { LearningSection } from './LearningSection';
 export { CommunicationSection } from './CommunicationSection';
 export { NotificationsSection } from './NotificationsSection';
 export { QuickActionsSection } from './QuickActionsSection';
+export { IndividualNotificationsSection } from './IndividualNotificationsSection';

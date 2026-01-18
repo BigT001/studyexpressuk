@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { Search, X } from 'lucide-react';
 
 interface User {
@@ -61,6 +62,9 @@ function getRoleLabel(role: string) {
 }
 
 export default function AdminMessagesPage() {
+  const searchParams = useSearchParams();
+  const userIdFromUrl = searchParams.get('user');
+  
   const [users, setUsers] = useState<User[]>([]);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
@@ -89,6 +93,24 @@ export default function AdminMessagesPage() {
     fetchUserInfo();
   }, []);
 
+  // Mark ALL unread messages as read when page loads
+  useEffect(() => {
+    if (!adminId) return;
+
+    const markAllAsRead = async () => {
+      try {
+        await fetch('/api/admin/messages/mark-all-read', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+        });
+      } catch (err) {
+        console.error('Failed to mark all messages as read:', err);
+      }
+    };
+
+    markAllAsRead();
+  }, [adminId]);
+
   // Fetch all users
   useEffect(() => {
     const fetchUsers = async () => {
@@ -99,8 +121,15 @@ export default function AdminMessagesPage() {
         
         if (data.success && data.users) {
           setUsers(data.users);
-          // Auto-select first user if available
-          if (data.users.length > 0 && !selectedUser) {
+          
+          // If user ID is in URL, select that user
+          if (userIdFromUrl) {
+            const userToSelect = data.users.find((u: User) => u._id === userIdFromUrl);
+            if (userToSelect) {
+              setSelectedUser(userToSelect);
+            }
+          } else if (data.users.length > 0 && !selectedUser) {
+            // Auto-select first user if available and no user in URL
             setSelectedUser(data.users[0]);
           }
         }
@@ -113,7 +142,7 @@ export default function AdminMessagesPage() {
     };
 
     fetchUsers();
-  }, []);
+  }, [userIdFromUrl]);
 
   // Fetch messages with selected user
   useEffect(() => {

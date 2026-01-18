@@ -78,8 +78,11 @@ export default function SignUp() {
           let redirectPath = '/individual';
           if (formData.userType === 'CORPORATE') {
             redirectPath = '/corporate';
+          } else if (formData.userType === 'STAFF') {
+            redirectPath = '/staff';
           }
-          router.push(redirectPath);
+          // Use replace to avoid going back to signup
+          router.replace(redirectPath);
         } else {
           // If auto-signin fails, redirect to signin page
           router.push('/auth/signin?message=Account created successfully. Please sign in.');
