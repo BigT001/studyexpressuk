@@ -1,4 +1,3 @@
-import Link from 'next/link';
 import Image from 'next/image';
 
 interface PublicCourseCardProps {
@@ -110,15 +109,23 @@ export default function PublicCourseCard({
         </div>
       </div>
 
-      {/* Card Footer - Enroll Button */}
+      {/* Card Footer - Action Buttons */}
       <div className="bg-gradient-to-r from-gray-50 to-gray-100 px-6 py-4 border-t border-gray-100">
-        <Link
-          href="/auth/signin"
-          className="block w-full px-4 py-3 text-white rounded-lg hover:opacity-90 transition-opacity font-semibold text-sm text-center"
-          style={{ backgroundColor: '#008200' }}
-        >
-          Enroll Now
-        </Link>
+        <div className="flex gap-3">
+          <button
+            onClick={() => window.location.href = '/courses'}
+            className="flex-1 px-4 py-3 text-white rounded-lg hover:opacity-90 transition-opacity font-semibold text-sm text-center"
+            style={{ backgroundColor: '#008200' }}
+          >
+            Enroll Now
+          </button>
+          <button
+            onClick={() => window.location.href = '/courses'}
+            className="flex-1 px-4 py-3 text-gray-900 rounded-lg hover:bg-gray-200 transition-colors font-semibold text-sm text-center border-2 border-gray-300"
+          >
+            View Course
+          </button>
+        </div>
       </div>
     </div>
   );

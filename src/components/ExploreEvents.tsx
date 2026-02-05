@@ -54,7 +54,7 @@ export function ExploreEvents() {
   const displayedEvents = events.slice(0, 6);
   const hasMoreEvents = events.length > 6;
 
-  const filteredCards = activeTab === 'Events' 
+  const filteredCards = activeTab === 'Events'
     ? displayedEvents
     : [];
 
@@ -147,7 +147,7 @@ export function ExploreEvents() {
                     <h3 className="text-xl font-bold text-gray-900 mb-3 line-clamp-2 leading-tight group-hover:text-blue-600 transition-colors">
                       {item.title}
                     </h3>
-                    
+
                     {/* Description */}
                     <p className="text-gray-600 text-sm mb-4 line-clamp-2 flex-grow">
                       {item.description || 'No description available'}
@@ -172,11 +172,18 @@ export function ExploreEvents() {
 
                   {/* Buttons - Side by Side */}
                   <div className="flex gap-3 px-6 py-3">
-                    <button className="flex-1 px-4 py-3 text-white font-bold text-sm transition-all duration-300 hover:shadow-xl transform hover:scale-105 active:scale-95" style={{ backgroundColor: '#008200' }}>
+                    <button
+                      onClick={() => window.location.href = '/events'}
+                      className="flex-1 px-4 py-3 text-white font-bold text-sm transition-all duration-300 hover:shadow-xl transform hover:scale-105 active:scale-95"
+                      style={{ backgroundColor: '#008200' }}
+                    >
                       Register Now →
                     </button>
 
-                    <button className="flex-1 px-4 py-3 text-gray-900 font-bold text-sm transition-all duration-300 hover:shadow-xl transform hover:scale-105 active:scale-95 border-2 border-gray-300 hover:border-gray-400">
+                    <button
+                      onClick={() => window.location.href = '/events'}
+                      className="flex-1 px-4 py-3 text-gray-900 font-bold text-sm transition-all duration-300 hover:shadow-xl transform hover:scale-105 active:scale-95 border-2 border-gray-300 hover:border-gray-400"
+                    >
                       View Event
                     </button>
                   </div>
@@ -187,7 +194,7 @@ export function ExploreEvents() {
             {/* Discover More Button */}
             {hasMoreEvents && (
               <div className="mt-12 flex justify-center">
-                <Link 
+                <Link
                   href="/events"
                   className="px-8 py-3 text-white rounded-lg font-bold text-sm transition-all duration-300 hover:scale-105 hover:shadow-lg"
                   style={{ backgroundColor: '#008200' }}

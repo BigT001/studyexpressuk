@@ -35,7 +35,7 @@ export async function POST(request: NextRequest) {
       email: email.toLowerCase(),
       passwordHash,
       role: UserRole.SUB_ADMIN,
-      status: 'active',
+      status: 'not-subscribed',
     });
 
     // Set permissions based on permission level

@@ -1,6 +1,6 @@
 import mongoose, { Schema, Document } from 'mongoose';
 
-export type EnrollmentStatus = 'enrolled' | 'in_progress' | 'completed' | 'cancelled';
+export type EnrollmentStatus = 'enrolled' | 'in_progress' | 'completed' | 'cancelled' | 'registered';
 
 export interface IEnrollment extends Document {
   userId: mongoose.Types.ObjectId;
@@ -18,7 +18,7 @@ const EnrollmentSchema = new Schema<IEnrollment>(
     userId: { type: Schema.Types.ObjectId, ref: 'User', required: true, index: true },
     eventId: { type: Schema.Types.ObjectId, ref: 'Event', required: true, index: true },
     progress: { type: Number, default: 0 },
-    status: { type: String, enum: ['enrolled', 'in_progress', 'completed', 'cancelled'], default: 'enrolled' },
+    status: { type: String, enum: ['enrolled', 'in_progress', 'completed', 'cancelled', 'registered'], default: 'enrolled' },
     completionDate: { type: Date },
     metadata: { type: Schema.Types.Mixed },
   },

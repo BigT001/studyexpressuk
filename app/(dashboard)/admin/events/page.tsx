@@ -11,6 +11,7 @@ interface Event {
   type: 'event' | 'course';
   category?: string;
   access: 'free' | 'premium' | 'corporate';
+  price?: number;
   format?: 'online' | 'offline' | 'hybrid';
   startDate?: string;
   endDate?: string;
@@ -54,6 +55,7 @@ export default function EventsManagementPage() {
     description: '',
     category: '',
     access: 'free' as 'free' | 'premium' | 'corporate',
+    price: '',
     format: '' as 'online' | 'offline' | 'hybrid' | '',
     startDate: '',
     endDate: '',
@@ -141,6 +143,7 @@ export default function EventsManagementPage() {
         description: formData.description,
         category: formData.category,
         access: formData.access,
+        price: formData.price ? parseFloat(formData.price) : 0,
         startDate: formData.startDate ? new Date(formData.startDate) : undefined,
         endDate: formData.endDate ? new Date(formData.endDate) : undefined,
         maxCapacity: formData.maxCapacity ? parseInt(formData.maxCapacity) : undefined,
@@ -155,7 +158,7 @@ export default function EventsManagementPage() {
       console.log('===== CREATE EVENT =====');
       console.log('Form data format:', formData.format);
       console.log('Sending payload to API:', payload);
-      
+
       const res = await fetch('/api/events', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -164,7 +167,7 @@ export default function EventsManagementPage() {
       const data = await res.json();
       console.log('API Response:', data);
       console.log('Saved event format in response:', data.event?.format);
-      
+
       if (data.success) {
         console.log('Event created successfully, adding to state');
         setEvents([data.event, ...events]);
@@ -188,6 +191,7 @@ export default function EventsManagementPage() {
         description: formData.description,
         category: formData.category,
         access: formData.access,
+        price: formData.price ? parseFloat(formData.price) : 0,
         startDate: formData.startDate ? new Date(formData.startDate) : undefined,
         endDate: formData.endDate ? new Date(formData.endDate) : undefined,
         maxCapacity: formData.maxCapacity ? parseInt(formData.maxCapacity) : undefined,
@@ -259,6 +263,7 @@ export default function EventsManagementPage() {
       description: '',
       category: '',
       access: 'free',
+      price: '',
       format: '',
       startDate: '',
       endDate: '',
@@ -286,6 +291,7 @@ export default function EventsManagementPage() {
       description: event.description || '',
       category: event.category || '',
       access: event.access,
+      price: event.price?.toString() || '',
       format: eventFormat as 'online' | 'offline' | 'hybrid' | '',
       startDate: event.startDate?.split('T')[0] || '',
       endDate: event.endDate?.split('T')[0] || '',
@@ -414,22 +420,22 @@ export default function EventsManagementPage() {
               {filteredEvents.map((event) => (
                 <div key={event._id} className="break-inside-avoid mb-6">
                   <EventCard
-                  key={event._id}
-                  _id={event._id}
-                  title={event.title}
-                  description={event.description}
-                  category={event.category}
-                  status={event.status}
-                  access={event.access}
-                  format={event.format}
-                  startDate={event.startDate}
-                  location={event.location}
-                  currentEnrollment={event.currentEnrollment}
-                  maxCapacity={event.maxCapacity}
-                  imageUrl={event.imageUrl}
-                  onEdit={() => openEditModal(event)}
-                  onPermissions={() => openPermissionsModal(event)}
-                  onDelete={() => handleDeleteEvent(event._id, event.title)}
+                    key={event._id}
+                    _id={event._id}
+                    title={event.title}
+                    description={event.description}
+                    category={event.category}
+                    status={event.status}
+                    access={event.access}
+                    format={event.format}
+                    startDate={event.startDate}
+                    location={event.location}
+                    currentEnrollment={event.currentEnrollment}
+                    maxCapacity={event.maxCapacity}
+                    imageUrl={event.imageUrl}
+                    onEdit={() => openEditModal(event)}
+                    onPermissions={() => openPermissionsModal(event)}
+                    onDelete={() => handleDeleteEvent(event._id, event.title)}
                   />
                 </div>
               ))}
@@ -561,7 +567,18 @@ export default function EventsManagementPage() {
                   </select>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Price ($)</label>
+                    <input
+                      type="number"
+                      step="0.01"
+                      value={formData.price}
+                      onChange={(e) => setFormData({ ...formData, price: e.target.value })}
+                      placeholder="0.00 for free"
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">Access Level</label>
                     <select

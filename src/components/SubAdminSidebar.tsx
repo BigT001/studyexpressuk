@@ -2,56 +2,59 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useSidebar } from '@/context/SidebarContext';
-import SubAdminLogoutButton from '@/components/subadmin/SubAdminLogoutButton';
 
 interface NavItem {
-  emoji: string;
+  icon: string;
   label: string;
   href: string;
+  badge?: number;
 }
+
+// Mobile menu state management
+let isMobileMenuOpen = false;
 
 const navItems: NavItem[] = [
   {
-    emoji: '📊',
+    icon: '📊',
     label: 'Dashboard',
     href: '/subadmin',
   },
   {
-    emoji: '👥',
+    icon: '👥',
     label: 'Members',
-    href: '/subadmin/members',
+    href: '/subadmin/users',
   },
   {
-    emoji: '✅',
-    label: 'Staff Approvals',
-    href: '/subadmin/staff-registrations',
+    icon: '📅',
+    label: 'Events',
+    href: '/subadmin/events',
   },
   {
-    emoji: '📅',
-    label: 'Events & Courses',
-    href: '/subadmin/events-courses',
+    icon: '📚',
+    label: 'Courses',
+    href: '/subadmin/courses',
   },
   {
-    emoji: '💬',
+    icon: '💳',
+    label: 'Memberships',
+    href: '/subadmin/memberships',
+  },
+  {
+    icon: '💬',
     label: 'Messages',
     href: '/subadmin/messages',
   },
   {
-    emoji: '📢',
+    icon: '📢',
     label: 'Announcements',
-    href: '/subadmin/announcements',
+    href: '/subadmin/communications',
   },
   {
-    emoji: '',
+    icon: '📋',
     label: 'Reports',
     href: '/subadmin/reports',
-  },
-  {
-    emoji: '❓',
-    label: 'Support',
-    href: '/subadmin/support',
   },
 ];
 
@@ -59,73 +62,181 @@ export function SubAdminSidebar() {
   const pathname = usePathname();
   const { isCollapsed, setIsCollapsed } = useSidebar();
   const [showLogoutModal, setShowLogoutModal] = useState(false);
+  const [showMobileMenu, setShowMobileMenu] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
+
+  // Detect mobile on mount and window resize
+  useEffect(() => {
+    const checkIsMobile = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+
+    checkIsMobile();
+    window.addEventListener('resize', checkIsMobile);
+    return () => window.removeEventListener('resize', checkIsMobile);
+  }, []);
 
   const handleLogout = () => {
     window.location.href = '/api/auth/signout';
   };
 
+  const handleNavClick = () => {
+    if (isMobile) {
+      setShowMobileMenu(false);
+    }
+  };
+
   return (
-    <aside
-      className={`fixed left-0 top-0 h-screen ${
-        isCollapsed ? 'w-20' : 'w-64'
-      } bg-white text-gray-900 border-r border-gray-200 transition-all duration-300 flex flex-col z-40`}
-    >
-      {/* Sidebar Header with Logo */}
-      <div className="p-4 border-b border-gray-200 flex items-center justify-between">
-        {!isCollapsed && (
-          <Link href="/" className="flex items-center gap-2 flex-1">
-            <span className="text-lg font-black leading-none bg-gradient-to-r from-[#008200] to-[#00B300] bg-clip-text text-transparent">
-              studyexpress
-            </span>
-          </Link>
-        )}
+    <>
+      {/* Desktop Sidebar */}
+      <aside
+        className={`hidden md:flex fixed left-0 top-0 h-screen ${isCollapsed ? 'w-20' : 'w-64'
+          } bg-white text-gray-900 border-r border-gray-200 transition-all duration-300 flex flex-col z-40`}
+      >
+        {/* Sidebar Header with Logo */}
+        <div className="p-4 border-b border-gray-200 flex items-center justify-between">
+          {!isCollapsed && (
+            <Link href="/" className="flex items-center gap-2 flex-1">
+              <span className="text-lg font-black leading-none bg-gradient-to-r from-[#008200] to-[#00B300] bg-clip-text text-transparent">
+                studyexpress
+              </span>
+            </Link>
+          )}
+          <button
+            onClick={() => setIsCollapsed(!isCollapsed)}
+            className="p-1.5 hover:bg-gray-100 rounded transition-colors ml-auto"
+            title={isCollapsed ? 'Expand' : 'Collapse'}
+          >
+            {isCollapsed ? '→' : '←'}
+          </button>
+        </div>
+
+        {/* Navigation */}
+        <nav className="flex-1 overflow-y-auto py-4 scrollbar-hide" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
+          <style>{`
+            nav::-webkit-scrollbar {
+              display: none;
+            }
+          `}</style>
+          <div className="space-y-0.5 px-2">
+            {navItems.map((item) => {
+              const isActive = item.href === '/subadmin'
+                ? pathname === item.href
+                : (pathname === item.href || pathname.startsWith(item.href + '/'));
+              return (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  className={`flex items-center gap-3 px-4 py-2 rounded-lg transition-all group relative ${isActive
+                    ? 'text-[#008200] bg-green-50 border-l-4 border-[#008200]'
+                    : 'text-gray-800 hover:text-[#008200] hover:bg-gray-100'
+                    }`}
+                  title={isCollapsed ? item.label : undefined}
+                >
+                  <span className="text-lg flex-shrink-0">{item.icon}</span>
+                  {!isCollapsed && (
+                    <>
+                      <span className="font-medium">{item.label}</span>
+                      {item.badge && (
+                        <span className="ml-auto bg-red-500 text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center">
+                          {item.badge}
+                        </span>
+                      )}
+                    </>
+                  )}
+                </Link>
+              );
+            })}
+          </div>
+        </nav>
+
+        {/* Sidebar Footer */}
+        <div className="border-t border-gray-200 p-3">
+          <button
+            onClick={() => setShowLogoutModal(true)}
+            className="flex items-center gap-3 px-4 py-2 rounded-lg text-gray-800 hover:text-red-600 hover:bg-red-50 transition-all w-full"
+            title={isCollapsed ? 'Sign Out' : undefined}
+          >
+            <span className="text-lg flex-shrink-0">🚪</span>
+            {!isCollapsed && <span className="font-medium">Sign Out</span>}
+          </button>
+        </div>
+      </aside>
+
+      {/* Mobile Header */}
+      <div className="md:hidden fixed top-0 left-0 right-0 h-16 bg-white border-b border-gray-200 flex items-center justify-between px-4 z-40">
+        <Link href="/" className="flex items-center gap-2">
+          <span className="text-base font-black bg-gradient-to-r from-[#008200] to-[#00B300] bg-clip-text text-transparent">
+            studyexpress
+          </span>
+        </Link>
         <button
-          onClick={() => setIsCollapsed(!isCollapsed)}
-          className="p-1.5 hover:bg-gray-100 rounded transition-colors ml-auto"
-          title={isCollapsed ? 'Expand' : 'Collapse'}
+          onClick={() => setShowMobileMenu(!showMobileMenu)}
+          className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+          title="Menu"
         >
-          {isCollapsed ? '→' : '←'}
+          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+          </svg>
         </button>
       </div>
 
-      {/* Navigation */}
-      <nav className="flex-1 overflow-y-auto py-4 scrollbar-hide" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
-        <style>{`
-          nav::-webkit-scrollbar {
-            display: none;
-          }
-        `}</style>
-        <div className="space-y-0.5 px-2">
-          {navItems.map((item) => {
-            // Make Dashboard exact match only, other items can have sub-paths
-            const isActive = item.href === '/subadmin' 
-              ? pathname === item.href 
-              : (pathname === item.href || pathname.startsWith(item.href + '/'));
-            return (
-              <Link
-                key={item.href}
-                href={item.href}
-                className={`flex items-center gap-3 px-4 py-2 rounded-lg transition-all group relative ${
-                  isActive
-                    ? 'text-[#008200] bg-green-50 border-l-4 border-[#008200]'
-                    : 'text-gray-800 hover:text-[#008200] hover:bg-gray-100'
-                }`}
-                title={isCollapsed ? item.label : undefined}
-              >
-                <span className="text-lg flex-shrink-0">{item.emoji}</span>
-                {!isCollapsed && (
-                  <span className="font-medium">{item.label}</span>
-                )}
-              </Link>
-            );
-          })}
-        </div>
-      </nav>
+      {/* Mobile Menu */}
+      {showMobileMenu && (
+        <>
+          {/* Overlay */}
+          <div
+            className="md:hidden fixed inset-0 bg-transparent backdrop-blur-sm z-30 pt-16"
+            onClick={() => setShowMobileMenu(false)}
+          />
+          {/* Mobile Menu Panel */}
+          <div className="md:hidden fixed left-0 top-16 bottom-0 w-64 bg-white border-r border-gray-200 flex flex-col z-40 overflow-y-auto">
+            {/* Navigation */}
+            <nav className="flex-1 py-4">
+              <div className="space-y-0.5 px-2">
+                {navItems.map((item) => {
+                  const isActive = item.href === '/subadmin'
+                    ? pathname === item.href
+                    : (pathname === item.href || pathname.startsWith(item.href + '/'));
+                  return (
+                    <Link
+                      key={item.href}
+                      href={item.href}
+                      onClick={handleNavClick}
+                      className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-all ${isActive
+                        ? 'text-[#008200] bg-green-50 border-l-4 border-[#008200]'
+                        : 'text-gray-800 hover:text-[#008200] hover:bg-gray-100'
+                        }`}
+                    >
+                      <span className="text-lg flex-shrink-0">{item.icon}</span>
+                      <span className="font-medium">{item.label}</span>
+                      {item.badge && (
+                        <span className="ml-auto bg-red-500 text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center">
+                          {item.badge}
+                        </span>
+                      )}
+                    </Link>
+                  );
+                })}
+              </div>
+            </nav>
 
-      {/* Sidebar Footer */}
-      <div className="border-t border-gray-200 p-3">
-        <SubAdminLogoutButton collapsed={isCollapsed} />
-      </div>
+            {/* Mobile Menu Footer */}
+            <div className="border-t border-gray-200 p-3">
+              <button
+                onClick={() => {
+                  setShowLogoutModal(true);
+                  setShowMobileMenu(false);
+                }}
+                className="flex items-center gap-3 px-4 py-3 rounded-lg text-gray-800 hover:text-red-600 hover:bg-red-50 transition-all w-full"
+              >
+                <span className="text-lg flex-shrink-0">🚪</span>
+                <span className="font-medium">Sign Out</span>
+              </button>
+            </div>
+          </div>
+        </>
+      )}
 
       {/* Logout Confirmation Modal */}
       {showLogoutModal && (
@@ -165,6 +276,6 @@ export function SubAdminSidebar() {
           </div>
         </div>
       )}
-    </aside>
+    </>
   );
 }

@@ -18,7 +18,7 @@ export async function GET(req: Request) {
     }
 
     // Count unread announcements for individual (students)
-    const unreadCount = await getUnreadAnnouncementCount(user._id, 'INDIVIDUAL');
+    const unreadCount = await getUnreadAnnouncementCount(user._id, 'INDIVIDUAL', user.createdAt);
 
     return NextResponse.json({
       success: true,

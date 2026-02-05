@@ -11,6 +11,7 @@ export interface IEvent extends Document {
   type: EventType;
   category?: string; // e.g., 'technology', 'business', 'health'
   access: EventAccess;
+  price?: number;
   startDate?: Date;
   endDate?: Date;
   maxCapacity?: number;
@@ -34,6 +35,7 @@ const EventSchema = new Schema<IEvent>(
     type: { type: String, enum: ['event', 'course'], default: 'event' },
     category: { type: String },
     access: { type: String, enum: ['free', 'premium', 'corporate'], default: 'free' },
+    price: { type: Number, default: 0 },
     startDate: { type: Date },
     endDate: { type: Date },
     maxCapacity: { type: Number },

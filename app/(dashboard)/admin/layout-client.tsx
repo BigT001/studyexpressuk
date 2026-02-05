@@ -7,7 +7,7 @@ import { usePathname } from 'next/navigation';
 export default function AdminLayoutClient({ children }: { children: React.ReactNode }) {
   const { isCollapsed } = useSidebar();
   const pathname = usePathname();
-  
+
   // Remove padding for messages page (full screen chat)
   const isMessagesPage = pathname?.includes('/admin/messages');
 
@@ -17,7 +17,7 @@ export default function AdminLayoutClient({ children }: { children: React.ReactN
       <AdminSidebar />
 
       {/* Main Content with responsive margin for sidebar */}
-      <main className={`flex-1 min-h-screen overflow-y-auto transition-all duration-300 ${isCollapsed ? 'md:ml-20' : 'md:ml-64'}`}>
+      <main className={`flex-1 min-h-screen overflow-y-auto transition-all duration-300 pt-16 md:pt-0 ${isCollapsed ? 'md:ml-20' : 'md:ml-64'}`}>
         <div className={isMessagesPage ? '' : 'p-4 md:p-8'}>
           {children}
         </div>

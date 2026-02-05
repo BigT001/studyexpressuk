@@ -3,10 +3,10 @@
 
 import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
+import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { LoginPrompt } from '@/components/LoginPrompt';
 import { EnrollmentConfirmation } from '@/components/EnrollmentConfirmation';
-import { useEnrollment } from '@/hooks/useEnrollment';
 
 interface Course {
   _id: string;
@@ -29,6 +29,7 @@ export default function CoursesPage() {
   const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const { status } = useSession();
+  const router = useRouter();
 
   // Login prompt state
   const [showLoginPrompt, setShowLoginPrompt] = useState(false);
@@ -37,10 +38,6 @@ export default function CoursesPage() {
   const [showConfirmation, setShowConfirmation] = useState(false);
   const [isEnrolling, setIsEnrolling] = useState(false);
 
-  // Use enrollment hook
-  const { isUserActive } = useEnrollment({
-    onError: (err: string) => setEnrollmentError(err),
-  });
 
   useEffect(() => {
     const fetchCourses = async () => {
@@ -101,7 +98,7 @@ export default function CoursesPage() {
     setEnrollmentError(null);
 
     // Check if user is logged in
-    if (!isUserActive()) {
+    if (status !== 'authenticated') {
       setShowLoginPrompt(true);
       return;
     }
@@ -115,33 +112,42 @@ export default function CoursesPage() {
 
     setIsEnrolling(true);
     try {
-      const response = await fetch('/api/enroll-course', {
+      const response = await fetch('/api/checkout', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          courseId: selectedCourse._id,
+          itemId: selectedCourse._id,
+          itemType: 'course',
         }),
       });
 
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error || 'Failed to enroll in course');
+        throw new Error(data.error || 'Failed to initiate checkout');
       }
 
-      // Show success notification
-      setShowConfirmation(false);
-      const notification = document.createElement('div');
-      notification.className =
-        'fixed top-4 right-4 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg z-50 animate-fade-in';
-      notification.textContent = `Successfully enrolled in ${selectedCourse.title}!`;
-      document.body.appendChild(notification);
+      // Handle free enrollment
+      if (data.free) {
+        setShowConfirmation(false);
+        const notification = document.createElement('div');
+        notification.className = 'fixed top-4 right-4 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg z-50';
+        notification.textContent = data.message || 'Successfully enrolled!';
+        document.body.appendChild(notification);
 
-      setTimeout(() => {
-        notification.remove();
-        // Redirect to individual enrollments page
-        window.location.href = '/individual/enrollments';
-      }, 2000);
+        setTimeout(() => {
+          notification.remove();
+          window.location.href = '/individual/enrollments';
+        }, 2000);
+        return;
+      }
+
+      if (data.url) {
+        // Redirect to Stripe Checkout
+        window.location.href = data.url;
+      } else {
+        throw new Error('No checkout URL received');
+      }
     } catch (err) {
       const errorMessage =
         err instanceof Error ? err.message : 'Enrollment failed. Please try again.';
@@ -285,14 +291,22 @@ export default function CoursesPage() {
                       )}
                     </div>
 
-                    {/* Button */}
-                    <button
-                      className="block w-full mt-4 px-4 py-3 text-white rounded-lg hover:opacity-90 transition-opacity text-sm font-bold text-center"
-                      style={{ backgroundColor: '#008200' }}
-                      onClick={() => handleEnrollClick(course)}
-                    >
-                      Enroll Now
-                    </button>
+                    {/* Buttons */}
+                    <div className="flex gap-2 mt-4">
+                      <button
+                        className="flex-1 px-4 py-3 text-white rounded-lg hover:opacity-90 transition-opacity text-sm font-bold text-center"
+                        style={{ backgroundColor: '#008200' }}
+                        onClick={() => handleEnrollClick(course)}
+                      >
+                        Enroll Now
+                      </button>
+                      <button
+                        className="flex-1 px-4 py-3 border-2 border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors text-sm font-bold text-center"
+                        onClick={() => router.push(`/courses/${course._id}`)}
+                      >
+                        View Details
+                      </button>
+                    </div>
                   </div>
                 </div>
               ))}

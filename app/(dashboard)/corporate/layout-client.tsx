@@ -11,7 +11,7 @@ export default function CorporateDashboardLayoutClient({
 }) {
   const { isCollapsed } = useSidebar();
   const pathname = usePathname();
-  
+
   // Remove padding for messages page (full screen chat)
   const isMessagesPage = pathname?.includes('/corporate/messages');
 
@@ -20,9 +20,8 @@ export default function CorporateDashboardLayoutClient({
       <CorporateSidebar />
 
       {/* Main Content */}
-      <div className={`flex-1 flex flex-col overflow-hidden transition-all duration-300 ${
-        isCollapsed ? 'ml-20' : 'ml-64'
-      }`}>
+      <div className={`flex-1 flex flex-col overflow-hidden transition-all duration-300 pt-16 md:pt-0 ${isCollapsed ? 'md:ml-20' : 'md:ml-64'
+        }`}>
         {/* Content */}
         <div className={isMessagesPage ? 'flex-1 overflow-hidden' : 'flex-1 overflow-y-auto'}>
           {children}

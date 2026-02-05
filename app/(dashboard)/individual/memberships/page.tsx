@@ -2,6 +2,7 @@ import Image from 'next/image';
 import { getServerAuthSession } from '@/server/auth/session';
 import { connectToDatabase } from '@/server/db/mongoose';
 import MembershipModel from '@/server/db/models/membership.model';
+import PlanModel from '@/server/db/models/plan.model';
 import CorporateStaffModel from '@/server/db/models/staff.model';
 import CorporateProfileModel from '@/server/db/models/corporate.model';
 import { redirect } from 'next/navigation';
@@ -14,7 +15,7 @@ export default async function MembershipsPage() {
   }
 
   await connectToDatabase();
-  
+
   const isStaff = session.user?.role === 'STAFF';
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let staffInfo: any = null;
@@ -24,7 +25,7 @@ export default async function MembershipsPage() {
   if (isStaff) {
     // Fetch staff record to get corporate ID
     staffInfo = await CorporateStaffModel.findOne({ userId: session.user.id }).lean();
-    
+
     if (staffInfo && staffInfo.corporateId) {
       // Fetch corporate information
       corporateInfo = await CorporateProfileModel.findById(staffInfo.corporateId).lean();
@@ -227,114 +228,43 @@ export default async function MembershipsPage() {
           <div className="space-y-4">
             <h3 className="text-xl font-bold text-gray-900">Available Membership Plans</h3>
             <div className="grid md:grid-cols-3 gap-6">
-              {/* Free Plan */}
-              <div className="bg-white rounded-2xl shadow-md border-2 border-gray-200 p-8 relative">
-                <div className="mb-6">
-                  <h4 className="text-2xl font-bold text-gray-900 mb-2">Free</h4>
-                  <p className="text-gray-600">Get started with basics</p>
+              {(await PlanModel.find({ type: 'individual', active: true }).lean()).map((plan: any) => (
+                <div key={plan._id} className={`rounded-2xl shadow-md border-2 p-8 relative ${plan.name.toLowerCase().includes('premium') ? 'bg-linear-to-br from-[#008200] to-[#00B300] border-[#008200] text-white transform scale-105' : 'bg-white border-gray-200'}`}>
+                  {plan.name.toLowerCase().includes('premium') && (
+                    <div className="absolute -top-4 -right-4 bg-[#00B300] text-white px-4 py-1 rounded-full font-bold text-sm">
+                      POPULAR
+                    </div>
+                  )}
+
+                  <div className="mb-6">
+                    <h4 className={`text-2xl font-bold mb-2 ${plan.name.toLowerCase().includes('premium') ? '' : 'text-gray-900'}`}>{plan.name}</h4>
+                    <p className={plan.name.toLowerCase().includes('premium') ? 'text-green-100' : 'text-gray-600'}>{plan.description}</p>
+                  </div>
+
+                  <div className="mb-8">
+                    <p className={`text-4xl font-black ${plan.name.toLowerCase().includes('premium') ? '' : 'text-gray-900'}`}>
+                      ${plan.price}
+                      <span className={`text-lg ${plan.name.toLowerCase().includes('premium') ? 'text-green-100' : 'text-gray-600'}`}>/{plan.billingInterval === 'month' ? 'month' : plan.billingInterval === 'year' ? 'year' : 'lifetime'}</span>
+                    </p>
+                  </div>
+
+                  <div className="space-y-3 mb-8">
+                    {plan.features.map((feature: string, idx: number) => (
+                      <div key={idx} className="flex items-center gap-3">
+                        <span className="text-xl">✓</span>
+                        <span className={plan.name.toLowerCase().includes('premium') ? '' : 'text-gray-700'}>{feature}</span>
+                      </div>
+                    ))}
+                  </div>
+
+                  <button className={`w-full px-4 py-3 font-bold rounded-lg transition-colors ${plan.name.toLowerCase().includes('premium')
+                      ? 'bg-white text-[#008200] hover:bg-gray-100'
+                      : 'bg-gray-900 text-white hover:bg-gray-800'
+                    }`}>
+                    {memberships.find(m => m.planId === plan._id.toString()) ? 'Current Plan' : 'Select Plan'}
+                  </button>
                 </div>
-
-                <div className="mb-8">
-                  <p className="text-4xl font-black text-gray-900">$0<span className="text-lg text-gray-600">/month</span></p>
-                </div>
-
-                <div className="space-y-3 mb-8">
-                  <div className="flex items-center gap-3">
-                    <span className="text-xl">✓</span>
-                    <span className="text-gray-700">Browse all courses</span>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <span className="text-xl">✓</span>
-                    <span className="text-gray-700">Limited course access</span>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <span className="text-xl">✗</span>
-                    <span className="text-gray-500">Certificates</span>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <span className="text-xl">✗</span>
-                    <span className="text-gray-500">Priority support</span>
-                  </div>
-                </div>
-
-                <button disabled className="w-full px-4 py-3 bg-gray-200 text-gray-600 font-bold rounded-lg cursor-not-allowed">
-                  Current Plan
-                </button>
-              </div>
-
-              {/* Premium Plan */}
-              <div className="bg-linear-to-br from-[#008200] to-[#00B300] rounded-2xl shadow-xl border-2 border-[#008200] p-8 relative text-white transform scale-105">
-                <div className="absolute -top-4 -right-4 bg-[#00B300] text-white px-4 py-1 rounded-full font-bold text-sm">
-                  POPULAR
-                </div>
-
-                <div className="mb-6">
-                  <h4 className="text-2xl font-bold mb-2">Premium</h4>
-                  <p className="text-green-100">Full access to all content</p>
-                </div>
-
-                <div className="mb-8">
-                  <p className="text-4xl font-black">$9.99<span className="text-lg text-green-100">/month</span></p>
-                </div>
-
-                <div className="space-y-3 mb-8">
-                  <div className="flex items-center gap-3">
-                    <span className="text-xl">✓</span>
-                    <span>All courses & materials</span>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <span className="text-xl">✓</span>
-                    <span>Offline access</span>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <span className="text-xl">✓</span>
-                    <span>Certificates</span>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <span className="text-xl">✓</span>
-                    <span>Priority support</span>
-                  </div>
-                </div>
-
-                <button className="w-full px-4 py-3 bg-white text-[#008200] font-bold rounded-lg hover:bg-gray-100 transition-colors">
-                  Upgrade Now
-                </button>
-              </div>
-
-              {/* Corporate Plan */}
-              <div className="bg-white rounded-2xl shadow-md border-2 border-gray-200 p-8">
-                <div className="mb-6">
-                  <h4 className="text-2xl font-bold text-gray-900 mb-2">Corporate</h4>
-                  <p className="text-gray-600">For teams & organizations</p>
-                </div>
-
-                <div className="mb-8">
-                  <p className="text-4xl font-black text-gray-900">Custom<span className="text-lg text-gray-600">/month</span></p>
-                </div>
-
-                <div className="space-y-3 mb-8">
-                  <div className="flex items-center gap-3">
-                    <span className="text-xl">✓</span>
-                    <span className="text-gray-700">Team management</span>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <span className="text-xl">✓</span>
-                    <span className="text-gray-700">Analytics & reports</span>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <span className="text-xl">✓</span>
-                    <span className="text-gray-700">Dedicated support</span>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <span className="text-xl">✓</span>
-                    <span className="text-gray-700">Custom content</span>
-                  </div>
-                </div>
-
-                <button className="w-full px-4 py-3 bg-gray-900 text-white font-bold rounded-lg hover:bg-gray-800 transition-colors">
-                  Contact Sales
-                </button>
-              </div>
+              ))}
             </div>
           </div>
 

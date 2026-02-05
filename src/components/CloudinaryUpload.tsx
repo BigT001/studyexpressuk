@@ -68,10 +68,13 @@ export default function CloudinaryUpload({
             }}
             onSuccess={handleUploadSuccess}
           >
-            {(cloudinaryContext) => {
+            {({ cloudinary, widget, open, isLoading }) => {
               const handleClick = () => {
-                if (cloudinaryContext?.open) {
-                  cloudinaryContext.open();
+                if (open && typeof open === 'function') {
+                  open();
+                } else {
+                  console.error('Cloudinary widget not ready');
+                  alert('Image upload is not ready yet. Please try again in a moment.');
                 }
               };
 
@@ -79,9 +82,10 @@ export default function CloudinaryUpload({
                 <button
                   type="button"
                   onClick={handleClick}
-                  className="w-full px-4 py-3 border-2 border-dashed border-blue-400 rounded-lg bg-blue-50 hover:bg-blue-100 transition-colors text-blue-700 font-medium cursor-pointer"
+                  disabled={isLoading}
+                  className="w-full px-4 py-3 border-2 border-dashed border-blue-400 rounded-lg bg-blue-50 hover:bg-blue-100 transition-colors text-blue-700 font-medium cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  {buttonText}
+                  {isLoading ? 'Loading...' : buttonText}
                 </button>
               );
             }}

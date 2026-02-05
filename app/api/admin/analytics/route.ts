@@ -10,11 +10,11 @@ import CorporateStaffModel from '@/server/db/models/staff.model';
 import CourseModel from '@/server/db/models/course.model';
 import EventModel from '@/server/db/models/event.model';
 
-// Check for admin role
+// Check for admin or subadmin role
 async function isAdmin(req: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
-    return session?.user?.role === 'ADMIN';
+    return session?.user?.role === 'ADMIN' || session?.user?.role === 'SUB_ADMIN';
   } catch {
     return false;
   }
@@ -182,9 +182,9 @@ export async function GET(req: NextRequest) {
       const totalEnrollments = allCourses.reduce((sum, c) => sum + c.totalEnrollments, 0);
       const completedEnrollments = allCourses.reduce((sum, c) => sum + c.completedEnrollments, 0);
       const totalRevenue = allCourses.reduce((sum, c) => sum + (c.totalRevenue || 0), 0);
-      
-      const completionRate = totalEnrollments > 0 
-        ? ((completedEnrollments / totalEnrollments) * 100).toFixed(2) 
+
+      const completionRate = totalEnrollments > 0
+        ? ((completedEnrollments / totalEnrollments) * 100).toFixed(2)
         : 0;
 
       // Paid course metrics
@@ -208,10 +208,10 @@ export async function GET(req: NextRequest) {
         inProgress: course.inProgressEnrollments,
         avgProgress: (course.avgProgress || 0).toFixed(1),
         revenue: course.totalRevenue || 0,
-        completionRate: course.totalEnrollments > 0 
+        completionRate: course.totalEnrollments > 0
           ? ((course.completedEnrollments / course.totalEnrollments) * 100).toFixed(1)
           : 0,
-        enrollmentRate: totalEnrollments > 0 
+        enrollmentRate: totalEnrollments > 0
           ? ((course.totalEnrollments / totalEnrollments) * 100).toFixed(1)
           : 0
       }));
@@ -237,8 +237,8 @@ export async function GET(req: NextRequest) {
             totalRevenue: parseFloat(totalRevenue.toFixed(2)),
             paidCourseRevenue: parseFloat(paidCourseRevenue.toFixed(2)),
             paidCourseEnrollments,
-            averageEnrollmentPerCourse: totalCourses > 0 
-              ? (totalEnrollments / totalCourses).toFixed(1) 
+            averageEnrollmentPerCourse: totalCourses > 0
+              ? (totalEnrollments / totalCourses).toFixed(1)
               : 0,
             priceDistribution: priceRanges,
             topCourses,
@@ -326,13 +326,13 @@ export async function GET(req: NextRequest) {
       const totalRegistrations = allEvents.reduce((sum, e) => sum + e.totalRegistrations, 0);
       const totalAttended = allEvents.reduce((sum, e) => sum + e.attendedCount, 0);
       const totalNoShows = allEvents.reduce((sum, e) => sum + e.noShowCount, 0);
-      
-      const attendanceRate = totalRegistrations > 0 
-        ? ((totalAttended / totalRegistrations) * 100).toFixed(2) 
+
+      const attendanceRate = totalRegistrations > 0
+        ? ((totalAttended / totalRegistrations) * 100).toFixed(2)
         : 0;
 
-      const noShowRate = totalRegistrations > 0 
-        ? ((totalNoShows / totalRegistrations) * 100).toFixed(2) 
+      const noShowRate = totalRegistrations > 0
+        ? ((totalNoShows / totalRegistrations) * 100).toFixed(2)
         : 0;
 
       // Event type breakdowns - proper paid/unpaid categorization
@@ -460,7 +460,7 @@ export async function GET(req: NextRequest) {
       const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
       const userGrowth = await UserModel.aggregate([
         {
-          $match: { 
+          $match: {
             createdAt: { $gte: thirtyDaysAgo },
             role: { $nin: ['ADMIN', 'SUB_ADMIN'] }
           },

@@ -67,8 +67,11 @@ function SignInForm() {
                 redirectPath = '/corporate';
               } else if (userRole === 'ADMIN') {
                 redirectPath = '/admin';
+              } else if (userRole === 'SUB_ADMIN') {
+                redirectPath = '/subadmin';
               }
               
+              console.log('[SignIn] Redirecting to:', callbackUrl || redirectPath);
               window.location.href = callbackUrl || redirectPath;
             } else {
               // Fallback if user fetch fails

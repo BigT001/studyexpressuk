@@ -1,192 +1,402 @@
-'use client'
+'use client';
 
-import { useState } from 'react'
-import { Search, MoreVertical, Paperclip, Send, MessageSquare } from 'lucide-react'
+import { useState, useEffect, useRef } from 'react';
+import { useSearchParams } from 'next/navigation';
+import { Search, X } from 'lucide-react';
 
+interface User {
+  _id: string;
+  firstName?: string;
+  lastName?: string;
+  email: string;
+  role: string;
+  profileImage?: string;
+}
 
-export default function MessagesPage() {
-  const [selectedMessage, setSelectedMessage] = useState<number | null>(null)
-  const [searchQuery, setSearchQuery] = useState('')
-  const [replyText, setReplyText] = useState('')
+interface Message {
+  _id: string;
+  senderId: { _id: string; firstName?: string; lastName?: string; email: string; profileImage?: string };
+  recipientId: { _id: string; firstName?: string; lastName?: string; email: string; profileImage?: string };
+  content: string;
+  createdAt: string;
+  readAt?: string;
+}
 
-  const messages = [
-    {
-      id: 1,
-      sender: 'Sarah Johnson',
-      senderType: 'Member',
-      email: 'sarah.johnson@email.com',
-      subject: 'Question about course enrollment',
-      preview: 'Hi, I wanted to ask about the project management course...',
-      timestamp: '2 hours ago',
-      unread: true,
-      avatar: 'SJ',
-      fullMessage: 'Hi, I wanted to ask about the project management course. Is it possible to start mid-session? I saw you have an ongoing cohort and would like to join.'
-    },
-    {
-      id: 2,
-      sender: 'Tech Industries Ltd',
-      senderType: 'Corporate',
-      email: 'hr@techindustries.com',
-      subject: 'Staff enrollment requests',
-      preview: 'We have 5 new team members who need to be enrolled...',
-      timestamp: '4 hours ago',
-      unread: true,
-      avatar: 'TI',
-      fullMessage: 'We have 5 new team members who need to be enrolled in the Excel training course. Please let me know the process and timeline.'
-    },
-    {
-      id: 3,
-      sender: 'James Wilson',
-      senderType: 'Member',
-      email: 'james.wilson@email.com',
-      subject: 'Technical issue with portal',
-      preview: 'I cannot access my course materials from the portal...',
-      timestamp: '6 hours ago',
-      unread: false,
-      avatar: 'JW',
-      fullMessage: 'I cannot access my course materials from the portal. Every time I try to open a lesson, I get an error message.'
-    },
-    {
-      id: 4,
-      sender: 'Emma Davis',
-      senderType: 'Member',
-      email: 'emma.davis@email.com',
-      subject: 'Certificate request',
-      preview: 'Could you please send me my completion certificate...',
-      timestamp: '1 day ago',
-      unread: false,
-      avatar: 'ED',
-      fullMessage: 'Could you please send me my completion certificate for the communication skills course? I completed it last week.'
-    },
-  ]
+function getFullName(user: any) {
+  if (!user) return 'User';
+  if (user.firstName && user.lastName) return `${user.firstName} ${user.lastName}`;
+  if (user.firstName) return user.firstName;
+  if (user.lastName) return user.lastName;
+  if (user.name) return user.name;
+  return user.email || 'User';
+}
 
-  const filteredMessages = messages.filter(msg => 
-    msg.sender.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    msg.subject.toLowerCase().includes(searchQuery.toLowerCase())
-  )
+function getInitials(user: any) {
+  const name = getFullName(user);
+  return name
+    .split(' ')
+    .map((n: string) => n[0])
+    .join('')
+    .toUpperCase()
+    .slice(0, 2);
+}
 
-  const selected = selectedMessage ? messages.find(m => m.id === selectedMessage) : null
+function formatTime(dateString: string) {
+  const date = new Date(dateString);
+  return date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+}
+
+function getRoleLabel(role: string) {
+  switch (role) {
+    case 'INDIVIDUAL':
+      return 'Student';
+    case 'CORPORATE':
+      return 'Corporate';
+    case 'STAFF':
+      return 'Staff';
+    case 'SUB_ADMIN':
+      return 'Sub Admin';
+    default:
+      return role;
+  }
+}
+
+export default function SubAdminMessagesPage() {
+  const searchParams = useSearchParams();
+  const userIdFromUrl = searchParams.get('user');
+
+  const [users, setUsers] = useState<User[]>([]);
+  const [selectedUser, setSelectedUser] = useState<User | null>(null);
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [messageInput, setMessageInput] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [usersLoading, setUsersLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [adminId, setAdminId] = useState<string>('');
+  const [searchQuery, setSearchQuery] = useState('');
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const [sidebarOpen, setSidebarOpen] = useState(true);
+
+  // Get current user ID
+  useEffect(() => {
+    const fetchUserInfo = async () => {
+      try {
+        const res = await fetch('/api/user/me');
+        const data = await res.json();
+        if (data.success && data.user?.id) {
+          setAdminId(data.user.id);
+        }
+      } catch (err) {
+        console.error('Failed to get user info:', err);
+      }
+    };
+    fetchUserInfo();
+  }, []);
+
+  // Mark ALL unread messages as read when page loads
+  useEffect(() => {
+    if (!adminId) return;
+
+    const markAllAsRead = async () => {
+      try {
+        await fetch('/api/admin/messages/mark-all-read', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+        });
+      } catch (err) {
+        console.error('Failed to mark all messages as read:', err);
+      }
+    };
+
+    markAllAsRead();
+  }, [adminId]);
+
+  // Fetch all users
+  useEffect(() => {
+    const fetchUsers = async () => {
+      try {
+        setUsersLoading(true);
+        const res = await fetch('/api/users');
+        const data = await res.json();
+
+        if (data.success && data.users) {
+          setUsers(data.users);
+
+          // If user ID is in URL, select that user
+          if (userIdFromUrl) {
+            const userToSelect = data.users.find((u: User) => u._id === userIdFromUrl);
+            if (userToSelect) {
+              setSelectedUser(userToSelect);
+            }
+          } else if (data.users.length > 0 && !selectedUser) {
+            // Auto-select first user if available and no user in URL
+            setSelectedUser(data.users[0]);
+          }
+        }
+      } catch (err) {
+        console.error('Failed to fetch users:', err);
+        setError('Failed to load users');
+      } finally {
+        setUsersLoading(false);
+      }
+    };
+
+    fetchUsers();
+  }, [userIdFromUrl]);
+
+  // Fetch messages with selected user
+  useEffect(() => {
+    if (!selectedUser?._id || !adminId) return;
+
+    const fetchMessages = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        const res = await fetch(`/api/messages/thread/${selectedUser._id}`);
+        const data = await res.json();
+
+        if (data.success && data.messages) {
+          setMessages(data.messages);
+        }
+      } catch (err) {
+        console.error('Failed to fetch messages:', err);
+        setError('Failed to load messages');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchMessages();
+  }, [selectedUser, adminId]);
+
+  // Smart background polling
+  useEffect(() => {
+    if (!selectedUser?._id || !adminId) return;
+
+    const pollMessages = async () => {
+      try {
+        const messagesRes = await fetch(`/api/messages/thread/${selectedUser._id}`);
+        const messagesData = await messagesRes.json();
+
+        if (messagesData.success && messagesData.messages) {
+          setMessages(prevMessages => {
+            if (prevMessages.length !== messagesData.messages.length) {
+              return messagesData.messages;
+            }
+            return prevMessages;
+          });
+        }
+      } catch (err) {
+        console.error('Background polling error:', err);
+      }
+    };
+
+    const interval = setInterval(pollMessages, 3000);
+    return () => clearInterval(interval);
+  }, [selectedUser?._id, adminId]);
+
+  // Auto-scroll to bottom
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages]);
+
+  const handleSendMessage = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!messageInput.trim() || !selectedUser) return;
+
+    const content = messageInput.trim();
+    setMessageInput('');
+
+    try {
+      const res = await fetch(`/api/messages/thread/${selectedUser._id}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ content }),
+      });
+
+      const data = await res.json();
+      if (data.success) {
+        setMessages([...messages, data.message]);
+      }
+    } catch (err) {
+      console.error('Failed to send message:', err);
+      setError('Failed to send message');
+    }
+  };
+
+  const filteredUsers = users.filter(user =>
+    getFullName(user).toLowerCase().includes(searchQuery.toLowerCase()) ||
+    user.email.toLowerCase().includes(searchQuery.toLowerCase())
+  );
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-start justify-between gap-4">
-        <div>
-          <h1 className="text-3xl font-bold text-slate-900">Member Messages</h1>
-          <p className="text-slate-600 mt-1">Respond to member inquiries and requests</p>
+    <div className="h-screen flex bg-white gap-0">
+      {/* Sidebar */}
+      <div className={`${sidebarOpen ? 'w-80' : 'w-0'} bg-white border-r border-gray-200 flex flex-col transition-all duration-300 overflow-hidden`}>
+        {/* Sidebar Header */}
+        <div className="p-4 border-b border-gray-200 flex items-center justify-between flex-shrink-0">
+          <h2 className="font-bold text-gray-900">Users</h2>
+          <button
+            onClick={() => setSidebarOpen(false)}
+            className="p-1 hover:bg-gray-100 rounded-lg transition-colors lg:hidden"
+          >
+            <X className="w-5 h-5 text-gray-600" />
+          </button>
         </div>
-      </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Messages List */}
-        <div className="lg:col-span-1 bg-white rounded-lg border border-slate-200">
-          <div className="p-4 border-b border-slate-200">
-            <div className="flex items-center gap-2 bg-slate-50 rounded-lg px-3 py-2">
-              <Search className="w-4 h-4 text-slate-400" />
-              <input
-                type="text"
-                placeholder="Search messages..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="bg-transparent flex-1 outline-none text-sm"
-              />
-            </div>
-          </div>
-
-          <div className="divide-y divide-slate-200 max-h-[600px] overflow-y-auto">
-            {filteredMessages.map((msg) => (
-              <button
-                key={msg.id}
-                onClick={() => setSelectedMessage(msg.id)}
-                className={`w-full p-4 text-left hover:bg-slate-50 transition-colors border-l-2 ${
-                  selectedMessage === msg.id ? 'bg-blue-50 border-l-blue-600' : 'border-l-transparent'
-                }`}
-              >
-                <div className="flex items-start gap-3">
-                  <div className={`w-10 h-10 rounded-full flex items-center justify-center text-white font-semibold flex-shrink-0 ${
-                    msg.senderType === 'Corporate' 
-                      ? 'bg-purple-500' 
-                      : 'bg-blue-500'
-                  }`}>
-                    {msg.avatar}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-start justify-between gap-2">
-                      <p className={`text-sm font-medium ${msg.unread ? 'text-slate-900 font-semibold' : 'text-slate-900'}`}>
-                        {msg.sender}
-                      </p>
-                      {msg.unread && <div className="w-2 h-2 bg-blue-600 rounded-full" />}
-                    </div>
-                    <p className="text-xs text-slate-600 mt-1 truncate">{msg.subject}</p>
-                    <p className="text-xs text-slate-500 mt-1 line-clamp-2">{msg.preview}</p>
-                    <p className="text-xs text-slate-400 mt-2">{msg.timestamp}</p>
-                  </div>
-                </div>
-              </button>
-            ))}
+        {/* Search */}
+        <div className="p-4 border-b border-gray-200 flex-shrink-0">
+          <div className="flex items-center gap-2 bg-gray-100 rounded-lg px-3 py-2">
+            <Search className="w-4 h-4 text-gray-400" />
+            <input
+              type="text"
+              placeholder="Search users..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="bg-transparent flex-1 outline-none text-sm"
+            />
           </div>
         </div>
 
-        {/* Message Detail */}
-        <div className="lg:col-span-2">
-          {selected ? (
-            <div className="bg-white rounded-lg border border-slate-200 flex flex-col h-[600px]">
-              {/* Header */}
-              <div className="p-4 border-b border-slate-200 flex items-start justify-between">
-                <div className="flex items-start gap-3">
-                  <div className={`w-12 h-12 rounded-lg flex items-center justify-center text-white font-semibold ${
-                    selected.senderType === 'Corporate' 
-                      ? 'bg-purple-500' 
-                      : 'bg-blue-500'
-                  }`}>
-                    {selected.avatar}
-                  </div>
-                  <div>
-                    <h3 className="font-semibold text-slate-900">{selected.sender}</h3>
-                    <p className="text-xs text-slate-600">{selected.email}</p>
-                    <p className="text-xs text-slate-500 mt-1">{selected.timestamp}</p>
-                  </div>
-                </div>
-                <button className="text-slate-400 hover:text-slate-600">
-                  <MoreVertical className="w-4 h-4" />
-                </button>
-              </div>
-
-              {/* Subject and Message */}
-              <div className="flex-1 overflow-y-auto p-4">
-                <p className="font-semibold text-slate-900 mb-4">{selected.subject}</p>
-                <p className="text-slate-700 leading-relaxed">{selected.fullMessage}</p>
-              </div>
-
-              {/* Reply Box */}
-              <div className="p-4 border-t border-slate-200">
-                <div className="flex items-center gap-2 mb-3">
-                  <input
-                    type="text"
-                    placeholder="Type your response..."
-                    value={replyText}
-                    onChange={(e) => setReplyText(e.target.value)}
-                    className="flex-1 px-3 py-2 text-sm border border-slate-200 rounded-lg outline-none"
-                  />
-                  <button className="text-slate-400 hover:text-slate-600">
-                    <Paperclip className="w-4 h-4" />
-                  </button>
-                  <button className="p-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
-                    <Send className="w-4 h-4" />
-                  </button>
-                </div>
-                <p className="text-xs text-slate-500">Your response will be marked and logged</p>
-              </div>
-            </div>
+        {/* Users List */}
+        <div className="flex-1 overflow-y-auto min-h-0">
+          {usersLoading ? (
+            <div className="p-4 text-center text-gray-500 text-sm">Loading users...</div>
+          ) : filteredUsers.length === 0 ? (
+            <div className="p-4 text-center text-gray-500 text-sm">No users found</div>
           ) : (
-            <div className="bg-white rounded-lg border border-slate-200 h-[600px] flex items-center justify-center">
-              <div className="text-center">
-                <MessageSquare className="w-12 h-12 text-slate-300 mx-auto mb-4" />
-                <p className="text-slate-600">Select a message to view details</p>
-              </div>
+            <div className="space-y-2 p-2">
+              {filteredUsers.map((user) => (
+                <button
+                  key={user._id}
+                  onClick={() => {
+                    setSelectedUser(user);
+                  }}
+                  className={`w-full p-3 rounded-lg text-left transition-colors ${selectedUser?._id === user._id
+                      ? 'bg-blue-100 border-l-4 border-blue-600'
+                      : 'hover:bg-gray-50'
+                    }`}
+                >
+                  <div className="flex items-start gap-3">
+                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center text-white font-semibold flex-shrink-0 overflow-hidden">
+                      {user.profileImage ? (
+                        <img src={user.profileImage} alt={getFullName(user)} className="w-full h-full object-cover" />
+                      ) : (
+                        getInitials(user)
+                      )}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-gray-900 truncate">{getFullName(user)}</p>
+                      <p className="text-xs text-gray-500 truncate">{getRoleLabel(user.role)}</p>
+                      <p className="text-xs text-gray-400 truncate">{user.email}</p>
+                    </div>
+                  </div>
+                </button>
+              ))}
             </div>
           )}
         </div>
       </div>
+
+      {/* Main Chat Area */}
+      <div className="flex-1 flex flex-col">
+        {/* Mobile Sidebar Toggle */}
+        <div className="lg:hidden p-4 border-b border-gray-200 flex items-center gap-3 flex-shrink-0">
+          <button
+            onClick={() => setSidebarOpen(true)}
+            className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+          >
+            <Search className="w-5 h-5 text-gray-600" />
+          </button>
+          {selectedUser && <h3 className="font-semibold text-gray-900">{getFullName(selectedUser)}</h3>}
+        </div>
+
+        {selectedUser ? (
+          <>
+            {/* Chat Header */}
+            <div className="p-4 border-b border-gray-200 flex items-center gap-3 bg-white hidden lg:flex flex-shrink-0">
+              <div className="w-12 h-12 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center text-white font-bold text-lg flex-shrink-0 overflow-hidden">
+                {selectedUser.profileImage ? (
+                  <img src={selectedUser.profileImage} alt={getFullName(selectedUser)} className="w-full h-full object-cover" />
+                ) : (
+                  getInitials(selectedUser)
+                )}
+              </div>
+              <div className="flex-1">
+                <h2 className="font-bold text-gray-900">{getFullName(selectedUser)}</h2>
+                <p className="text-xs text-gray-500">{getRoleLabel(selectedUser.role)} • {selectedUser.email}</p>
+              </div>
+            </div>
+
+            {/* Messages Area */}
+            <div className="flex-1 overflow-y-auto p-4 space-y-3 bg-gradient-to-b from-gray-50 to-white min-h-0">
+              {loading ? (
+                <div className="flex items-center justify-center h-full">
+                  <p className="text-gray-500">Loading messages...</p>
+                </div>
+              ) : error ? (
+                <div className="flex items-center justify-center h-full">
+                  <p className="text-red-500">{error}</p>
+                </div>
+              ) : messages.length === 0 ? (
+                <div className="flex flex-col items-center justify-center h-full text-center">
+                  <div className="text-5xl mb-4">👋</div>
+                  <h3 className="font-bold text-gray-900 mb-1">Start your conversation</h3>
+                  <p className="text-gray-500 text-sm max-w-sm">
+                    Send a message to {getFullName(selectedUser)} to get started
+                  </p>
+                </div>
+              ) : (
+                messages.map(message => {
+                  const isOwn = message.senderId._id === adminId;
+                  return (
+                    <div key={message._id} className={`flex ${isOwn ? 'justify-end' : 'justify-start'}`}>
+                      <div className={`max-w-xs lg:max-w-md px-4 py-2 rounded-2xl ${isOwn
+                          ? 'bg-blue-600 text-white rounded-br-none'
+                          : 'bg-gray-200 text-gray-900 rounded-bl-none'
+                        }`}>
+                        <p className="break-words">{message.content}</p>
+                        <p className={`text-xs mt-1 ${isOwn ? 'text-blue-100' : 'text-gray-500'}`}>
+                          {formatTime(message.createdAt)}
+                          {isOwn && message.readAt && ' ✓✓'}
+                        </p>
+                      </div>
+                    </div>
+                  );
+                })
+              )}
+              <div ref={messagesEndRef} />
+            </div>
+
+            {/* Message Input */}
+            <div className="p-4 border-t border-gray-200 bg-white flex-shrink-0">
+              <form onSubmit={handleSendMessage} className="flex gap-3">
+                <input
+                  type="text"
+                  value={messageInput}
+                  onChange={(e) => setMessageInput(e.target.value)}
+                  placeholder="Type your message..."
+                  className="flex-1 px-4 py-2 bg-gray-100 rounded-full border border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                />
+                <button
+                  type="submit"
+                  disabled={!messageInput.trim()}
+                  className="px-4 py-2 bg-blue-600 text-white rounded-full hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-semibold"
+                >
+                  ➤
+                </button>
+              </form>
+            </div>
+          </>
+        ) : (
+          <div className="flex-1 flex items-center justify-center bg-gradient-to-b from-gray-50 to-white">
+            <div className="text-center">
+              <div className="text-6xl mb-4">💬</div>
+              <p className="text-gray-500">Select a user to start chatting</p>
+            </div>
+          </div>
+        )}
+      </div>
     </div>
-  )
+  );
 }

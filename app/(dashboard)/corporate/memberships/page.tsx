@@ -1,9 +1,20 @@
-'use client';
+import { getServerAuthSession } from '@/server/auth/session';
+import { connectToDatabase } from '@/server/db/mongoose';
+import PlanModel from '@/server/db/models/plan.model';
+import { redirect } from 'next/navigation';
 
-import { useState } from 'react';
+export default async function CorporateMembershipsPage() {
+  const session = await getServerAuthSession();
 
-export default function CorporateMembershipsPage() {
-  const [memberships] = useState([
+  if (!session || !['CORPORATE', 'STAFF'].includes(session.user?.role || '')) {
+    redirect('/auth/signin');
+  }
+
+  await connectToDatabase();
+  const plans = await PlanModel.find({ type: 'corporate', active: true }).lean();
+
+  // Mock data for current membership status (to be replaced with real DB data later)
+  const memberships = [
     {
       id: 1,
       plan: 'Professional',
@@ -14,61 +25,7 @@ export default function CorporateMembershipsPage() {
       price: '$5,000',
       color: 'blue',
     },
-    {
-      id: 2,
-      plan: 'Enterprise',
-      status: 'Active',
-      members: 100,
-      startDate: 'Feb 15, 2024',
-      endDate: 'Feb 14, 2025',
-      price: '$15,000',
-      color: 'purple',
-    },
-  ]);
-
-  const [plans] = useState([
-    {
-      name: 'Professional',
-      price: '$5,000',
-      period: 'per year',
-      members: 'Up to 50',
-      features: [
-        'Staff enrollment in courses',
-        'Progress tracking',
-        'Basic reporting',
-        'Email support',
-      ],
-      recommended: false,
-    },
-    {
-      name: 'Enterprise',
-      price: '$15,000',
-      period: 'per year',
-      members: 'Unlimited',
-      features: [
-        'Unlimited staff enrollment',
-        'Advanced analytics',
-        'Custom reporting',
-        'Priority support',
-        'API access',
-        'Dedicated account manager',
-      ],
-      recommended: true,
-    },
-    {
-      name: 'Custom',
-      price: 'Contact us',
-      period: 'custom pricing',
-      members: 'Tailored',
-      features: [
-        'All Enterprise features',
-        'Custom integrations',
-        'White-label options',
-        'SLA guarantees',
-      ],
-      recommended: false,
-    },
-  ]);
+  ];
 
   const renewalHistory = [
     {
@@ -76,20 +33,6 @@ export default function CorporateMembershipsPage() {
       plan: 'Professional',
       date: 'Jan 1, 2024',
       amount: '$5,000',
-      status: 'Completed',
-    },
-    {
-      id: 2,
-      plan: 'Professional',
-      date: 'Jan 1, 2023',
-      amount: '$4,500',
-      status: 'Completed',
-    },
-    {
-      id: 3,
-      plan: 'Professional',
-      date: 'Jan 1, 2022',
-      amount: '$4,500',
       status: 'Completed',
     },
   ];
@@ -150,50 +93,41 @@ export default function CorporateMembershipsPage() {
         </div>
 
         <div className="p-6 grid grid-cols-1 md:grid-cols-3 gap-6">
-          {plans.map((plan, idx) => (
-            <div
-              key={idx}
-              className={`rounded-lg border-2 p-6 transition-all ${
-                plan.recommended
-                  ? 'border-green-500 bg-green-50 ring-2 ring-green-200'
-                  : 'border-gray-200 hover:border-gray-300'
-              }`}
-            >
-              {plan.recommended && (
-                <div className="mb-4">
-                  <span className="bg-green-600 text-white px-3 py-1 rounded-full text-sm font-medium">
-                    Recommended
-                  </span>
-                </div>
-              )}
-
-              <h3 className="text-xl font-bold text-gray-900">{plan.name}</h3>
-              <div className="mt-2">
-                <span className="text-3xl font-bold text-gray-900">{plan.price}</span>
-                <span className="text-gray-600 ml-2">{plan.period}</span>
-              </div>
-              <p className="text-gray-600 mt-2">{plan.members}</p>
-
-              <ul className="mt-6 space-y-3">
-                {plan.features.map((feature, fdx) => (
-                  <li key={fdx} className="flex items-center gap-3">
-                    <span className="w-5 h-5 bg-green-500 rounded-full flex items-center justify-center text-white text-sm">
-                      ✓
-                    </span>
-                    <span className="text-gray-700">{feature}</span>
-                  </li>
-                ))}
-              </ul>
-
-              <button className={`mt-6 w-full py-3 rounded-lg font-medium transition-colors ${
-                plan.recommended
-                  ? 'bg-green-600 text-white hover:bg-green-700'
-                  : 'border border-gray-300 text-gray-900 hover:bg-gray-50'
-              }`}>
-                {plan.name === 'Custom' ? 'Contact Sales' : 'Upgrade Now'}
-              </button>
+          {plans.length === 0 ? (
+            <div className="col-span-3 text-center py-8 text-gray-500">
+              No corporate plans available at the moment.
             </div>
-          ))}
+          ) : (
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            plans.map((plan: any, idx) => (
+              <div
+                key={plan._id || idx}
+                className={`rounded-lg border-2 p-6 transition-all border-gray-200 hover:border-gray-300`}
+              >
+                <h3 className="text-xl font-bold text-gray-900">{plan.name}</h3>
+                <div className="mt-2">
+                  <span className="text-3xl font-bold text-gray-900">${plan.price}</span>
+                  <span className="text-gray-600 ml-2">/{plan.billingInterval}</span>
+                </div>
+                <p className="text-gray-600 mt-2">{plan.description}</p>
+
+                <ul className="mt-6 space-y-3">
+                  {plan.features.map((feature: string, fdx: number) => (
+                    <li key={fdx} className="flex items-center gap-3">
+                      <span className="w-5 h-5 bg-green-500 rounded-full flex items-center justify-center text-white text-sm">
+                        ✓
+                      </span>
+                      <span className="text-gray-700">{feature}</span>
+                    </li>
+                  ))}
+                </ul>
+
+                <button className={`mt-6 w-full py-3 rounded-lg font-medium transition-colors border border-gray-300 text-gray-900 hover:bg-gray-50`}>
+                  Upgrade Now
+                </button>
+              </div>
+            ))
+          )}
         </div>
       </div>
 

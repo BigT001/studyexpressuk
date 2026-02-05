@@ -29,11 +29,12 @@ export async function getUnreadMessageCount(userId: string | mongoose.Types.Obje
  */
 export async function getUnreadAnnouncementCount(
   userId: string | mongoose.Types.ObjectId,
-  userRole?: 'INDIVIDUAL' | 'CORPORATE' | 'SUBADMIN' | 'ADMIN'
+  userRole?: 'INDIVIDUAL' | 'CORPORATE' | 'SUBADMIN' | 'ADMIN',
+  userCreatedAt?: Date
 ): Promise<number> {
   try {
     await connectToDatabase();
-    
+
     // Build the query filter
     const query: any = {
       isActive: true,
@@ -41,6 +42,8 @@ export async function getUnreadAnnouncementCount(
     };
 
     // Filter by targetAudience based on user role
+    const isRestrictedRole = userRole === 'INDIVIDUAL' || userRole === 'CORPORATE';
+
     if (userRole === 'CORPORATE') {
       query.targetAudience = { $in: ['corporate', 'all'] };
     } else if (userRole === 'SUBADMIN') {
@@ -49,7 +52,26 @@ export async function getUnreadAnnouncementCount(
       query.targetAudience = { $in: ['students', 'all'] };
     } else if (userRole === 'ADMIN') {
       // Admins see all announcements
-      // no additional filter needed
+    }
+
+    // Apply creation date filter for restricted roles (new users don't see old announcements)
+    if (isRestrictedRole) {
+      let joinDate = userCreatedAt;
+
+      // If date not provided but needed, fetch user
+      if (!joinDate) {
+        const user = await UserModel.findById(userId).select('createdAt');
+        if (user) {
+          joinDate = user.createdAt;
+        }
+      }
+
+      if (joinDate) {
+        // Allow a small buffer (e.g. 1 minute)
+        const dateFilter = new Date(joinDate);
+        dateFilter.setMinutes(dateFilter.getMinutes() - 1);
+        query.createdAt = { $gte: dateFilter };
+      }
     }
 
     const count = await Announcement.countDocuments(query);

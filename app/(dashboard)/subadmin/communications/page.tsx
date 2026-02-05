@@ -1,418 +1,506 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { Bell, Mail, MessageSquare, Trash2, Check, CheckCheck, AlertCircle, Info } from 'lucide-react';
+import { useState, useEffect } from 'react';
 
-interface Notification {
+interface Announcement {
   _id: string;
-  type: 'announcement' | 'message' | 'email';
   title: string;
   content: string;
-  sender?: string;
-  priority: 'normal' | 'urgent';
-  status: 'read' | 'unread';
+  type: 'info' | 'warning' | 'success' | 'urgent';
+  targetAudience: 'all' | 'students' | 'corporate' | 'subadmin';
+  createdBy: string;
   createdAt: string;
+  isActive: boolean;
 }
 
-export default function SubadminCommunicationsPage() {
-  const [notifications, setNotifications] = useState<Notification[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [filter, setFilter] = useState<'all' | 'unread' | 'announcement' | 'message'>('all');
-  const [selectedNotification, setSelectedNotification] = useState<Notification | null>(null);
-  const [actionLoading, setActionLoading] = useState(false);
+interface GroupMessage {
+  _id: string;
+  subject: string;
+  body: string;
+  senderName: string;
+  recipientGroups: string[];
+  status: 'draft' | 'scheduled' | 'sent' | 'failed';
+  sentAt: string;
+}
 
+interface EmailNotification {
+  _id: string;
+  subject: string;
+  htmlContent: string;
+  recipients: string[];
+  status: 'draft' | 'scheduled' | 'sending' | 'sent' | 'failed';
+  successCount?: number;
+  failedCount?: number;
+  sentAt: string;
+}
+
+export default function SubAdminCommunicationsPage() {
+  const [selectedTab, setSelectedTab] = useState(0);
+  const [announcements, setAnnouncements] = useState<Announcement[]>([]);
+  const [messages, setMessages] = useState<GroupMessage[]>([]);
+  const [emails, setEmails] = useState<EmailNotification[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  // Announcement form state
+  const [announcementForm, setAnnouncementForm] = useState({
+    title: '',
+    content: '',
+    type: 'info' as const,
+    targetAudience: 'all' as const,
+  });
+
+  // Email form state
+  const [emailForm, setEmailForm] = useState({
+    subject: '',
+    htmlContent: '',
+    recipients: ['all'],
+  });
+
+  // Message form state
+  const [messageForm, setMessageForm] = useState({
+    subject: '',
+    body: '',
+    senderName: '',
+    recipientGroups: ['all'],
+  });
+
+  // Fetch all data on mount
   useEffect(() => {
-    fetchNotifications();
-    const interval = setInterval(fetchNotifications, 30000);
-    return () => clearInterval(interval);
+    fetchAllData();
   }, []);
 
-  const fetchNotifications = async () => {
+  const fetchAllData = async () => {
     try {
-      const res = await fetch('/api/user/notifications');
-      const data = await res.json();
-      if (data.success) {
-        setNotifications(data.notifications || []);
+      setLoading(true);
+      const [announcementsRes, emailsRes] = await Promise.all([
+        fetch('/api/announcements'),
+        fetch('/api/emails'),
+      ]);
+
+      if (announcementsRes.ok) {
+        const data = await announcementsRes.json();
+        setAnnouncements(data.announcements || []);
       }
-    } catch (error) {
-      console.error('Error fetching notifications:', error);
+      if (emailsRes.ok) {
+        const data = await emailsRes.json();
+        setEmails(data.emails || []);
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to fetch data');
     } finally {
       setLoading(false);
     }
   };
 
-  const markAsRead = async (id: string) => {
-    setActionLoading(true);
+  const handleCreateAnnouncement = async (e: React.FormEvent) => {
+    e.preventDefault();
     try {
-      const res = await fetch(`/api/user/notifications/${id}`, {
-        method: 'PATCH',
-        body: JSON.stringify({ action: 'read' }),
+      const res = await fetch('/api/announcements', {
+        method: 'POST',
+        body: JSON.stringify(announcementForm),
       });
       if (res.ok) {
-        setNotifications((prev) =>
-          prev.map((n) => (n._id === id ? { ...n, status: 'read' } : n))
-        );
+        const data = await res.json();
+        setAnnouncements([data.announcement, ...announcements]);
+        setAnnouncementForm({
+          title: '',
+          content: '',
+          type: 'info',
+          targetAudience: 'all',
+        });
       }
-    } catch (error) {
-      console.error('Error marking notification as read:', error);
-    } finally {
-      setActionLoading(false);
+    } catch (err) {
+      setError('Failed to create announcement');
     }
   };
 
-  const markAllAsRead = async () => {
-    setActionLoading(true);
+  const handleSendMessage = async (e: React.FormEvent) => {
+    e.preventDefault();
     try {
-      const res = await fetch('/api/user/notifications', {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'read-all' }),
+      const res = await fetch('/api/messages', {
+        method: 'POST',
+        body: JSON.stringify(messageForm),
       });
       if (res.ok) {
-        setNotifications((prev) =>
-          prev.map((n) => ({ ...n, status: 'read' }))
-        );
+        const data = await res.json();
+        setMessages([data.message, ...messages]);
+        setMessageForm({
+          subject: '',
+          body: '',
+          senderName: '',
+          recipientGroups: ['all'],
+        });
       }
-    } catch (error) {
-      console.error('Error marking all as read:', error);
-    } finally {
-      setActionLoading(false);
+    } catch (err) {
+      setError('Failed to send message');
     }
   };
 
-  const deleteNotification = async (id: string) => {
-    setActionLoading(true);
+  const handleSendEmail = async (e: React.FormEvent) => {
+    e.preventDefault();
     try {
-      const res = await fetch(`/api/user/notifications/${id}`, {
-        method: 'DELETE',
+      const res = await fetch('/api/emails', {
+        method: 'POST',
+        body: JSON.stringify(emailForm),
       });
       if (res.ok) {
-        setNotifications((prev) => prev.filter((n) => n._id !== id));
-        setSelectedNotification(null);
+        const data = await res.json();
+        setEmails([data.email, ...emails]);
+        setEmailForm({
+          subject: '',
+          htmlContent: '',
+          recipients: ['all'],
+        });
       }
-    } catch (error) {
-      console.error('Error deleting notification:', error);
-    } finally {
-      setActionLoading(false);
+    } catch (err) {
+      setError('Failed to send email');
     }
   };
 
-  const getFilteredNotifications = () => {
-    let filtered = notifications;
-    if (filter === 'unread') {
-      filtered = filtered.filter((n) => n.status === 'unread');
-    } else if (filter === 'announcement') {
-      filtered = filtered.filter((n) => n.type === 'announcement');
-    } else if (filter === 'message') {
-      filtered = filtered.filter((n) => n.type === 'message');
-    }
-    return filtered;
-  };
-
-  const filteredNotifications = getFilteredNotifications();
-  const unreadCount = notifications.filter((n) => n.status === 'unread').length;
-
-  const getTypeIcon = (type: string) => {
-    switch (type) {
-      case 'announcement':
-        return <AlertCircle className="w-4 h-4" />;
-      case 'message':
-        return <MessageSquare className="w-4 h-4" />;
-      case 'email':
-        return <Mail className="w-4 h-4" />;
-      default:
-        return <Bell className="w-4 h-4" />;
+  const handleDeleteAnnouncement = async (id: string) => {
+    if (!confirm('Delete this announcement?')) return;
+    try {
+      const res = await fetch(`/api/announcements/${id}`, { method: 'DELETE' });
+      if (res.ok) {
+        setAnnouncements(announcements.filter(a => a._id !== id));
+      }
+    } catch (err) {
+      setError('Failed to delete announcement');
     }
   };
 
-  const getPriorityColor = (priority: string) => {
-    return priority === 'urgent' ? 'bg-red-100 text-red-800' : 'bg-blue-100 text-blue-800';
+  const handleDeleteMessage = async (id: string) => {
+    if (!confirm('Delete this message?')) return;
+    try {
+      const res = await fetch(`/api/messages/${id}`, { method: 'DELETE' });
+      if (res.ok) {
+        setMessages(messages.filter(m => m._id !== id));
+      }
+    } catch (err) {
+      setError('Failed to delete message');
+    }
+  };
+
+  const handleDeleteEmail = async (id: string) => {
+    if (!confirm('Delete this email?')) return;
+    try {
+      const res = await fetch(`/api/emails/${id}`, { method: 'DELETE' });
+      if (res.ok) {
+        setEmails(emails.filter(e => e._id !== id));
+      }
+    } catch (err) {
+      setError('Failed to delete email');
+    }
   };
 
   const getTypeColor = (type: string) => {
     switch (type) {
-      case 'announcement':
-        return 'bg-purple-100 text-purple-800';
-      case 'message':
+      case 'urgent':
+        return 'bg-red-100 text-red-800 border-red-300';
+      case 'warning':
+        return 'bg-yellow-100 text-yellow-800 border-yellow-300';
+      case 'success':
+        return 'bg-green-100 text-green-800 border-green-300';
+      default:
+        return 'bg-blue-100 text-blue-800 border-blue-300';
+    }
+  };
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'sent':
         return 'bg-green-100 text-green-800';
-      case 'email':
-        return 'bg-gray-100 text-gray-800';
+      case 'sending':
+        return 'bg-blue-100 text-blue-800';
+      case 'scheduled':
+        return 'bg-purple-100 text-purple-800';
+      case 'failed':
+        return 'bg-red-100 text-red-800';
       default:
         return 'bg-gray-100 text-gray-800';
     }
   };
 
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    const now = new Date();
-    const diffTime = Math.abs(now.getTime() - date.getTime());
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-
-    if (diffDays === 0) {
-      const diffHours = Math.ceil(diffTime / (1000 * 60 * 60));
-      if (diffHours === 0) {
-        const diffMinutes = Math.ceil(diffTime / (1000 * 60));
-        return `${diffMinutes}m ago`;
-      }
-      return `${diffHours}h ago`;
-    }
-    if (diffDays === 1) return 'Yesterday';
-    if (diffDays < 7) return `${diffDays}d ago`;
-    return date.toLocaleDateString();
-  };
-
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600"></div>
-      </div>
-    );
-  }
-
   return (
-    <div className="max-w-6xl mx-auto p-4 md:p-6">
-      {/* Header */}
-      <div className="mb-8">
-        <div className="flex items-center justify-between mb-6">
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-2">
-              <Bell className="w-8 h-8 text-green-600" />
-              Updates & Communications
-            </h1>
-            <p className="text-gray-600 mt-2">
-              Important announcements and messages from StudyExpress
-            </p>
-          </div>
-          {unreadCount > 0 && (
-            <button
-              onClick={markAllAsRead}
-              disabled={actionLoading}
-              className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 flex items-center gap-2 transition"
-            >
-              <CheckCheck className="w-4 h-4" />
-              Mark All as Read
-            </button>
-          )}
-        </div>
-
-        {/* Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <div className="bg-white p-4 rounded-lg border border-gray-200 shadow-sm">
-            <div className="text-sm text-gray-600">Total Messages</div>
-            <div className="text-2xl font-bold text-gray-900 mt-1">{notifications.length}</div>
-          </div>
-          <div className="bg-white p-4 rounded-lg border border-gray-200 shadow-sm">
-            <div className="text-sm text-gray-600">Unread</div>
-            <div className="text-2xl font-bold text-red-600 mt-1">{unreadCount}</div>
-          </div>
-          <div className="bg-white p-4 rounded-lg border border-gray-200 shadow-sm">
-            <div className="text-sm text-gray-600">Announcements</div>
-            <div className="text-2xl font-bold text-purple-600 mt-1">
-              {notifications.filter((n) => n.type === 'announcement').length}
-            </div>
-          </div>
-          <div className="bg-white p-4 rounded-lg border border-gray-200 shadow-sm">
-            <div className="text-sm text-gray-600">Messages</div>
-            <div className="text-2xl font-bold text-green-600 mt-1">
-              {notifications.filter((n) => n.type === 'message').length}
-            </div>
-          </div>
-        </div>
+    <div className="space-y-6">
+      <div>
+        <h2 className="text-3xl font-bold text-gray-900">Messaging & Communications</h2>
+        <p className="text-gray-600 mt-2">Send announcements, messages, and manage notifications</p>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-        {/* Sidebar Filters */}
-        <div className="lg:col-span-1">
-          <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-4 sticky top-4">
-            <h3 className="font-semibold text-gray-900 mb-4">Filters</h3>
-            <div className="space-y-2">
-              {[
-                { value: 'all', label: 'All Messages', icon: Bell },
-                { value: 'unread', label: 'Unread', icon: AlertCircle },
-                { value: 'announcement', label: 'Announcements', icon: Info },
-                { value: 'message', label: 'Messages', icon: MessageSquare },
-              ].map((option) => {
-                const Icon = option.icon;
-                return (
-                  <button
-                    key={option.value}
-                    onClick={() => setFilter(option.value as any)}
-                    className={`w-full flex items-center gap-2 px-4 py-2 rounded-lg text-left transition ${
-                      filter === option.value
-                        ? 'bg-green-100 text-green-700 font-semibold'
-                        : 'text-gray-700 hover:bg-gray-100'
-                    }`}
-                  >
-                    <Icon className="w-4 h-4" />
-                    {option.label}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
+      {error && (
+        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
+          {error}
         </div>
+      )}
 
-        {/* Main Content */}
-        <div className="lg:col-span-3">
-          {filteredNotifications.length === 0 ? (
-            <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-12 text-center">
-              <Bell className="w-12 h-12 text-gray-300 mx-auto mb-4" />
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">No messages</h3>
-              <p className="text-gray-600">
-                {filter === 'unread'
-                  ? 'You have read all your messages.'
-                  : filter === 'announcement'
-                    ? 'No announcements available.'
-                    : filter === 'message'
-                      ? 'No messages available.'
-                      : 'No notifications yet.'}
-              </p>
-            </div>
-          ) : (
-            <div className="space-y-3">
-              {filteredNotifications.map((notification) => (
-                <div
-                  key={notification._id}
-                  onClick={() => setSelectedNotification(notification)}
-                  className={`bg-white rounded-lg border shadow-sm p-4 cursor-pointer transition hover:shadow-md ${
-                    notification.status === 'unread'
-                      ? 'border-green-300 bg-green-50'
-                      : 'border-gray-200'
-                  }`}
-                >
-                  <div className="flex items-start gap-3">
-                    <div className="mt-1 text-green-600">
-                      {getTypeIcon(notification.type)}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-start justify-between gap-2">
-                        <div className="flex-1">
-                          <h4 className="font-semibold text-gray-900 break-words">
-                            {notification.title}
-                          </h4>
-                          <p className="text-sm text-gray-600 line-clamp-1 mt-1">
-                            {notification.content}
-                          </p>
-                          <div className="flex items-center gap-2 mt-2 flex-wrap">
-                            <span className={`text-xs px-2 py-1 rounded-full ${getTypeColor(notification.type)}`}>
-                              {notification.type.charAt(0).toUpperCase() + notification.type.slice(1)}
-                            </span>
-                            {notification.priority === 'urgent' && (
-                              <span className={`text-xs px-2 py-1 rounded-full ${getPriorityColor(notification.priority)}`}>
-                                Urgent
-                              </span>
-                            )}
-                            <span className="text-xs text-gray-500">
-                              {formatDate(notification.createdAt)}
-                            </span>
-                          </div>
-                        </div>
-                        {notification.status === 'unread' && (
-                          <div className="flex-shrink-0 w-2 h-2 bg-green-600 rounded-full mt-2"></div>
-                        )}
-                      </div>
-                    </div>
-                  </div>
+      {/* Tab Navigation */}
+      <div className="flex space-x-1 bg-white rounded-lg shadow p-1">
+        <button
+          onClick={() => setSelectedTab(0)}
+          className={`px-6 py-3 font-bold rounded transition-colors ${selectedTab === 0
+              ? 'bg-green-600 text-white'
+              : 'text-gray-700 hover:bg-gray-100'
+            }`}
+        >
+          📢 Announcements
+        </button>
+        <button
+          onClick={() => setSelectedTab(1)}
+          className={`px-6 py-3 font-bold rounded transition-colors ${selectedTab === 1
+              ? 'bg-green-600 text-white'
+              : 'text-gray-700 hover:bg-gray-100'
+            }`}
+        >
+          Emails
+        </button>
+      </div>
+
+      {/* Tab Content */}
+      {/* Announcements Tab */}
+      {selectedTab === 0 && (
+        <div className="space-y-6 mt-6">
+          <div className="bg-white rounded-lg shadow p-6">
+            <h3 className="text-xl font-bold mb-6">Create New Announcement</h3>
+            <form onSubmit={handleCreateAnnouncement} className="space-y-4">
+              <div className="grid md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-bold text-gray-700 mb-2">
+                    Title
+                  </label>
+                  <input
+                    type="text"
+                    value={announcementForm.title}
+                    onChange={(e) =>
+                      setAnnouncementForm({ ...announcementForm, title: e.target.value })
+                    }
+                    required
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:border-transparent"
+                    style={{ borderColor: '#008200' }}
+                    placeholder="Announcement title"
+                  />
                 </div>
-              ))}
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* Detail Modal */}
-      {selectedNotification && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-            {/* Modal Header */}
-            <div className="sticky top-0 bg-white border-b border-gray-200 p-6 flex items-start justify-between">
-              <div className="flex items-start gap-3 flex-1">
-                <div className="text-green-600 mt-1">{getTypeIcon(selectedNotification.type)}</div>
-                <div className="flex-1">
-                  <h2 className="text-2xl font-bold text-gray-900">
-                    {selectedNotification.title}
-                  </h2>
-                  <div className="flex items-center gap-2 mt-2 flex-wrap">
-                    <span className={`text-xs px-2 py-1 rounded-full font-medium ${getTypeColor(selectedNotification.type)}`}>
-                      {selectedNotification.type.charAt(0).toUpperCase() + selectedNotification.type.slice(1)}
-                    </span>
-                    {selectedNotification.priority === 'urgent' && (
-                      <span className={`text-xs px-2 py-1 rounded-full font-medium ${getPriorityColor(selectedNotification.priority)}`}>
-                        Urgent
-                      </span>
-                    )}
-                    <span className="text-sm text-gray-500">
-                      {formatDate(selectedNotification.createdAt)}
-                    </span>
-                  </div>
-                  {selectedNotification.sender && (
-                    <p className="text-sm text-gray-600 mt-2">
-                      From: <span className="font-semibold">{selectedNotification.sender}</span>
-                    </p>
-                  )}
+                <div>
+                  <label className="block text-sm font-bold text-gray-700 mb-2">
+                    Type
+                  </label>
+                  <select
+                    value={announcementForm.type}
+                    onChange={(e) =>
+                      setAnnouncementForm({
+                        ...announcementForm,
+                        type: e.target.value as any,
+                      })
+                    }
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:border-transparent"
+                    style={{ borderColor: '#008200' }}
+                  >
+                    <option value="info">ℹ️ Info</option>
+                    <option value="urgent">🚨 Urgent</option>
+                  </select>
                 </div>
               </div>
+
+              <div>
+                <label className="block text-sm font-bold text-gray-700 mb-2">
+                  Target Audience
+                </label>
+                <select
+                  value={announcementForm.targetAudience}
+                  onChange={(e) =>
+                    setAnnouncementForm({
+                      ...announcementForm,
+                      targetAudience: e.target.value as any,
+                    })
+                  }
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:border-transparent"
+                  style={{ borderColor: '#008200' }}
+                >
+                  <option value="all">👥 Everyone</option>
+                  <option value="students">🎓 Students</option>
+                  <option value="corporate">🏢 Corporate</option>
+                  <option value="subadmin">👤 Sub Admin</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-bold text-gray-700 mb-2">
+                  Content
+                </label>
+                <textarea
+                  value={announcementForm.content}
+                  onChange={(e) =>
+                    setAnnouncementForm({
+                      ...announcementForm,
+                      content: e.target.value,
+                    })
+                  }
+                  required
+                  rows={4}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:border-transparent"
+                  style={{ borderColor: '#008200' }}
+                  placeholder="Announcement content"
+                />
+              </div>
+
               <button
-                onClick={() => setSelectedNotification(null)}
-                className="text-gray-400 hover:text-gray-600 text-2xl leading-none"
+                type="submit"
+                className="w-full px-6 py-3 text-white rounded-lg hover:opacity-90 transition-opacity font-bold"
+                style={{ backgroundColor: '#008200' }}
               >
-                ×
+                📢 Post Announcement
               </button>
-            </div>
+            </form>
+          </div>
 
-            {/* Modal Body */}
-            <div className="p-6">
-              <div className="prose prose-sm max-w-none text-gray-700 whitespace-pre-wrap">
-                {selectedNotification.content}
-              </div>
+          <div className="bg-white rounded-lg shadow p-6">
+            <h3 className="text-xl font-bold mb-4">Recent Announcements</h3>
+            <div className="space-y-3 max-h-96 overflow-y-auto">
+              {announcements.length === 0 ? (
+                <p className="text-gray-600">No announcements yet</p>
+              ) : (
+                announcements.map((ann) => (
+                  <div key={ann._id} className={`p-4 rounded-lg border-l-4 ${getTypeColor(ann.type)}`}>
+                    <div className="flex justify-between items-start">
+                      <div className="flex-grow">
+                        <h4 className="font-bold">{ann.title}</h4>
+                        <p className="text-sm mt-1">{ann.content.substring(0, 100)}...</p>
+                        <div className="flex gap-2 mt-2 text-xs">
+                          <span className="px-2 py-1 bg-white rounded">
+                            {ann.targetAudience}
+                          </span>
+                          <span className="px-2 py-1 bg-white rounded">
+                            {new Date(ann.createdAt).toLocaleDateString()}
+                          </span>
+                        </div>
+                      </div>
+                      <button
+                        onClick={() => handleDeleteAnnouncement(ann._id)}
+                        className="text-red-600 hover:text-red-800 font-bold"
+                      >
+                        ✕
+                      </button>
+                    </div>
+                  </div>
+                ))
+              )}
             </div>
+          </div>
+        </div>
+      )}
 
-            {/* Modal Footer */}
-            <div className="border-t border-gray-200 p-6 flex items-center justify-between bg-gray-50">
-              <div className="text-sm text-gray-600">
-                {selectedNotification.status === 'unread' ? (
-                  <span className="flex items-center gap-1 text-orange-600">
-                    <AlertCircle className="w-4 h-4" />
-                    Unread
-                  </span>
-                ) : (
-                  <span className="flex items-center gap-1 text-green-600">
-                    <Check className="w-4 h-4" />
-                    Read
-                  </span>
-                )}
+      {/* Emails Tab */}
+      {selectedTab === 1 && (
+        <div className="space-y-6 mt-6">
+          <div className="bg-white rounded-lg shadow p-6">
+            <h3 className="text-xl font-bold mb-6">Send Email Notification</h3>
+            <form onSubmit={handleSendEmail} className="space-y-4">
+              <div>
+                <label className="block text-sm font-bold text-gray-700 mb-2">
+                  Email Subject
+                </label>
+                <input
+                  type="text"
+                  value={emailForm.subject}
+                  onChange={(e) =>
+                    setEmailForm({ ...emailForm, subject: e.target.value })
+                  }
+                  required
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:border-transparent"
+                  style={{ borderColor: '#008200' }}
+                  placeholder="Email subject"
+                />
               </div>
-              <div className="flex items-center gap-3">
-                {selectedNotification.status === 'unread' && (
-                  <button
-                    onClick={() => {
-                      markAsRead(selectedNotification._id);
-                      setSelectedNotification(null);
-                    }}
-                    disabled={actionLoading}
-                    className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 flex items-center gap-2 transition"
-                  >
-                    <Check className="w-4 h-4" />
-                    Mark as Read
-                  </button>
-                )}
-                <button
-                  onClick={() => {
-                    deleteNotification(selectedNotification._id);
-                  }}
-                  disabled={actionLoading}
-                  className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50 flex items-center gap-2 transition"
+
+              <div>
+                <label className="block text-sm font-bold text-gray-700 mb-2">
+                  Recipient Group
+                </label>
+                <select
+                  value={emailForm.recipients[0] || 'all'}
+                  onChange={(e) =>
+                    setEmailForm({
+                      ...emailForm,
+                      recipients: [e.target.value],
+                    })
+                  }
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:border-transparent"
+                  style={{ borderColor: '#008200' }}
                 >
-                  <Trash2 className="w-4 h-4" />
-                  Delete
-                </button>
-                <button
-                  onClick={() => setSelectedNotification(null)}
-                  className="px-4 py-2 bg-gray-300 text-gray-800 rounded-lg hover:bg-gray-400 transition"
-                >
-                  Close
-                </button>
+                  <option value="all">👥 Everyone</option>
+                  <option value="students">🎓 Students</option>
+                  <option value="corporate">🏢 Corporate</option>
+                  <option value="subadmin">👤 Sub Admin</option>
+                </select>
               </div>
+
+              <div>
+                <label className="block text-sm font-bold text-gray-700 mb-2">
+                  Email Content (HTML)
+                </label>
+                <textarea
+                  value={emailForm.htmlContent}
+                  onChange={(e) =>
+                    setEmailForm({ ...emailForm, htmlContent: e.target.value })
+                  }
+                  required
+                  rows={6}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:border-transparent font-mono text-sm"
+                  style={{ borderColor: '#008200' }}
+                  placeholder="<h1>Title</h1><p>Your email content here...</p>"
+                />
+              </div>
+
+              <button
+                type="submit"
+                className="w-full px-6 py-3 text-white rounded-lg hover:opacity-90 transition-opacity font-bold"
+                style={{ backgroundColor: '#008200' }}
+              >
+                📧 Send Email
+              </button>
+            </form>
+          </div>
+
+          <div className="bg-white rounded-lg shadow p-6">
+            <h3 className="text-xl font-bold mb-4">Email History</h3>
+            <div className="space-y-3 max-h-96 overflow-y-auto">
+              {emails.length === 0 ? (
+                <p className="text-gray-600">No emails sent</p>
+              ) : (
+                emails.map((email) => (
+                  <div key={email._id} className="p-4 border border-gray-200 rounded-lg">
+                    <div className="flex justify-between items-start">
+                      <div className="flex-grow">
+                        <h4 className="font-bold">{email.subject}</h4>
+                        <div className="flex gap-2 mt-2">
+                          <span className={`text-xs px-2 py-1 rounded ${getStatusColor(email.status)}`}>
+                            {email.status}
+                          </span>
+                          {email.status === 'sent' && (
+                            <>
+                              <span className="text-xs px-2 py-1 bg-green-100 text-green-800 rounded">
+                                ✓ {email.successCount || 0} sent
+                              </span>
+                              {email.failedCount ? (
+                                <span className="text-xs px-2 py-1 bg-red-100 text-red-800 rounded">
+                                  ✕ {email.failedCount} failed
+                                </span>
+                              ) : null}
+                            </>
+                          )}
+                        </div>
+                      </div>
+                      <button
+                        onClick={() => handleDeleteEmail(email._id)}
+                        className="text-red-600 hover:text-red-800 font-bold"
+                      >
+                        ✕
+                      </button>
+                    </div>
+                  </div>
+                ))
+              )}
             </div>
           </div>
         </div>

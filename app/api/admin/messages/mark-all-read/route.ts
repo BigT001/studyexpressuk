@@ -5,7 +5,7 @@ import MessageModel from '@/server/db/models/message.model';
 export async function POST(req: Request) {
   try {
     const session = await getServerAuthSession();
-    if (!session?.user?.id || session.user.role !== 'ADMIN') {
+    if (!session?.user?.id || (session.user.role !== 'ADMIN' && session.user.role !== 'SUB_ADMIN')) {
       return NextResponse.json(
         { success: false, error: 'Unauthorized' },
         { status: 401 }

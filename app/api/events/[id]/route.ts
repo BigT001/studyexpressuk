@@ -82,3 +82,37 @@ export async function DELETE(
     return NextResponse.json({ success: false, error: message }, { status: 400 });
   }
 }
+
+export async function GET(
+  req: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const { id } = await params;
+
+    await connectToDatabase();
+
+    // Validate that ID is a valid MongoDB ObjectId
+    if (!id.match(/^[0-9a-fA-F]{24}$/)) {
+      return NextResponse.json(
+        { success: false, error: 'Invalid event ID' },
+        { status: 400 }
+      );
+    }
+
+    // Fetch the event
+    const event = await EventModel.findById(id);
+
+    if (!event) {
+      return NextResponse.json(
+        { success: false, error: 'Event not found' },
+        { status: 404 }
+      );
+    }
+
+    return NextResponse.json({ success: true, event: event.toObject() });
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : String(err);
+    return NextResponse.json({ success: false, error: message }, { status: 500 });
+  }
+}
