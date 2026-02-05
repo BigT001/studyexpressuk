@@ -54,7 +54,7 @@ export async function GET(req: Request) {
 
     let unreadCount = 0;
     let readAnnouncementIds: string[] = [];
-    let user;
+    let user: any = null;
 
     if (session?.user?.email) {
       const { connectToDatabase } = await import('@/server/db/mongoose');
