@@ -7,7 +7,20 @@ import CourseModel from '@/server/db/models/course.model';
 import EventModel from '@/server/db/models/event.model';
 import MembershipModel from '@/server/db/models/membership.model';
 
-const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
+import Stripe from 'stripe';
+
+// Initialize Stripe lazily to avoid build-time errors if env vars are missing
+const getStripe = () => {
+    if (!process.env.STRIPE_SECRET_KEY) {
+        throw new Error('STRIPE_SECRET_KEY is missing');
+    }
+    return new Stripe(process.env.STRIPE_SECRET_KEY, {
+        apiVersion: '2025-12-15.clover', // Update to match installed types
+        // Let's use typescript: true if needed.
+        typescript: true,
+    });
+};
+
 
 interface CheckoutRequest {
     itemId: string;
@@ -16,6 +29,7 @@ interface CheckoutRequest {
 
 export async function POST(req: Request) {
     try {
+        const stripe = getStripe();
         const session: any = await getServerAuthSession();
         if (!session || !session.user?.id) {
             return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
