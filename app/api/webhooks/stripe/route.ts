@@ -3,7 +3,18 @@ import { connectToDatabase } from '@/server/db/mongoose';
 import UserModel from '@/server/db/models/user.model';
 import EnrollmentModel from '@/server/db/models/enrollment.model';
 
-const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
+import Stripe from 'stripe';
+
+// Initialize Stripe lazily to avoid build-time errors if env vars are missing
+const getStripe = () => {
+  if (!process.env.STRIPE_SECRET_KEY) {
+    throw new Error('STRIPE_SECRET_KEY is missing');
+  }
+  return new Stripe(process.env.STRIPE_SECRET_KEY, {
+    apiVersion: '2025-12-15.clover',
+    typescript: true,
+  });
+};
 
 export async function POST(req: NextRequest) {
   const body = await req.text();
@@ -16,6 +27,7 @@ export async function POST(req: NextRequest) {
     );
   }
 
+  const stripe = getStripe();
   let event;
   try {
     event = stripe.webhooks.constructEvent(
