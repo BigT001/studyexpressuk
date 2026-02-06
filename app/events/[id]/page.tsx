@@ -150,54 +150,59 @@ export default function EventDetailPage() {
         : null;
 
     return (
-        <div className="min-h-screen bg-gray-50">
-            {/* Hero Section */}
-            <div className="bg-gradient-to-r from-green-600 to-green-700 text-white py-12">
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                    <button
-                        onClick={() => router.push('/events')}
-                        className="mb-6 flex items-center text-white hover:text-green-100 transition-colors"
-                    >
-                        ← Back to Events
-                    </button>
-                    <div className="grid md:grid-cols-2 gap-8 items-center">
-                        <div>
-                            <div className="flex gap-2 mb-4 flex-wrap">
-                                {event.category && (
-                                    <span className="px-3 py-1 bg-white/20 rounded-full text-sm font-semibold">
-                                        {event.category}
-                                    </span>
-                                )}
-                                {event.format && (
-                                    <span className="px-3 py-1 bg-blue-500 rounded-full text-sm font-semibold">
-                                        {event.format === 'online' ? '🌐 Online' : event.format === 'offline' ? '📍 Offline' : '🔄 Hybrid'}
-                                    </span>
-                                )}
-                                {event.access && (
-                                    <span className={`px-3 py-1 rounded-full text-sm font-semibold ${event.access === 'premium' ? 'bg-amber-500' : event.access === 'corporate' ? 'bg-blue-600' : 'bg-emerald-500'
-                                        }`}>
-                                        {event.access === 'premium' ? '💎 Premium' : event.access === 'corporate' ? '🏢 Corporate' : '🆓 Free'}
-                                    </span>
-                                )}
-                            </div>
-                            <h1 className="text-4xl font-bold mb-4">{event.title}</h1>
-                            {event.startDate && (
-                                <div className="text-lg text-green-100">
-                                    <p>📅 {formatDate(event.startDate)}</p>
-                                    <p>🕐 {formatTime(event.startDate)}</p>
-                                </div>
+        <div className="min-h-screen bg-gray-50 pb-20">
+            {/* Hero Image Section - Full Width */}
+            <div className="relative h-[60vh] min-h-[400px] w-full bg-gray-900">
+                {event.imageUrl ? (
+                    <img
+                        src={event.imageUrl}
+                        alt={event.title}
+                        className="w-full h-full object-cover opacity-60"
+                    />
+                ) : (
+                    <div className="w-full h-full bg-gradient-to-br from-green-800 to-gray-900 opacity-80" />
+                )}
+
+                <div className="absolute inset-0 bg-gradient-to-t from-gray-900 via-transparent to-transparent" />
+
+                {/* Hero Content Overlay */}
+                <div className="absolute bottom-0 left-0 right-0 p-8 md:p-16">
+                    <div className="max-w-7xl mx-auto">
+                        <button
+                            onClick={() => router.push('/events')}
+                            className="mb-6 flex items-center text-white/80 hover:text-white transition-colors text-sm font-medium uppercase tracking-wide"
+                        >
+                            ← Back to Events
+                        </button>
+
+                        <div className="flex flex-wrap gap-3 mb-6">
+                            {event.category && (
+                                <span className="px-3 py-1 bg-green-600 text-white rounded-full text-xs font-bold uppercase tracking-wider">
+                                    {event.category}
+                                </span>
+                            )}
+                            {event.format && (
+                                <span className="px-3 py-1 bg-white/20 backdrop-blur-sm text-white rounded-full text-xs font-bold uppercase tracking-wider border border-white/30">
+                                    {event.format}
+                                </span>
                             )}
                         </div>
-                        <div className="relative h-64 rounded-lg overflow-hidden shadow-xl">
-                            {event.imageUrl ? (
-                                <img
-                                    src={event.imageUrl}
-                                    alt={event.title}
-                                    className="w-full h-full object-cover"
-                                />
-                            ) : (
-                                <div className="w-full h-full bg-gradient-to-br from-green-400 to-green-600 flex items-center justify-center">
-                                    <span className="text-6xl">🎯</span>
+
+                        <h1 className="text-4xl md:text-5xl lg:text-6xl font-black text-white mb-6 leading-tight max-w-4xl">
+                            {event.title}
+                        </h1>
+
+                        <div className="flex flex-wrap items-center gap-6 text-white/90 text-sm md:text-base font-medium">
+                            {event.startDate && (
+                                <div className="flex items-center gap-2">
+                                    <span className="text-green-400">📅</span>
+                                    {formatDate(event.startDate)}
+                                </div>
+                            )}
+                            {event.location && (
+                                <div className="flex items-center gap-2">
+                                    <span className="text-green-400">📍</span>
+                                    {event.location}
                                 </div>
                             )}
                         </div>
@@ -205,103 +210,136 @@ export default function EventDetailPage() {
                 </div>
             </div>
 
-            {/* Content Section */}
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-                <div className="grid md:grid-cols-3 gap-8">
-                    {/* Main Content */}
-                    <div className="md:col-span-2 space-y-8">
-                        <div className="bg-white rounded-lg shadow-md p-6">
-                            <h2 className="text-2xl font-bold text-gray-900 mb-4">About This Event</h2>
-                            <p className="text-gray-700 leading-relaxed">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 -mt-10 relative z-10">
+                <div className="grid lg:grid-cols-3 gap-12">
+                    {/* Main Content - Blog Style */}
+                    <div className="lg:col-span-2 space-y-12">
+                        {/* Overview Card */}
+                        <div className="bg-white rounded-2xl shadow-xl p-8 md:p-12">
+                            <h2 className="text-2xl font-bold text-gray-900 mb-6 flex items-center gap-3">
+                                <span className="w-8 h-1 bg-green-500 rounded-full block"></span>
+                                About this Event
+                            </h2>
+                            <div className="prose prose-lg prose-green max-w-none text-gray-600 leading-relaxed whitespace-pre-line">
                                 {event.description || 'No description available for this event.'}
-                            </p>
+                            </div>
                         </div>
 
-                        <div className="bg-white rounded-lg shadow-md p-6">
-                            <h2 className="text-2xl font-bold text-gray-900 mb-4">Event Details</h2>
-                            <div className="space-y-4">
-                                {event.startDate && (
-                                    <div className="flex items-start gap-3">
-                                        <span className="text-2xl">📅</span>
-                                        <div>
-                                            <p className="text-sm text-gray-500">Start Date</p>
-                                            <p className="font-semibold text-gray-900">{formatDate(event.startDate)}</p>
-                                            <p className="text-sm text-gray-600">{formatTime(event.startDate)}</p>
-                                        </div>
+                        {/* Additional Info / Schedule (Placeholder if no data structure yet) */}
+                        <div className="bg-white rounded-2xl shadow-xl p-8 md:p-12">
+                            <h2 className="text-2xl font-bold text-gray-900 mb-6 flex items-center gap-3">
+                                <span className="w-8 h-1 bg-green-500 rounded-full block"></span>
+                                Event Highlights
+                            </h2>
+                            <div className="grid sm:grid-cols-2 gap-8">
+                                <div className="flex gap-4">
+                                    <div className="flex-shrink-0 w-12 h-12 bg-green-100 rounded-xl flex items-center justify-center text-2xl">
+                                        🎓
                                     </div>
-                                )}
-                                {event.endDate && (
-                                    <div className="flex items-start gap-3">
-                                        <span className="text-2xl">🏁</span>
-                                        <div>
-                                            <p className="text-sm text-gray-500">End Date</p>
-                                            <p className="font-semibold text-gray-900">{formatDate(event.endDate)}</p>
-                                            <p className="text-sm text-gray-600">{formatTime(event.endDate)}</p>
-                                        </div>
+                                    <div>
+                                        <h3 className="font-bold text-gray-900 mb-2">Networking</h3>
+                                        <p className="text-gray-600 text-sm">Connect with industry leaders and like-minded professionals.</p>
                                     </div>
-                                )}
-                                {event.location && (
-                                    <div className="flex items-start gap-3">
-                                        <span className="text-2xl">📍</span>
-                                        <div>
-                                            <p className="text-sm text-gray-500">Location</p>
-                                            <p className="font-semibold text-gray-900">{event.location}</p>
-                                        </div>
+                                </div>
+                                <div className="flex gap-4">
+                                    <div className="flex-shrink-0 w-12 h-12 bg-green-100 rounded-xl flex items-center justify-center text-2xl">
+                                        💡
                                     </div>
-                                )}
-                                {event.format && (
-                                    <div className="flex items-start gap-3">
-                                        <span className="text-2xl">💻</span>
-                                        <div>
-                                            <p className="text-sm text-gray-500">Format</p>
-                                            <p className="font-semibold text-gray-900">
-                                                {event.format.charAt(0).toUpperCase() + event.format.slice(1)}
-                                            </p>
-                                        </div>
+                                    <div>
+                                        <h3 className="font-bold text-gray-900 mb-2">Expert Insights</h3>
+                                        <p className="text-gray-600 text-sm">Gain valuable knowledge from top experts in the field.</p>
                                     </div>
-                                )}
-                                {event.maxCapacity && (
-                                    <div className="flex items-start gap-3">
-                                        <span className="text-2xl">👥</span>
-                                        <div>
-                                            <p className="text-sm text-gray-500">Capacity</p>
-                                            <p className="font-semibold text-gray-900">
-                                                {event.currentEnrollment || 0} / {event.maxCapacity} registered
-                                            </p>
-                                            {spotsLeft !== null && spotsLeft > 0 && (
-                                                <p className="text-sm text-green-600">{spotsLeft} spots left!</p>
-                                            )}
-                                            {spotsLeft === 0 && (
-                                                <p className="text-sm text-red-600">Event is full</p>
-                                            )}
-                                        </div>
+                                </div>
+                                <div className="flex gap-4">
+                                    <div className="flex-shrink-0 w-12 h-12 bg-green-100 rounded-xl flex items-center justify-center text-2xl">
+                                        📜
                                     </div>
-                                )}
+                                    <div>
+                                        <h3 className="font-bold text-gray-900 mb-2">Certification</h3>
+                                        <p className="text-gray-600 text-sm">Receive a certificate of participation upon completion.</p>
+                                    </div>
+                                </div>
+                                <div className="flex gap-4">
+                                    <div className="flex-shrink-0 w-12 h-12 bg-green-100 rounded-xl flex items-center justify-center text-2xl">
+                                        🤝
+                                    </div>
+                                    <div>
+                                        <h3 className="font-bold text-gray-900 mb-2">Community</h3>
+                                        <p className="text-gray-600 text-sm">Join a vibrant community of learners and professionals.</p>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
 
-                    {/* Sidebar */}
-                    <div className="md:col-span-1">
-                        <div className="bg-white rounded-lg shadow-md p-6 sticky top-6">
-                            <div className="text-center mb-6">
-                                <p className="text-sm text-gray-500 mb-2">Registration Fee</p>
-                                <p className="text-4xl font-bold text-green-600">
-                                    {event.price ? `$${event.price}` : 'Free'}
+                    {/* Sidebar Sticky */}
+                    <div className="lg:col-span-1">
+                        <div className="sticky top-24 space-y-6">
+                            {/* Registration Card */}
+                            <div className="bg-white rounded-2xl shadow-xl p-8 border-t-8 border-green-500">
+                                <div className="text-center mb-8">
+                                    <p className="text-gray-500 text-sm font-medium uppercase tracking-wider mb-2">Registration Fee</p>
+                                    <div className="flex items-baseline justify-center gap-1">
+                                        <span className="text-5xl font-black text-gray-900">
+                                            {event.price ? `$${event.price}` : 'Free'}
+                                        </span>
+                                    </div>
+                                </div>
+
+                                <div className="space-y-4 mb-8">
+                                    {event.startDate && (
+                                        <div className="flex items-center justify-between text-sm py-2 border-b border-gray-100">
+                                            <span className="text-gray-500">Date</span>
+                                            <span className="font-bold text-gray-900 text-right">{formatDate(event.startDate)}</span>
+                                        </div>
+                                    )}
+                                    {event.startDate && (
+                                        <div className="flex items-center justify-between text-sm py-2 border-b border-gray-100">
+                                            <span className="text-gray-500">Time</span>
+                                            <span className="font-bold text-gray-900 text-right">{formatTime(event.startDate)}</span>
+                                        </div>
+                                    )}
+                                    {event.maxCapacity && (
+                                        <div className="flex items-center justify-between text-sm py-2 border-b border-gray-100">
+                                            <span className="text-gray-500">Availability</span>
+                                            <span className={`font-bold text-right ${spotsLeft !== null && spotsLeft < 10 ? 'text-red-600' : 'text-green-600'}`}>
+                                                {spotsLeft !== null ? `${spotsLeft} spots left` : 'Open'}
+                                            </span>
+                                        </div>
+                                    )}
+                                </div>
+
+                                <button
+                                    onClick={handleRegister}
+                                    disabled={registering || (spotsLeft !== null && spotsLeft <= 0)}
+                                    className="w-full py-4 bg-green-600 text-white rounded-xl font-bold text-lg hover:bg-green-700 transition-all transform hover:scale-[1.02] shadow-lg disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
+                                >
+                                    {registering ? (
+                                        <span className="flex items-center justify-center gap-2">
+                                            <svg className="animate-spin h-5 w-5 text-white" viewBox="0 0 24 24">
+                                                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                            </svg>
+                                            Processing...
+                                        </span>
+                                    ) : spotsLeft === 0 ? 'Event Full' : 'Register Now'}
+                                </button>
+
+                                <p className="text-center text-xs text-gray-400 mt-4">
+                                    Secure payment powered by Stripe
                                 </p>
                             </div>
-                            <button
-                                onClick={handleRegister}
-                                disabled={registering || (spotsLeft !== null && spotsLeft <= 0)}
-                                className="w-full py-3 bg-green-600 text-white rounded-lg font-semibold hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                            >
-                                {registering ? 'Processing...' : spotsLeft === 0 ? 'Event Full' : 'Register Now'}
-                            </button>
-                            {spotsLeft !== null && spotsLeft > 0 && spotsLeft <= 10 && (
-                                <p className="text-xs text-red-600 text-center mt-2 font-semibold">
-                                    Only {spotsLeft} spots remaining!
+
+                            {/* Organizer / Contact (Optional) */}
+                            <div className="bg-gray-100 rounded-2xl p-6">
+                                <h3 className="font-bold text-gray-900 mb-2">Need Help?</h3>
+                                <p className="text-gray-600 text-sm mb-4">
+                                    Contact our support team for any questions regarding this event.
                                 </p>
-                            )}
+                                <a href="mailto:support@studyexpressuk.com" className="text-green-600 font-bold text-sm hover:underline">
+                                    Contact Support →
+                                </a>
+                            </div>
                         </div>
                     </div>
                 </div>

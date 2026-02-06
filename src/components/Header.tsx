@@ -7,9 +7,19 @@ import { useSession, signOut } from 'next-auth/react';
 
 export function Header() {
   const [isOpen, setIsOpen] = useState(false);
+  const [isScrolled, setIsScrolled] = useState(false);
   const { data: session } = useSession();
   const pathname = usePathname();
   const router = useRouter();
+
+  useEffect(() => {
+    const handleScroll = () => {
+      setIsScrolled(window.scrollY > 0);
+    };
+
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
 
   useEffect(() => {
     if (isOpen) {
@@ -25,7 +35,7 @@ export function Header() {
   const menuItems = [
     { label: 'Courses', href: '/courses' },
     { label: 'Events', href: '/events' },
-    { label: 'Corporate', href: '/corporate', special: true },
+    { label: 'About', href: '/about' },
   ];
 
   const isActive = (href: string) => {
@@ -33,9 +43,14 @@ export function Header() {
   };
 
   return (
-    <header className="sticky top-0 z-50 w-full bg-white border-b border-gray-200 shadow-sm">
+    <header
+      className={`fixed top-0 z-50 w-full transition-all duration-300 ${isScrolled
+        ? 'bg-white/95 backdrop-blur-sm border-b border-gray-200 shadow-sm'
+        : 'bg-transparent border-transparent'
+        }`}
+    >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-16">
+        <div className={`flex items-center justify-between transition-all duration-300 ${isScrolled ? 'h-16' : 'h-20'}`}>
           {/* Logo */}
           <Link href="/" className="flex-shrink-0">
             <div className="flex items-center gap-0.5">
@@ -52,21 +67,12 @@ export function Header() {
               <Link
                 key={item.label}
                 href={item.href}
-                className={`text-sm font-medium transition-all relative group ${
-                  item.special
-                    ? 'text-gray-900 font-bold uppercase tracking-wide'
-                    : isActive(item.href)
-                    ? 'text-blue-600 border-b-2 border-blue-600 pb-1'
-                    : 'text-gray-700 hover:text-gray-900'
-                }`}
+                className={`text-sm font-medium transition-all relative group ${isActive(item.href)
+                  ? 'text-blue-600 border-b-2 border-blue-600 pb-1'
+                  : 'text-gray-700 hover:text-gray-900'
+                  }`}
               >
                 {item.label}
-                {item.special && (
-                  <>
-                    <span className="absolute -bottom-1 left-0 w-full h-1 bg-gradient-to-r from-purple-600 to-blue-500 rounded-full transform scale-x-0 group-hover:scale-x-100 transition-transform origin-left"></span>
-                    <span className="ml-2">🏢</span>
-                  </>
-                )}
               </Link>
             ))}
           </nav>
@@ -111,15 +117,15 @@ export function Header() {
             ) : (
               <Link
                 href={
-                  session?.user?.role === 'INDIVIDUAL' 
-                    ? '/individual' 
-                    : session?.user?.role === 'CORPORATE' 
-                    ? '/corporate' 
-                    : session?.user?.role === 'SUBADMIN' 
-                    ? '/subadmin' 
-                    : session?.user?.role === 'STAFF'
+                  session?.user?.role === 'INDIVIDUAL'
                     ? '/individual'
-                    : '/admin'
+                    : session?.user?.role === 'CORPORATE'
+                      ? '/corporate'
+                      : session?.user?.role === 'SUBADMIN'
+                        ? '/subadmin'
+                        : session?.user?.role === 'STAFF'
+                          ? '/individual'
+                          : '/admin'
                 }
                 className="px-4 py-2 text-sm font-bold text-white hover:opacity-90 rounded-lg transition-colors"
                 style={{ backgroundColor: '#008200' }}
@@ -159,11 +165,10 @@ export function Header() {
               <Link
                 key={item.label}
                 href={item.href}
-                className={`block px-3 py-2 text-base font-medium rounded transition-colors ${
-                  isActive(item.href)
-                    ? 'bg-blue-50 text-blue-600'
-                    : 'text-gray-700 hover:bg-gray-50'
-                }`}
+                className={`block px-3 py-2 text-base font-medium rounded transition-colors ${isActive(item.href)
+                  ? 'bg-blue-50 text-blue-600'
+                  : 'text-gray-700 hover:bg-gray-50'
+                  }`}
                 onClick={() => setIsOpen(false)}
               >
                 {item.label}
@@ -191,15 +196,15 @@ export function Header() {
               ) : (
                 <Link
                   href={
-                    session?.user?.role === 'INDIVIDUAL' 
-                      ? '/individual' 
-                      : session?.user?.role === 'CORPORATE' 
-                      ? '/corporate' 
-                      : session?.user?.role === 'SUBADMIN' 
-                      ? '/subadmin' 
-                      : session?.user?.role === 'STAFF'
+                    session?.user?.role === 'INDIVIDUAL'
                       ? '/individual'
-                      : '/admin'
+                      : session?.user?.role === 'CORPORATE'
+                        ? '/corporate'
+                        : session?.user?.role === 'SUBADMIN'
+                          ? '/subadmin'
+                          : session?.user?.role === 'STAFF'
+                            ? '/individual'
+                            : '/admin'
                   }
                   className="flex-1 text-center px-4 py-2 text-sm font-bold text-white rounded transition-colors"
                   style={{ backgroundColor: '#008200' }}

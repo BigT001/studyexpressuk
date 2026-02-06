@@ -71,6 +71,11 @@ const navItems: NavItem[] = [
     label: 'Sub-Admins',
     href: '/admin/subadmins',
   },
+  {
+    icon: '📝',
+    label: 'Site Content',
+    href: '/admin/site-content',
+  },
 ];
 
 export function AdminSidebar() {
@@ -105,9 +110,8 @@ export function AdminSidebar() {
     <>
       {/* Desktop Sidebar */}
       <aside
-        className={`hidden md:flex fixed left-0 top-0 h-screen ${
-          isCollapsed ? 'w-20' : 'w-64'
-        } bg-white text-gray-900 border-r border-gray-200 transition-all duration-300 flex flex-col z-40`}
+        className={`hidden md:flex fixed left-0 top-0 h-screen ${isCollapsed ? 'w-20' : 'w-64'
+          } bg-white text-gray-900 border-r border-gray-200 transition-all duration-300 flex flex-col z-40`}
       >
         {/* Sidebar Header with Logo */}
         <div className="p-4 border-b border-gray-200 flex items-center justify-between">
@@ -136,18 +140,17 @@ export function AdminSidebar() {
           `}</style>
           <div className="space-y-0.5 px-2">
             {navItems.map((item) => {
-              const isActive = item.href === '/admin' 
-                ? pathname === item.href 
+              const isActive = item.href === '/admin'
+                ? pathname === item.href
                 : (pathname === item.href || pathname.startsWith(item.href + '/'));
               return (
                 <Link
                   key={item.href}
                   href={item.href}
-                  className={`flex items-center gap-3 px-4 py-2 rounded-lg transition-all group relative ${
-                    isActive
-                      ? 'text-[#008200] bg-green-50 border-l-4 border-[#008200]'
-                      : 'text-gray-800 hover:text-[#008200] hover:bg-gray-100'
-                  }`}
+                  className={`flex items-center gap-3 px-4 py-2 rounded-lg transition-all group relative ${isActive
+                    ? 'text-[#008200] bg-green-50 border-l-4 border-[#008200]'
+                    : 'text-gray-800 hover:text-[#008200] hover:bg-gray-100'
+                    }`}
                   title={isCollapsed ? item.label : undefined}
                 >
                   <span className="text-lg flex-shrink-0">{item.icon}</span>
@@ -212,19 +215,18 @@ export function AdminSidebar() {
             <nav className="flex-1 py-4">
               <div className="space-y-0.5 px-2">
                 {navItems.map((item) => {
-                  const isActive = item.href === '/admin' 
-                    ? pathname === item.href 
+                  const isActive = item.href === '/admin'
+                    ? pathname === item.href
                     : (pathname === item.href || pathname.startsWith(item.href + '/'));
                   return (
                     <Link
                       key={item.href}
                       href={item.href}
                       onClick={handleNavClick}
-                      className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-all ${
-                        isActive
-                          ? 'text-[#008200] bg-green-50 border-l-4 border-[#008200]'
-                          : 'text-gray-800 hover:text-[#008200] hover:bg-gray-100'
-                      }`}
+                      className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-all ${isActive
+                        ? 'text-[#008200] bg-green-50 border-l-4 border-[#008200]'
+                        : 'text-gray-800 hover:text-[#008200] hover:bg-gray-100'
+                        }`}
                     >
                       <span className="text-lg flex-shrink-0">{item.icon}</span>
                       <span className="font-medium">{item.label}</span>

@@ -181,10 +181,10 @@ export function ExploreEvents() {
                     </button>
 
                     <button
-                      onClick={() => window.location.href = '/events'}
+                      onClick={() => window.location.href = `/events/${item._id || item.id}`}
                       className="flex-1 px-4 py-3 text-gray-900 font-bold text-sm transition-all duration-300 hover:shadow-xl transform hover:scale-105 active:scale-95 border-2 border-gray-300 hover:border-gray-400"
                     >
-                      View Event
+                      View Details
                     </button>
                   </div>
                 </div>

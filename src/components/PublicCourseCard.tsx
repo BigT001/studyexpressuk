@@ -120,10 +120,10 @@ export default function PublicCourseCard({
             Enroll Now
           </button>
           <button
-            onClick={() => window.location.href = '/courses'}
+            onClick={() => window.location.href = `/courses/${_id}`}
             className="flex-1 px-4 py-3 text-gray-900 rounded-lg hover:bg-gray-200 transition-colors font-semibold text-sm text-center border-2 border-gray-300"
           >
-            View Course
+            View Details
           </button>
         </div>
       </div>
