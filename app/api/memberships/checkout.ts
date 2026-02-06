@@ -3,10 +3,17 @@ import { getServerAuthSession } from '@/server/auth/session';
 import { connectToDatabase } from '@/server/db/mongoose';
 import UserModel from '@/server/db/models/user.model';
 
-// This is a placeholder for Stripe integration
-// You'll need to install stripe: npm install stripe
+import Stripe from 'stripe';
 
-const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
+const getStripe = () => {
+  if (!process.env.STRIPE_SECRET_KEY) {
+    throw new Error('STRIPE_SECRET_KEY is missing');
+  }
+  return new Stripe(process.env.STRIPE_SECRET_KEY, {
+    apiVersion: '2025-12-15.clover',
+    typescript: true,
+  });
+};
 
 interface CheckoutSessionRequest {
   planType: 'individual' | 'corporate';
@@ -26,7 +33,7 @@ export async function POST(req: NextRequest) {
 
     await connectToDatabase();
     const body: CheckoutSessionRequest = await req.json();
-    
+
     if (!body.planType || !body.priceAmount || !body.planName) {
       return NextResponse.json(
         { success: false, error: 'Missing required fields' },
@@ -44,6 +51,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Create Stripe checkout session
+    const stripe = getStripe();
     const checkoutSession = await stripe.checkout.sessions.create({
       mode: 'payment',
       payment_method_types: ['card'],
