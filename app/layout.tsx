@@ -1,46 +1,40 @@
-'use client';
-
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Inter } from "next/font/google";
 import "./globals.css";
-import { Header } from "@/components/Header";
-import { SessionProvider } from "@/components/SessionProvider";
-import { usePathname } from "next/navigation";
+import { LayoutShell } from "@/components/LayoutShell";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
+/* ─── Font ──────────────────────────────────────────────────────────── */
+const inter = Inter({
   subsets: ["latin"],
+  variable: "--font-inter",
+  display: "swap",
 });
 
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-});
+/* ─── SEO Metadata ──────────────────────────────────────────────────── */
+export const metadata: Metadata = {
+  title: {
+    default: "Study Express UK — Learn, Connect & Transform",
+    template: "%s | Study Express UK",
+  },
+  description:
+    "UK-accredited courses, professional development events, and corporate training solutions. Join 50,000+ learners advancing their careers.",
+  keywords: ["UK courses", "online learning", "professional development", "certifications", "study in UK"],
+  metadataBase: new URL("https://studyexpressuk.com"),
+  openGraph: {
+    type: "website",
+    locale: "en_GB",
+    siteName: "Study Express UK",
+  },
+};
 
+/* ─── Root layout (server component) ─────────────────────────────────── */
 export default function RootLayout({
   children,
-}: Readonly<{
-  children: React.ReactNode;
-}>) {
-  const pathname = usePathname();
-  
-  // Hide header on all dashboard routes
-  const isDashboard =
-    pathname?.startsWith("/dashboard") ||
-    pathname?.startsWith("/admin") ||
-    pathname?.startsWith("/individual") ||
-    pathname?.startsWith("/corporate") ||
-    pathname?.startsWith("/subadmin");
-
+}: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="en">
-      <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
-      >
-        <SessionProvider>
-          {!isDashboard && <Header />}
-          {children}
-        </SessionProvider>
+    <html lang="en" className={inter.variable}>
+      <body style={{ margin: 0, padding: 0 }}>
+        <LayoutShell>{children}</LayoutShell>
       </body>
     </html>
   );

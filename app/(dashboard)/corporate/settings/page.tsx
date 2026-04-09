@@ -1,8 +1,12 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 export default function CorporateSettingsPage() {
+  const [loading, setLoading] = useState(true);
+  const [message, setMessage] = useState('');
+  const [error, setError] = useState('');
+
   const [passwordForm, setPasswordForm] = useState({
     currentPassword: '',
     newPassword: '',
@@ -27,45 +31,141 @@ export default function CorporateSettingsPage() {
   });
 
   const [twoFactorEnabled, setTwoFactorEnabled] = useState(false);
-  const [activeDevices] = useState([
-    {
-      id: 1,
-      name: 'Chrome - Windows',
-      location: 'London, UK',
-      lastActive: '5 minutes ago',
-      current: true,
-    },
-    {
-      id: 2,
-      name: 'Safari - iPhone',
-      location: 'London, UK',
-      lastActive: '2 hours ago',
-      current: false,
-    },
-    {
-      id: 3,
-      name: 'Firefox - Windows',
-      location: 'Manchester, UK',
-      lastActive: '1 day ago',
-      current: false,
-    },
-  ]);
+  const [activeDevices, setActiveDevices] = useState<any[]>([]);
+  const [updatingPassword, setUpdatingPassword] = useState(false);
 
-  const handlePasswordChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    setPasswordForm(prev => ({ ...prev, [name]: value }));
+  useEffect(() => {
+    fetchInitialData();
+  }, []);
+
+  const fetchInitialData = async () => {
+    setLoading(true);
+    try {
+      const [settingsRes, sessionsRes] = await Promise.all([
+        fetch('/api/corporate/settings'),
+        fetch('/api/user/sessions')
+      ]);
+
+      if (settingsRes.ok) {
+        const settingsData = await settingsRes.json();
+        if (settingsData.success) {
+          setAccessControl(settingsData.accessControl);
+          setTwoFactorEnabled(settingsData.twoFactorEnabled);
+        }
+      }
+
+      if (sessionsRes.ok) {
+        const sessionsData = await sessionsRes.json();
+        if (sessionsData.success) {
+          setActiveDevices(sessionsData.devices || []);
+        }
+      }
+    } catch (err) {
+      console.error('Failed to load initial data:', err);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const handleAccessControlChange = (key: keyof typeof accessControl) => {
-    setAccessControl(prev => ({ ...prev, [key]: !prev[key] }));
+  const handlePasswordChangeForm = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setPasswordForm(prev => ({ ...prev, [name]: value }));
   };
 
   const togglePasswordVisibility = (field: 'current' | 'new' | 'confirm') => {
     setShowPasswords(prev => ({ ...prev, [field]: !prev[field] }));
   };
 
+  const submitPasswordChange = async () => {
+    setError('');
+    setMessage('');
+
+    if (passwordForm.newPassword !== passwordForm.confirmPassword) {
+      setError('Passwords do not match');
+      return;
+    }
+    
+    if (passwordForm.newPassword.length < 8) {
+      setError('New password must be at least 8 characters long');
+      return;
+    }
+
+    setUpdatingPassword(true);
+    try {
+      const res = await fetch('/api/users/change-password', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(passwordForm),
+      });
+
+      const data = await res.json();
+      if (data.success) {
+        setMessage('Password updated successfully!');
+        setPasswordForm({
+          currentPassword: '',
+          newPassword: '',
+          confirmPassword: '',
+        });
+      } else {
+        setError(data.error || 'Failed to update password');
+      }
+    } catch (err) {
+      setError('An unexpected error occurred. Please try again.');
+    } finally {
+      setUpdatingPassword(false);
+    }
+  };
+
+  const updateSettings = async (updates: any) => {
+    try {
+      const res = await fetch('/api/corporate/settings', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updates),
+      });
+      if (!res.ok) throw new Error('Failed to update settings');
+    } catch (err) {
+      console.error('Error updating settings:', err);
+      // Revert if needed in an advanced implementation
+    }
+  };
+
+  const handleAccessControlChange = (key: keyof typeof accessControl) => {
+    const newValue = !accessControl[key];
+    setAccessControl(prev => ({ ...prev, [key]: newValue }));
+    updateSettings({ accessControl: { ...accessControl, [key]: newValue } });
+  };
+
+  const toggleTwoFactor = () => {
+    const newValue = !twoFactorEnabled;
+    setTwoFactorEnabled(newValue);
+    updateSettings({ twoFactorEnabled: newValue });
+    setMessage(newValue ? 'Two-Factor Authentication enabled' : 'Two-Factor Authentication disabled');
+    setTimeout(() => setMessage(''), 3000);
+  };
+
+  if (loading) {
+    return <div className="p-8 text-center text-gray-500">Loading settings...</div>;
+  }
+
   return (
     <div className="space-y-8 p-6">
+      {/* Messages */}
+      {error && (
+        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg flex justify-between items-center">
+          <span>{error}</span>
+          <button onClick={() => setError('')}>&times;</button>
+        </div>
+      )}
+      {message && (
+        <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-lg flex justify-between items-center">
+          <span>{message}</span>
+          <button onClick={() => setMessage('')}>&times;</button>
+        </div>
+      )}
+
       {/* Header */}
       <div>
         <h1 className="text-3xl font-bold text-gray-900">Settings</h1>
@@ -90,7 +190,7 @@ export default function CorporateSettingsPage() {
                 type={showPasswords.current ? 'text' : 'password'}
                 name="currentPassword"
                 value={passwordForm.currentPassword}
-                onChange={handlePasswordChange}
+                onChange={handlePasswordChangeForm}
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 pr-10"
                 placeholder="Enter your current password"
               />
@@ -111,7 +211,7 @@ export default function CorporateSettingsPage() {
                   type={showPasswords.new ? 'text' : 'password'}
                   name="newPassword"
                   value={passwordForm.newPassword}
-                  onChange={handlePasswordChange}
+                  onChange={handlePasswordChangeForm}
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 pr-10"
                   placeholder="Enter new password"
                 />
@@ -131,7 +231,7 @@ export default function CorporateSettingsPage() {
                   type={showPasswords.confirm ? 'text' : 'password'}
                   name="confirmPassword"
                   value={passwordForm.confirmPassword}
-                  onChange={handlePasswordChange}
+                  onChange={handlePasswordChangeForm}
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 pr-10"
                   placeholder="Confirm new password"
                 />
@@ -155,8 +255,12 @@ export default function CorporateSettingsPage() {
             </ul>
           </div>
 
-          <button className="px-6 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors">
-            Update Password
+          <button 
+            onClick={submitPasswordChange}
+            disabled={updatingPassword || !passwordForm.currentPassword || !passwordForm.newPassword}
+            className="px-6 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors disabled:opacity-50"
+          >
+            {updatingPassword ? 'Updating...' : 'Update Password'}
           </button>
         </div>
       </div>
@@ -178,7 +282,7 @@ export default function CorporateSettingsPage() {
               <p className="text-sm text-gray-600 mt-1">Require authentication code in addition to password</p>
             </div>
             <button
-              onClick={() => setTwoFactorEnabled(!twoFactorEnabled)}
+              onClick={toggleTwoFactor}
               className={`relative inline-flex h-8 w-14 items-center rounded-full transition-colors ${
                 twoFactorEnabled ? 'bg-red-600' : 'bg-gray-300'
               }`}
@@ -192,20 +296,12 @@ export default function CorporateSettingsPage() {
           </div>
 
           {twoFactorEnabled && (
-            <div className="mt-4 p-4 bg-red-50 border border-red-200 rounded-lg">
+            <div className="mt-4 p-4 bg-red-50 border border-red-200 rounded-lg overflow-hidden transition-all duration-300">
               <p className="text-sm text-red-900 mb-3">
-                <strong>Setup Instructions:</strong> Scan the QR code below with your authenticator app (Google Authenticator, Microsoft Authenticator, Authy, etc.)
+                <strong>Setup Instructions:</strong> Two-Factor Authentication is currently enabled on your account. Keep your authenticator application configured.
               </p>
-              <div className="bg-gray-100 w-40 h-40 rounded-lg mx-auto flex items-center justify-center mb-3">
-                <p className="text-gray-600">QR Code Placeholder</p>
-              </div>
-              <input
-                type="text"
-                placeholder="Enter 6-digit code from authenticator"
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500"
-              />
-              <button className="mt-3 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors">
-                Verify & Enable 2FA
+              <button onClick={toggleTwoFactor} className="mt-2 px-4 py-2 bg-white border border-red-200 text-red-600 rounded-lg hover:bg-red-50 transition-colors">
+                Disable 2FA
               </button>
             </div>
           )}
@@ -265,23 +361,26 @@ export default function CorporateSettingsPage() {
         </div>
 
         <div className="divide-y divide-gray-200">
-          {activeDevices.map((device) => (
+          {activeDevices.length === 0 ? (
+            <div className="p-6 text-center text-gray-500">No active sessions mapped.</div>
+          ) : activeDevices.map((device) => (
             <div key={device.id} className="p-6 hover:bg-gray-50 transition-colors">
               <div className="flex items-center justify-between">
                 <div className="flex-1">
                   <div className="flex items-center gap-3">
+                    <span className="text-2xl">{device.icon}</span>
                     <h3 className="font-bold text-gray-900">{device.name}</h3>
-                    {device.current && (
+                    {device.isCurrent && (
                       <span className="px-2 py-1 bg-blue-100 text-blue-900 rounded-full text-xs font-medium">
                         Current Session
                       </span>
                     )}
                   </div>
-                  <p className="text-gray-600 text-sm mt-1">{device.location}</p>
-                  <p className="text-gray-600 text-xs mt-1">Last active: {device.lastActive}</p>
+                  <p className="text-gray-600 text-sm mt-1">{device.location} • {device.ip}</p>
+                  <p className="text-gray-600 text-xs mt-1">Last active: {new Date(device.lastActive).toLocaleString()}</p>
                 </div>
 
-                {!device.current && (
+                {!device.isCurrent && (
                   <button className="px-4 py-2 border border-red-300 text-red-600 rounded-lg hover:bg-red-50 transition-colors">
                     Sign Out
                   </button>

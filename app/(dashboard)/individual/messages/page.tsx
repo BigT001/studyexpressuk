@@ -207,91 +207,107 @@ export default function IndividualMessagesPage() {
 
   if (!adminUser) {
     return (
-      <div className="h-screen flex items-center justify-center bg-gradient-to-b from-gray-50 to-white">
-        <div className="text-center">
-          <div className="text-6xl mb-4">💬</div>
-          <p className="text-gray-500">Loading chat...</p>
-        </div>
+      <div className="h-full min-h-[80vh] flex flex-col items-center justify-center bg-gray-50 rounded-3xl border border-gray-100 shadow-sm m-4 lg:m-8 animate-in fade-in duration-700">
+        <div className="w-16 h-16 border-4 border-emerald-200 border-t-emerald-600 rounded-full animate-spin mb-6"></div>
+        <p className="text-gray-500 font-bold tracking-wide uppercase">Connecting to Secure Channel...</p>
       </div>
     );
   }
 
   return (
-    <div className="h-screen flex flex-col bg-white">
-      {/* Chat Header */}
-      <div className="p-4 border-b border-gray-200 flex items-center gap-3 sticky top-0 z-10 bg-white">
-        <div className="w-12 h-12 rounded-full bg-gradient-to-br from-[#008200] to-[#00B300] flex items-center justify-center text-white font-bold text-lg flex-shrink-0">
-          {adminUser.profileImage ? (
-            <img src={adminUser.profileImage} alt={getFullName(adminUser)} className="w-full h-full rounded-full object-cover" />
+    <div className="h-[calc(100vh-6rem)] max-h-screen flex flex-col bg-gray-50/50 p-4 lg:p-8 space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-700">
+      
+      {/* Container Wrapper */}
+      <div className="flex-1 flex flex-col bg-white rounded-3xl shadow-xl shadow-gray-200/60 border border-gray-100 overflow-hidden relative">
+        {/* Chat Header */}
+        <div className="px-6 py-5 border-b border-gray-100 bg-white flex items-center gap-4 sticky top-0 z-10 shadow-sm">
+          <div className="relative">
+            <div className="w-14 h-14 rounded-full bg-gradient-to-br from-[#008200] to-teal-600 flex items-center justify-center text-white font-black text-xl flex-shrink-0 shadow-lg shadow-green-900/20">
+              {adminUser.profileImage ? (
+                <img src={adminUser.profileImage} alt={getFullName(adminUser)} className="w-full h-full rounded-full object-cover" />
+              ) : (
+                getInitials(adminUser)
+              )}
+            </div>
+            {/* Online indicator */}
+            <div className="absolute bottom-0 right-0 w-4 h-4 bg-emerald-500 border-2 border-white rounded-full"></div>
+          </div>
+          <div className="flex-1">
+            <h2 className="font-black text-gray-900 text-lg tracking-tight">{getFullName(adminUser)}</h2>
+            <p className="text-sm font-semibold text-emerald-600 uppercase tracking-widest mt-0.5">Support Team Active</p>
+          </div>
+        </div>
+
+        {/* Messages Area */}
+        <div className="flex-1 overflow-y-auto p-6 space-y-6 bg-gradient-to-b from-gray-50/50 to-white relative custom-scrollbar">
+          {loading ? (
+            <div className="flex items-center justify-center h-full">
+               <div className="w-8 h-8 border-4 border-gray-200 border-t-emerald-600 rounded-full animate-spin"></div>
+            </div>
+          ) : error ? (
+            <div className="flex flex-col items-center justify-center h-full text-center space-y-3">
+              <span className="text-4xl">⚠️</span>
+              <p className="text-red-600 font-bold bg-red-50 px-4 py-2 rounded-lg">{error}</p>
+            </div>
+          ) : messages.length === 0 ? (
+            <div className="flex flex-col items-center justify-center h-full text-center">
+              <div className="text-6xl mb-6 opacity-80 mix-blend-luminosity grayscale">👋</div>
+              <h3 className="text-2xl font-black text-gray-900 mb-2">Start your conversation</h3>
+              <p className="text-gray-500 text-base font-medium max-w-sm">
+                Our support team is online and ready to assist you. Send a message to begin!
+              </p>
+            </div>
           ) : (
-            getInitials(adminUser)
-          )}
-        </div>
-        <div className="flex-1">
-          <h2 className="font-bold text-gray-900">{getFullName(adminUser)}</h2>
-          <p className="text-xs text-gray-500">Admin • {adminUser.email}</p>
-        </div>
-      </div>
-
-      {/* Messages Area */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-3 bg-gradient-to-b from-gray-50 to-white">
-        {loading ? (
-          <div className="flex items-center justify-center h-full">
-            <p className="text-gray-500">Loading messages...</p>
-          </div>
-        ) : error ? (
-          <div className="flex items-center justify-center h-full">
-            <p className="text-red-500">{error}</p>
-          </div>
-        ) : messages.length === 0 ? (
-          <div className="flex flex-col items-center justify-center h-full text-center">
-            <div className="text-5xl mb-4">👋</div>
-            <h3 className="font-bold text-gray-900 mb-1">Start your conversation</h3>
-            <p className="text-gray-500 text-sm max-w-sm">
-              Send a message to {getFullName(adminUser)} to get started
-            </p>
-          </div>
-        ) : (
-          messages.map(message => {
-            const isOwn = message.senderId._id === userId;
-            return (
-              <div key={message._id} className={`flex ${isOwn ? 'justify-end' : 'justify-start'}`}>
-                <div className={`max-w-xs lg:max-w-md px-4 py-2 rounded-2xl ${
-                  isOwn
-                    ? 'bg-[#008200] text-white rounded-br-none'
-                    : 'bg-gray-200 text-gray-900 rounded-bl-none'
-                }`}>
-                  <p className="break-words">{message.content}</p>
-                  <p className={`text-xs mt-1 ${isOwn ? 'text-green-100' : 'text-gray-500'}`}>
-                    {formatTime(message.createdAt)}
-                    {isOwn && message.readAt && ' ✓✓'}
-                  </p>
+            messages.map((message, idx) => {
+              const isOwn = message.senderId._id === userId;
+              const isLast = idx === messages.length - 1;
+              return (
+                <div key={message._id} className={`flex ${isOwn ? 'justify-end' : 'justify-start'} animate-in fade-in slide-in-from-bottom-2 duration-300`}>
+                  <div className={`group flex flex-col ${isOwn ? 'items-end' : 'items-start'} max-w-[85%] lg:max-w-[70%]`}>
+                    <div className={`px-6 py-4 rounded-3xl shadow-sm text-base ${
+                      isOwn
+                        ? 'bg-gradient-to-br from-[#008200] to-emerald-700 text-white rounded-br-md shadow-emerald-900/20 border border-emerald-600'
+                        : 'bg-white text-gray-800 rounded-bl-md shadow-gray-200/50 border border-gray-100'
+                    }`}>
+                      <p className="break-words leading-relaxed">{message.content}</p>
+                    </div>
+                    
+                    <div className={`flex items-center gap-1.5 mt-2 text-xs font-bold px-2 ${isOwn ? 'text-gray-400' : 'text-gray-400'}`}>
+                      <span>{formatTime(message.createdAt)}</span>
+                      {isOwn && (
+                        <span className={`transition-colors duration-300 ${message.readAt ? 'text-blue-500' : 'text-gray-300'}`}>
+                          {message.readAt ? '✓✓ Read' : '✓ Sent'}
+                        </span>
+                      )}
+                    </div>
+                  </div>
                 </div>
-              </div>
-            );
-          })
-        )}
-        <div ref={messagesEndRef} />
-      </div>
+              );
+            })
+          )}
+          <div ref={messagesEndRef} className="h-1" />
+        </div>
 
-      {/* Message Input */}
-      <div className="p-4 border-t border-gray-200 bg-white sticky bottom-0">
-        <form onSubmit={handleSendMessage} className="flex gap-3">
-          <input
-            type="text"
-            value={messageInput}
-            onChange={(e) => setMessageInput(e.target.value)}
-            placeholder="Type your message..."
-            className="flex-1 px-4 py-2 bg-gray-100 rounded-full border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#008200] text-sm"
-          />
-          <button
-            type="submit"
-            disabled={!messageInput.trim()}
-            className="px-4 py-2 bg-[#008200] text-white rounded-full hover:bg-[#006600] disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-semibold"
-          >
-            ➤
-          </button>
-        </form>
+        {/* Message Input Container */}
+        <div className="p-4 border-t border-gray-100 bg-white mb-2 mx-4 rounded-2xl shadow-lg -translate-y-2 sticky bottom-4 z-20">
+          <form onSubmit={handleSendMessage} className="flex gap-3 items-center">
+            <input
+              type="text"
+              value={messageInput}
+              onChange={(e) => setMessageInput(e.target.value)}
+              placeholder="Write your message here..."
+              className="flex-1 px-6 py-4 bg-gray-50/80 rounded-xl border border-gray-200 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#008200] focus:border-transparent text-base transition-all duration-300 placeholder:text-gray-400 font-medium"
+            />
+            <button
+              type="submit"
+              disabled={!messageInput.trim()}
+              className="p-4 px-8 bg-gradient-to-r from-[#008200] to-emerald-600 text-white rounded-xl hover:shadow-lg hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0 disabled:shadow-none transition-all duration-300 font-bold flex items-center justify-center gap-2 group"
+            >
+              <span className="hidden sm:inline">Send</span>
+              <span className="text-xl group-hover:translate-x-1 transition-transform">➤</span>
+            </button>
+          </form>
+        </div>
       </div>
     </div>
   );

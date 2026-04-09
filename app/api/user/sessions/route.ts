@@ -41,6 +41,22 @@ export async function GET(req: Request) {
 
     const deviceName = `${osName} (${browserName})`;
 
+    let location = 'Unknown Location';
+    try {
+       // Only query external API if IP looks somewhat public
+       if (clientIP && clientIP !== '127.0.0.1' && clientIP !== '::1' && clientIP !== 'Unknown' && clientIP.split('.').length === 4) {
+          const geoRes = await fetch(`http://ip-api.com/json/${clientIP}?fields=city,country`);
+          const geoData = await geoRes.json();
+          if (geoData.status === 'success') {
+             location = `${geoData.city}, ${geoData.country}`;
+          }
+       } else {
+          location = 'Local Network / Development';
+       }
+    } catch (e) {
+       console.log('Geo IP fetch failed', e);
+    }
+
     // Mock devices array with current device and a sample previous device
     const devices = [
       {
@@ -49,11 +65,9 @@ export async function GET(req: Request) {
         icon: deviceIcon,
         lastActive: new Date().toISOString(),
         ip: clientIP,
-        location: 'London, UK', // In production, use IP geolocation service
+        location: location,
         isCurrent: true,
       },
-      // This would be previous sessions if stored in database
-      // For now showing as empty to avoid duplicate data
     ];
 
     // In production, you would query sessions stored in database

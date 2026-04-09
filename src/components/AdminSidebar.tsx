@@ -71,11 +71,7 @@ const navItems: NavItem[] = [
     label: 'Sub-Admins',
     href: '/admin/subadmins',
   },
-  {
-    icon: '📝',
-    label: 'Site Content',
-    href: '/admin/site-content',
-  },
+
 ];
 
 export function AdminSidebar() {

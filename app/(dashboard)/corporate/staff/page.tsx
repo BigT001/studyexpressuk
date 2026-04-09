@@ -189,7 +189,8 @@ export default function CorporateStaffPage() {
             <div>
               <div className="text-gray-600 text-sm font-medium">In Training</div>
               <div className="text-3xl font-bold text-gray-900 mt-2">
-                {staff.length > 0 ? Math.floor(staff.length * 0.7) : 0}
+                {/* Real stats to be mapped from Enrollments */}
+                0
               </div>
             </div>
             <BookOpen className="w-8 h-8 text-blue-200" />
@@ -201,7 +202,8 @@ export default function CorporateStaffPage() {
             <div>
               <div className="text-gray-600 text-sm font-medium">Completed</div>
               <div className="text-3xl font-bold text-gray-900 mt-2">
-                {staff.length > 0 ? Math.floor(staff.length * 0.3) : 0}
+                {/* Real stats to be mapped from Enrollments */}
+                0
               </div>
             </div>
             <Award className="w-8 h-8 text-purple-200" />
@@ -212,7 +214,7 @@ export default function CorporateStaffPage() {
           <div className="flex items-center justify-between">
             <div>
               <div className="text-gray-600 text-sm font-medium">Avg. Progress</div>
-              <div className="text-3xl font-bold text-gray-900 mt-2">65%</div>
+              <div className="text-3xl font-bold text-gray-900 mt-2">0%</div>
             </div>
             <TrendingUp className="w-8 h-8 text-orange-200" />
           </div>

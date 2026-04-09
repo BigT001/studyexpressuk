@@ -25,6 +25,12 @@ export default function MembershipsManagementPage() {
   const [plans, setPlans] = useState<MembershipPlan[]>([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
+  const [showStripeModal, setShowStripeModal] = useState(false);
+  const [savingStripe, setSavingStripe] = useState(false);
+  const [stripeKeys, setStripeKeys] = useState({
+    stripePublishableKey: '',
+    stripeSecretKey: ''
+  });
   const [selectedPlan, setSelectedPlan] = useState<MembershipPlan | null>(null);
   const [formData, setFormData] = useState({
     name: '',
@@ -51,8 +57,26 @@ export default function MembershipsManagementPage() {
     }
   };
 
+  const fetchStripeKeys = async () => {
+    try {
+      const res = await fetch('/api/admin/settings');
+      if (res.ok) {
+        const data = await res.json();
+        if (data.success && data.settings) {
+          setStripeKeys({
+            stripePublishableKey: data.settings.stripePublishableKey || '',
+            stripeSecretKey: data.settings.stripeSecretKey || ''
+          });
+        }
+      }
+    } catch (error) {
+      console.error('Failed to fetch settings', error);
+    }
+  };
+
   useEffect(() => {
     fetchPlans();
+    fetchStripeKeys();
   }, []);
 
   const handleCreatePlan = () => {
@@ -144,6 +168,41 @@ export default function MembershipsManagementPage() {
     }
   };
 
+  const saveStripeKeys = async () => {
+    setSavingStripe(true);
+    try {
+      // First, fetch current settings so we only update stripe keys
+      const curr = await fetch('/api/admin/settings');
+      let currentSettings = {};
+      if (curr.ok) {
+        const data = await curr.json();
+        currentSettings = data.settings || {};
+      }
+
+      const res = await fetch('/api/admin/settings', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ...currentSettings,
+          stripePublishableKey: stripeKeys.stripePublishableKey,
+          stripeSecretKey: stripeKeys.stripeSecretKey,
+        }),
+      });
+
+      if (!res.ok) {
+        throw new Error('Failed to update Stripe settings');
+      }
+      
+      setShowStripeModal(false);
+      alert('Stripe configuration saved successfully.');
+    } catch (error: any) {
+      console.error(error);
+      alert(error.message || 'Failed to save stripe keys');
+    } finally {
+      setSavingStripe(false);
+    }
+  };
+
   const totalRevenue = 0; // consistent with backend mock for now, implement real count later if needed
   const activeMemberships = 0; // consistent with backend mock for now
 
@@ -195,7 +254,10 @@ export default function MembershipsManagementPage() {
         <div className="bg-white rounded-lg shadow p-6 border-t-4 border-green-600">
           <h3 className="text-lg font-bold mb-4">📊 Active Memberships</h3>
           <p className="text-gray-600 text-sm mb-4">View and manage active memberships</p>
-          <button className="w-full bg-green-600 text-white py-2 rounded hover:bg-green-700">
+          <button 
+            onClick={() => router.push('/admin/users?filter=memberships')}
+            className="w-full bg-green-600 text-white py-2 rounded hover:bg-green-700"
+          >
             View Members
           </button>
         </div>
@@ -203,7 +265,10 @@ export default function MembershipsManagementPage() {
         <div className="bg-white rounded-lg shadow p-6 border-t-4 border-purple-600">
           <h3 className="text-lg font-bold mb-4">💰 Stripe Integration</h3>
           <p className="text-gray-600 text-sm mb-4">Process payments securely</p>
-          <button className="w-full bg-purple-600 text-white py-2 rounded hover:bg-purple-700">
+          <button 
+            onClick={() => setShowStripeModal(true)}
+            className="w-full bg-purple-600 text-white py-2 rounded hover:bg-purple-700"
+          >
             Configure Stripe
           </button>
         </div>
@@ -411,6 +476,60 @@ export default function MembershipsManagementPage() {
                   className="flex-1 px-4 py-2 bg-[#008200] text-white rounded-lg hover:bg-[#006600]"
                 >
                   {selectedPlan ? 'Update' : 'Create'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+      
+      {/* Stripe Modal */}
+      {showStripeModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 max-w-md w-full">
+            <h3 className="text-2xl font-bold mb-6">Stripe Configuration</h3>
+            
+            <p className="text-sm text-gray-500 mb-4">
+              Enter your Stripe API keys below to automatically receive payments. These details are stored securely and encrypted in the database.
+            </p>
+
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Publishable Key</label>
+                <input
+                  type="text"
+                  value={stripeKeys.stripePublishableKey}
+                  onChange={(e) => setStripeKeys({ ...stripeKeys, stripePublishableKey: e.target.value })}
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
+                  placeholder="pk_live_..."
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Secret Key</label>
+                <input
+                  type="password"
+                  value={stripeKeys.stripeSecretKey}
+                  onChange={(e) => setStripeKeys({ ...stripeKeys, stripeSecretKey: e.target.value })}
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
+                  placeholder="sk_live_..."
+                />
+              </div>
+
+              <div className="flex gap-3 pt-4 border-t mt-6">
+                <button
+                  onClick={() => setShowStripeModal(false)}
+                  disabled={savingStripe}
+                  className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={saveStripeKeys}
+                  disabled={savingStripe}
+                  className="flex-1 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 flex justify-center items-center gap-2"
+                >
+                  {savingStripe ? <Loader2 className="w-5 h-5 animate-spin" /> : 'Save Keys'}
                 </button>
               </div>
             </div>

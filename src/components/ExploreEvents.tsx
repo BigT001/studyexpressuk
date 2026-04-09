@@ -1,211 +1,272 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import Image from 'next/image';
 import Link from 'next/link';
+import { useScrollReveal } from '@/hooks/useScrollReveal';
 
+/* ── Helpers ─────────────────────────────────────────────────────────── */
+function formatDate(date: string | Date | undefined) {
+  if (!date) return 'TBA';
+  return new Date(date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+}
+
+const FORMAT_STYLE: Record<string, { bg: string; label: string; icon: string }> = {
+  online:  { bg: '#0066CC', label: 'Online',  icon: '🌐' },
+  offline: { bg: '#FF6B35', label: 'Offline', icon: '📍' },
+  hybrid:  { bg: '#7C3AED', label: 'Hybrid',  icon: '🔄' },
+};
+
+const ACCESS_STYLE: Record<string, { bg: string; label: string; icon: string }> = {
+  premium:   { bg: '#d97706', label: 'Premium',   icon: '💎' },
+  corporate: { bg: '#0E3386', label: 'Corporate', icon: '🏢' },
+  free:      { bg: '#059669', label: 'Free',       icon: '🆓' },
+};
+
+/* ── Skeleton ─────────────────────────────────────────────────── */
+function EventSkeleton() {
+  return (
+    <div style={{
+      background: 'white', borderRadius: 20, overflow: 'hidden',
+      border: '1px solid #f3f4f6', boxShadow: '0 2px 12px rgba(0,0,0,0.06)',
+    }}>
+      <div className="skeleton" style={{ height: 180 }} />
+      <div style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: 12 }}>
+        <div className="skeleton" style={{ height: 20, width: '60%' }} />
+        <div className="skeleton" style={{ height: 14, width: '100%' }} />
+        <div className="skeleton" style={{ height: 14, width: '75%' }} />
+        <div style={{ display: 'flex', gap: 8, marginTop: 6 }}>
+          <div className="skeleton" style={{ height: 36, flex: 1 }} />
+          <div className="skeleton" style={{ height: 36, flex: 1 }} />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ── Event Card ───────────────────────────────────────────────── */
+function EventCard({ item, index }: { item: any, index: number }) {
+  const fmt    = FORMAT_STYLE[item.format] ?? null;
+  const access = ACCESS_STYLE[item.access] ?? ACCESS_STYLE.free;
+
+  return (
+    <div className="card reveal reveal-scale" style={{ 
+      display: 'flex', flexDirection: 'column', height: '100%',
+      transitionDelay: `${index * 0.1}s`
+    }}>
+      {/* Image */}
+      <div style={{ position: 'relative', height: 190, overflow: 'hidden', flexShrink: 0 }}>
+        {item.imageUrl ? (
+          <img
+            src={item.imageUrl}
+            alt={item.title}
+            style={{ width: '100%', height: '100%', objectFit: 'cover', transition: 'transform 0.5s ease' }}
+            className="event-img"
+          />
+        ) : (
+          <div style={{
+            width: '100%', height: '100%',
+            background: 'linear-gradient(135deg, #008200 0%, #0E3386 100%)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+          }}>
+            <span style={{ fontSize: '2.5rem' }}>🎯</span>
+          </div>
+        )}
+        {/* Dark overlay */}
+        <div style={{
+          position: 'absolute', inset: 0,
+          background: 'linear-gradient(to top, rgba(0,0,0,0.5) 0%, transparent 60%)',
+          pointerEvents: 'none',
+        }} />
+
+        {/* Access badge */}
+        <div style={{
+          position: 'absolute', top: 12, left: 12,
+          background: access.bg, color: 'white',
+          padding: '4px 10px', borderRadius: 100,
+          fontSize: '0.7rem', fontWeight: 700,
+        }}>
+          {access.icon} {access.label}
+        </div>
+
+        {/* Format badge */}
+        {fmt && (
+          <div style={{
+            position: 'absolute', top: 12, right: 12,
+            background: fmt.bg, color: 'white',
+            padding: '4px 10px', borderRadius: 100,
+            fontSize: '0.7rem', fontWeight: 700,
+          }}>
+            {fmt.icon} {fmt.label}
+          </div>
+        )}
+
+        {/* Date on image */}
+        {item.startDate && (
+          <div style={{
+            position: 'absolute', bottom: 12, left: 12,
+            background: 'rgba(255,255,255,0.95)',
+            borderRadius: 8, padding: '6px 10px',
+            fontSize: '0.72rem', fontWeight: 700, color: '#111827',
+            display: 'flex', alignItems: 'center', gap: 5,
+          }}>
+            <svg width="12" height="12" fill="none" stroke="#008200" strokeWidth="2" viewBox="0 0 24 24">
+              <rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/>
+            </svg>
+            {formatDate(item.startDate)}
+          </div>
+        )}
+      </div>
+
+      {/* Body */}
+      <div style={{ padding: '18px 20px 0', flex: 1, display: 'flex', flexDirection: 'column', gap: 8 }}>
+        <span style={{ fontSize: '0.7rem', fontWeight: 700, color: '#0E3386', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+          🎯 Event
+        </span>
+
+        <h3 style={{ margin: 0, fontSize: '1rem', fontWeight: 700, color: '#111827', lineHeight: 1.35 }}
+          className="line-clamp-2">
+          {item.title}
+        </h3>
+
+        {item.description && (
+          <p style={{ margin: 0, fontSize: '0.82rem', color: '#6b7280', lineHeight: 1.5 }}
+            className="line-clamp-2">
+            {item.description}
+          </p>
+        )}
+      </div>
+
+      {/* Actions */}
+      <div style={{ padding: '16px 20px 20px', display: 'flex', gap: 10, marginTop: 'auto' }}>
+        <button
+          onClick={() => window.location.href = '/events'}
+          className="btn-primary"
+          style={{ flex: 1, justifyContent: 'center', padding: '10px 16px', fontSize: '0.82rem', borderRadius: 10 }}
+        >
+          Register Now
+        </button>
+        <button
+          onClick={() => window.location.href = `/events/${item._id || item.id}`}
+          style={{
+            flex: 1, padding: '10px 16px', fontSize: '0.82rem', fontWeight: 600,
+            border: '1.5px solid #e5e7eb', borderRadius: 10, background: 'transparent',
+            color: '#374151', cursor: 'pointer', transition: 'all 0.2s',
+          }}
+          onMouseEnter={e => { e.currentTarget.style.borderColor = '#0E3386'; e.currentTarget.style.color = '#0E3386'; }}
+          onMouseLeave={e => { e.currentTarget.style.borderColor = '#e5e7eb'; e.currentTarget.style.color = '#374151'; }}
+        >
+          View Details
+        </button>
+      </div>
+    </div>
+  );
+}
+
+/* ── Main section ─────────────────────────────────────────────── */
 export function ExploreEvents() {
-  const [activeTab, setActiveTab] = useState('Events');
-  const [events, setEvents] = useState<any[]>([]);
+  const [events,  setEvents ] = useState<any[]>([]);
+  useScrollReveal([events]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [error,   setError  ] = useState<string | null>(null);
 
   useEffect(() => {
-    const fetchEvents = async () => {
+    (async () => {
       try {
-        setLoading(true);
-        const response = await fetch('/api/events');
-        if (!response.ok) {
-          throw new Error('Failed to fetch events');
-        }
-        const data = await response.json();
-        console.log('===== EXPLORE EVENTS FETCH =====');
-        console.log('Raw API response:', data);
-        console.log('Events array:', data.events);
-        if (data.events && data.events.length > 0) {
-          console.log('First event:', data.events[0]);
-          console.log('First event format field:', data.events[0].format);
-          console.log('First event format is truthy:', !!data.events[0].format);
-          data.events.forEach((event: any, idx: number) => {
-            console.log(`Event ${idx}: "${event.title}" - format="${event.format || 'UNDEFINED'}" - format truthy: ${!!event.format}`);
-          });
-        }
+        const res  = await fetch('/api/events');
+        const data = await res.json();
         setEvents(data.events || []);
       } catch (err) {
-        setError(err instanceof Error ? err.message : 'An error occurred');
-        console.error('Error fetching events:', err);
+        setError(err instanceof Error ? err.message : 'Failed to load events');
       } finally {
         setLoading(false);
       }
-    };
-
-    fetchEvents();
+    })();
   }, []);
 
-  const categories = ['Events'];
-
-  const formatDate = (date: string | Date | undefined) => {
-    if (!date) return 'TBA';
-    const d = new Date(date);
-    return d.toLocaleDateString('en-GB', { month: 'short', day: 'numeric', year: 'numeric' });
-  };
-
-  // Limit to 6 events
-  const displayedEvents = events.slice(0, 6);
-  const hasMoreEvents = events.length > 6;
-
-  const filteredCards = activeTab === 'Events'
-    ? displayedEvents
-    : [];
+  const displayed = events.slice(0, 3);
 
   return (
-    <section className="py-24 relative overflow-hidden" style={{ background: 'linear-gradient(to bottom right, rgba(0, 130, 0, 0.05), white, rgba(14, 51, 134, 0.05))' }}>
-      {/* Decorative elements */}
-      <div className="absolute top-0 right-0 w-96 h-96 rounded-full mix-blend-multiply filter blur-3xl opacity-10" style={{ backgroundColor: '#008200' }}></div>
-      <div className="absolute -bottom-8 left-20 w-72 h-72 bg-blue-200 rounded-full mix-blend-multiply filter blur-3xl opacity-10"></div>
+    <section style={{
+      padding: 'clamp(60px, 8vw, 100px) 0',
+      background: 'linear-gradient(180deg, #f0f5ff 0%, #ffffff 100%)',
+      position: 'relative',
+    }}>
+      {/* Mesh gradient decoration */}
+      <div style={{
+        position: 'absolute', bottom: 0, left: 0, right: 0, top: 0,
+        backgroundImage: 'radial-gradient(at 0% 100%, rgba(14, 51, 134, 0.04) 0, transparent 50%), radial-gradient(at 100% 0%, rgba(0, 130, 0, 0.02) 0, transparent 40%)',
+        pointerEvents: 'none',
+      }} />
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+      <div className="section-container" style={{ position: 'relative' }}>
+
         {/* Header */}
-        <div className="mb-16 text-center">
-          <div className="mb-6">
-            <h2 className="text-4xl md:text-4xl font-black mb-4 text-gray-900">
-              Explore <span style={{ color: '#008200' }}>Recent Events</span>
-            </h2>
-            <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-              Discover our latest upcoming events and professional development opportunities.
-            </p>
-          </div>
+        <div style={{ textAlign: 'center', marginBottom: 56 }} className="reveal reveal-up">
+          <span className="section-label section-label-blue" style={{ marginBottom: 16, display: 'inline-flex' }}>
+            🎯 Upcoming Events
+          </span>
+          <h2 style={{
+            fontSize: 'clamp(1.75rem, 3.5vw, 2.5rem)',
+            fontWeight: 900, letterSpacing: '-0.03em',
+            color: '#111827', margin: '12px 0 16px',
+          }}>
+            Explore <span className="gradient-text-blue">Recent Events</span>
+          </h2>
+          <p style={{ fontSize: '1.05rem', color: '#6b7280', maxWidth: 520, margin: '0 auto', lineHeight: 1.6 }}>
+            Discover professional development events, networking sessions, and UK study experiences.
+          </p>
         </div>
 
-        {/* Loading State */}
+        {/* Grid */}
         {loading && (
-          <div className="text-center py-12">
-            <p className="text-gray-600">Loading events...</p>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: 24 }}>
+            {Array.from({ length: 3 }).map((_, i) => <EventSkeleton key={i} />)}
           </div>
         )}
 
-        {/* Error State */}
         {error && (
-          <div className="text-center py-12">
-            <p className="text-red-600">Error loading events: {error}</p>
+          <div style={{
+            textAlign: 'center', padding: '48px 24px',
+            background: '#fef2f2', borderRadius: 16, border: '1px solid #fecaca',
+          }}>
+            <div style={{ fontSize: '2rem', marginBottom: 12 }}>⚠️</div>
+            <p style={{ color: '#dc2626', fontWeight: 500 }}>{error}</p>
           </div>
         )}
 
-        {/* Empty State */}
-        {!loading && !error && filteredCards.length === 0 && (
-          <div className="text-center py-12">
-            <p className="text-gray-600">No events available at the moment.</p>
+        {!loading && !error && displayed.length === 0 && (
+          <div style={{ textAlign: 'center', padding: '64px 24px', color: '#9ca3af' }}>
+            <div style={{ fontSize: '3rem', marginBottom: 16 }}>📭</div>
+            <p style={{ fontSize: '1rem' }}>No events at the moment. Check back soon!</p>
           </div>
         )}
 
-        {/* Events Grid */}
-        {!loading && !error && filteredCards.length > 0 && (
+        {!loading && !error && displayed.length > 0 && (
           <>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 auto-rows-max">
-              {filteredCards.map((item) => (
-                <div key={item._id || item.id} className="bg-white rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 overflow-hidden group border border-gray-100">
-                  {/* Image Container with Badge Overlay */}
-                  <div className="relative w-full aspect-video overflow-hidden bg-gradient-to-br from-green-400 to-blue-500">
-                    {item.imageUrl ? (
-                      <img
-                        src={item.imageUrl}
-                        alt={item.title}
-                        className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
-                      />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center text-white text-sm font-medium">
-                        No Image
-                      </div>
-                    )}
-                    {/* Dark overlay */}
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent"></div>
-                  </div>
-
-                  {/* Content */}
-                  <div className="px-6 pt-6 pb-0">
-                    {/* Badges */}
-                    <div className="flex items-center gap-2 mb-4 flex-wrap">
-                      <span className="px-3 py-1.5 rounded-full text-xs font-bold text-white" style={{ backgroundColor: '#008200' }}>
-                        {item.type === 'course' ? '📚 Course' : '🎯 Event'}
-                      </span>
-                      <span className="px-3 py-1.5 rounded-full text-xs font-bold text-white" style={{ backgroundColor: item.access === 'premium' ? '#FFA500' : item.access === 'corporate' ? '#0E3386' : '#10B981' }}>
-                        {item.access === 'premium' ? '💎 Premium' : item.access === 'corporate' ? '🏢 Corporate' : '🆓 Free'}
-                      </span>
-                      {(() => {
-                        return item.format ? (
-                          <span
-                            className="px-3 py-1.5 rounded-full text-xs font-bold text-white"
-                            style={{ backgroundColor: item.format === 'offline' ? '#FF6B35' : item.format === 'hybrid' ? '#7C3AED' : '#0066CC' }}
-                          >
-                            {item.format === 'offline' ? '📍 Offline' : item.format === 'hybrid' ? '🔄 Hybrid' : '🌐 Online'}
-                          </span>
-                        ) : null;
-                      })()}
-                    </div>
-
-                    {/* Title */}
-                    <h3 className="text-xl font-bold text-gray-900 mb-3 line-clamp-2 leading-tight group-hover:text-blue-600 transition-colors">
-                      {item.title}
-                    </h3>
-
-                    {/* Description */}
-                    <p className="text-gray-600 text-sm mb-4 line-clamp-2 flex-grow">
-                      {item.description || 'No description available'}
-                    </p>
-
-                    {/* Separator */}
-                    <div className="h-px bg-gradient-to-r from-transparent via-gray-300 to-transparent mb-4"></div>
-
-                    {/* Key Details */}
-                    <div className="space-y-3 mb-5">
-                      {item.startDate && (
-                        <div className="flex items-center gap-3 text-sm">
-                          <span className="text-lg">📅</span>
-                          <div className="flex-grow">
-                            <p className="text-xs text-gray-500 uppercase tracking-wide font-semibold">Date</p>
-                            <p className="text-gray-900 font-bold">{formatDate(item.startDate)}</p>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Buttons - Side by Side */}
-                  <div className="flex gap-3 px-6 py-3">
-                    <button
-                      onClick={() => window.location.href = '/events'}
-                      className="flex-1 px-4 py-3 text-white font-bold text-sm transition-all duration-300 hover:shadow-xl transform hover:scale-105 active:scale-95"
-                      style={{ backgroundColor: '#008200' }}
-                    >
-                      Register Now →
-                    </button>
-
-                    <button
-                      onClick={() => window.location.href = `/events/${item._id || item.id}`}
-                      className="flex-1 px-4 py-3 text-gray-900 font-bold text-sm transition-all duration-300 hover:shadow-xl transform hover:scale-105 active:scale-95 border-2 border-gray-300 hover:border-gray-400"
-                    >
-                      View Details
-                    </button>
-                  </div>
-                </div>
-              ))}
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))',
+              gap: 24,
+            }}>
+              {displayed.map((item, idx) => <EventCard key={item._id || item.id} item={item} index={idx} />)}
             </div>
 
-            {/* Discover More Button */}
-            {hasMoreEvents && (
-              <div className="mt-12 flex justify-center">
-                <Link
-                  href="/events"
-                  className="px-8 py-3 text-white rounded-lg font-bold text-sm transition-all duration-300 hover:scale-105 hover:shadow-lg"
-                  style={{ backgroundColor: '#008200' }}
-                >
-                  Discover More Events
+            <div style={{ textAlign: 'center', marginTop: 48 }} className="reveal reveal-up">
+                <Link href="/events" className="btn-primary" style={{ fontSize: '0.95rem', padding: '14px 32px' }}>
+                  View More Events
+                  <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M17 8l4 4m0 0l-4 4m4-4H3" />
+                  </svg>
                 </Link>
               </div>
-            )}
           </>
         )}
       </div>
+
+      <style>{`
+        .event-img { transition: transform 0.5s ease; }
+        .card:hover .event-img { transform: scale(1.06); }
+      `}</style>
     </section>
   );
 }

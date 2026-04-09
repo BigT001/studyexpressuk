@@ -37,6 +37,8 @@ export async function GET(req: NextRequest) {
       emailFromName: 'Study Express UK',
       emailFromAddress: 'noreply@studyexpressuk.com',
       stripeEnabled: true,
+      stripePublishableKey: '',
+      stripeSecretKey: '',
       taxRate: 0,
       maintenanceMode: false,
       maintenanceMessage: '',

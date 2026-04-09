@@ -23,6 +23,8 @@ interface ISettings extends Document {
     
     // Payment
     stripeEnabled: boolean;
+    stripePublishableKey: string;
+    stripeSecretKey: string;
     taxRate: number;
     
     // System
@@ -109,6 +111,14 @@ const settingsSchema = new Schema<ISettings>({
     stripeEnabled: {
       type: Boolean,
       default: true,
+    },
+    stripePublishableKey: {
+      type: String,
+      default: '',
+    },
+    stripeSecretKey: {
+      type: String,
+      default: '',
     },
     taxRate: {
       type: Number,

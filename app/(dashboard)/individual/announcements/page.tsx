@@ -100,119 +100,132 @@ export default function AnnouncementsPage() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin rounded-full h-12 w-12 border-4 border-green-200 border-t-green-600"></div>
+      <div className="flex flex-col items-center justify-center min-h-[80vh] m-4 lg:m-8 bg-gray-50 rounded-3xl border border-gray-100 shadow-sm animate-in fade-in duration-700">
+        <div className="w-16 h-16 border-4 border-emerald-200 border-t-emerald-600 rounded-full animate-spin mb-6"></div>
+        <p className="text-gray-500 font-bold tracking-wide uppercase">Syncing Announcements...</p>
       </div>
     );
   }
 
   return (
-    <div className="space-y-8 p-4 md:p-8">
+    <div className="space-y-8 p-4 lg:p-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
       {/* Header */}
-      <div className="space-y-2">
-        <h1 className="text-4xl font-black text-gray-900">Announcements</h1>
-        <p className="text-gray-600 text-lg">Stay updated with important announcements from the platform</p>
+      <div className="bg-gradient-to-r from-[#008200] to-teal-700 rounded-3xl p-10 text-white shadow-2xl relative overflow-hidden">
+        <div className="absolute inset-0 bg-[url('/noise.png')] opacity-10 mix-blend-overlay"></div>
+        <div className="relative z-10">
+          <h1 className="text-4xl font-black tracking-tight mb-2">Announcements</h1>
+          <p className="text-green-100 text-lg font-medium opacity-90 max-w-xl">
+            Stay updated with real-time broadcasts, platform upgrades, and urgent notices from the administration.
+          </p>
+        </div>
       </div>
 
       {/* Tab Navigation */}
       <div className="flex gap-3">
         <button
           onClick={() => setActiveTab('all')}
-          className={`px-6 py-3 rounded-lg font-bold transition-all duration-300 flex items-center gap-2 ${
+          className={`px-8 py-4 rounded-2xl font-black transition-all duration-300 flex items-center gap-3 ${
             activeTab === 'all'
-              ? 'bg-green-600 text-white shadow-lg'
-              : 'bg-white text-gray-700 border border-gray-200 hover:border-gray-300 hover:shadow-md'
+              ? 'bg-gradient-to-r from-gray-900 to-gray-800 text-white shadow-xl shadow-gray-900/20 translate-y-0'
+              : 'bg-white text-gray-500 border border-gray-100 shadow-sm hover:border-gray-200 hover:shadow-md hover:text-gray-700'
           }`}
         >
-          📢 All Announcements
+          <span className="text-xl">📢</span> Global Feed
           {unreadCount > 0 && (
-            <span className="bg-red-500 text-white text-xs font-bold rounded-full px-2.5 py-0.5 ml-1">
-              {unreadCount}
+            <span className={`text-xs font-black rounded-full px-3 py-1 ${activeTab === 'all' ? 'bg-red-500 text-white' : 'bg-red-100 text-red-600'}`}>
+              {unreadCount} New
             </span>
           )}
         </button>
         <button
           onClick={() => setActiveTab('urgent')}
-          className={`px-6 py-3 rounded-lg font-bold transition-all duration-300 flex items-center gap-2 ${
+          className={`px-8 py-4 rounded-2xl font-black transition-all duration-300 flex items-center gap-3 ${
             activeTab === 'urgent'
-              ? 'bg-red-600 text-white shadow-lg'
-              : 'bg-white text-gray-700 border border-gray-200 hover:border-gray-300 hover:shadow-md'
+              ? 'bg-gradient-to-r from-red-600 to-rose-600 text-white shadow-xl shadow-red-900/20'
+              : 'bg-white text-gray-500 border border-gray-100 shadow-sm hover:border-red-200 hover:shadow-md hover:text-red-600'
           }`}
         >
-          🚨 Urgent
+          <span className="text-xl">🚨</span> Critical Action
         </button>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
         {/* Announcements Feed */}
-        <div className="lg:col-span-2">
-          <div className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
-            <div className="bg-linear-to-r from-blue-50 to-blue-100 px-6 py-6 border-b border-gray-200">
-              <div className="flex items-center gap-3">
-                <span className="text-3xl">📢</span>
-                <div>
-                  <h2 className="text-2xl font-bold text-gray-900">All Announcements</h2>
-                  <p className="text-sm text-gray-600 mt-1">{filteredAnnouncements.length} announcement{filteredAnnouncements.length !== 1 ? 's' : ''}</p>
-                </div>
-              </div>
+        <div className="lg:col-span-7 xl:col-span-8">
+          <div className="bg-white rounded-3xl shadow-xl shadow-gray-200/50 border border-gray-100 overflow-hidden flex flex-col min-h-[600px]">
+            <div className="bg-gray-50/80 px-8 py-6 border-b border-gray-100 flex items-center justify-between">
+              <h2 className="text-xl font-black text-gray-900 flex items-center gap-2">
+                {activeTab === 'urgent' ? 'Critical Notices' : 'Inbox Stream'}
+              </h2>
+              <span className="text-sm font-bold text-gray-500 bg-white px-4 py-1.5 rounded-full border border-gray-100 shadow-sm">
+                {filteredAnnouncements.length} Records
+              </span>
             </div>
 
             {announcements.length === 0 ? (
-              <div className="p-12 text-center">
-                <div className="text-6xl mb-4">📭</div>
-                <p className="text-gray-600 text-lg font-medium">No announcements at this time</p>
-                <p className="text-gray-500 mt-2">Check back later for updates</p>
+              <div className="flex-1 flex flex-col items-center justify-center p-12 text-center opacity-70">
+                <div className="text-7xl mb-6 grayscale mix-blend-luminosity">📭</div>
+                <p className="text-gray-900 text-2xl font-black mb-2">Inbox Empty</p>
+                <p className="text-gray-500 font-medium max-w-sm">No administrative broadcasts have been published recently.</p>
               </div>
             ) : filteredAnnouncements.length === 0 ? (
-              <div className="p-12 text-center">
-                <div className="text-6xl mb-4">🔍</div>
-                <p className="text-gray-600 text-lg font-medium">No {activeTab === 'urgent' ? 'urgent' : ''} announcements</p>
+              <div className="flex-1 flex flex-col items-center justify-center p-12 text-center opacity-70">
+                <div className="text-7xl mb-6 grayscale mix-blend-luminosity">🔍</div>
+                <p className="text-gray-900 text-2xl font-black mb-2">Filter Returned Empty</p>
+                <p className="text-gray-500 font-medium">No {activeTab} notifications match your view.</p>
               </div>
             ) : (
-              <div className="divide-y divide-gray-200">
+              <div className="divide-y divide-gray-100 overflow-y-auto">
                 {filteredAnnouncements.map((announcement: any) => {
                   const unread = isUnread(announcement);
+                  const isSelected = selectedAnnouncement?._id === announcement._id;
+                  
                   return (
                     <div
                       key={announcement._id}
                       onClick={() => handleSelectAnnouncement(announcement)}
-                      className={`p-6 cursor-pointer transition-all duration-200 hover:bg-gray-50 ${
-                        unread ? 'bg-blue-50' : ''
-                      } ${
-                        selectedAnnouncement?._id === announcement._id ? 'bg-blue-100 border-l-4 border-blue-600' : ''
-                      }`}
+                      className={`p-6 cursor-pointer transition-all duration-300 group relative ${
+                        unread ? 'bg-emerald-50/30' : 'bg-white'
+                      } ${isSelected ? 'bg-gray-50 ring-1 ring-inset ring-gray-200' : 'hover:bg-gray-50/50'}`}
                     >
-                      <div className="flex items-start gap-4">
-                        {/* Priority Indicator */}
-                        <div className="flex-shrink-0 mt-1">
+                      {/* Active Border */}
+                      {isSelected && (
+                         <div className="absolute left-0 top-0 bottom-0 w-1.5 bg-[#008200] rounded-r-md"></div>
+                      )}
+                      
+                      <div className="flex gap-5 pl-2">
+                        {/* Status Dot */}
+                        <div className="flex-shrink-0 mt-1.5">
                           {unread ? (
-                            <div className="w-4 h-4 rounded-full bg-green-500 ring-2 ring-green-200"></div>
+                            <div className="w-4 h-4 rounded-full bg-emerald-500 shadow-md shadow-emerald-500/30 border-2 border-white ring-2 ring-emerald-100 relative">
+                               <div className="absolute inset-0 rounded-full bg-emerald-400 animate-ping opacity-20"></div>
+                            </div>
                           ) : (
-                            <div className="w-4 h-4 rounded-full bg-gray-300"></div>
+                            <div className="w-4 h-4 rounded-full bg-gray-200 border-2 border-white"></div>
                           )}
                         </div>
 
                         <div className="flex-1 min-w-0">
-                          <div className="flex items-center justify-between gap-3 mb-2">
-                            <h3 className={`font-bold text-lg line-clamp-1 ${unread ? 'text-gray-900' : 'text-gray-700'}`}>
+                          <div className="flex items-start justify-between gap-4 mb-2">
+                            <h3 className={`font-black text-lg leading-tight transition-colors ${unread ? 'text-gray-900' : 'text-gray-600'} group-hover:text-[#008200]`}>
                               {announcement.title}
                             </h3>
                             {announcement.type === 'urgent' && (
-                              <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-red-100 text-red-700 text-xs font-bold whitespace-nowrap">
-                                🚨 Urgent
+                              <span className="shrink-0 inline-flex items-center px-3 py-1 rounded-full bg-red-50 text-red-600 text-xs font-black uppercase tracking-widest border border-red-100">
+                                Urgent
                               </span>
                             )}
                           </div>
 
-                          <p className="text-gray-600 line-clamp-2 text-sm mb-3">{announcement.content}</p>
+                          <p className="text-gray-500 line-clamp-2 text-sm leading-relaxed mb-4 font-medium pr-8">{announcement.content}</p>
 
-                          <div className="flex items-center gap-4 text-xs text-gray-500 flex-wrap">
-                            <div className="flex items-center gap-1">
-                              <span>📅</span>
+                          <div className="flex items-center gap-6 text-xs font-bold text-gray-400 select-none">
+                            <div className="flex items-center gap-1.5">
+                              <span className="text-gray-300">📅</span>
                               {formatDate(announcement.createdAt)}
                             </div>
-                            <div className="flex items-center gap-1">
-                              <span>👤</span>
+                            <div className="flex items-center gap-1.5">
+                              <span className="text-gray-300">👤</span>
                               {announcement.createdBy?.name || 'Admin'}
                             </div>
                           </div>
@@ -227,60 +240,53 @@ export default function AnnouncementsPage() {
         </div>
 
         {/* Announcement Details Panel */}
-        <div className="lg:col-span-1">
+        <div className="lg:col-span-5 xl:col-span-4">
           {selectedAnnouncement ? (
-            <div className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden sticky top-6">
-              <div className="bg-linear-to-r from-green-50 to-green-100 px-6 py-6 border-b border-gray-200">
-                <div className="flex items-center gap-2">
-                  <span className="text-2xl">💌</span>
-                  <h3 className="font-bold text-gray-900 text-lg">Full Message</h3>
+            <div className="bg-white rounded-3xl shadow-xl shadow-gray-200/50 border border-gray-100 overflow-hidden sticky top-6 animate-in slide-in-from-right-8 duration-500 flex flex-col max-h-[85vh]">
+              {/* Cover Header */}
+              <div className={`px-8 py-8 ${selectedAnnouncement.type === 'urgent' ? 'bg-gradient-to-br from-red-500 to-rose-700' : 'bg-gradient-to-br from-emerald-500 to-teal-700'} text-white relative`}>
+                 <div className="absolute inset-0 bg-[url('/noise.png')] opacity-10 mix-blend-overlay"></div>
+                 <div className="relative z-10">
+                    <div className="w-12 h-12 bg-white/20 backdrop-blur-md rounded-xl flex items-center justify-center text-2xl mb-4 border border-white/20 shadow-inner">
+                       {selectedAnnouncement.type === 'urgent' ? '🚨' : '💌'}
+                    </div>
+                    {selectedAnnouncement.type === 'urgent' && (
+                      <span className="inline-flex mb-3 px-3 py-1 rounded-full bg-white/20 text-white text-xs font-black uppercase tracking-widest border border-white/30 backdrop-blur-sm shadow-sm">
+                        Critical Operations
+                      </span>
+                    )}
+                    <h3 className="font-black text-2xl leading-tight text-white mb-2">{selectedAnnouncement.title}</h3>
+                 </div>
+              </div>
+
+              {/* Notice Body */}
+              <div className="p-8 overflow-y-auto flex-1 bg-white">
+                <div className="prose prose-emerald max-w-none text-gray-700 leading-loose prose-p:font-medium">
+                   <p className="whitespace-pre-wrap">{selectedAnnouncement.content}</p>
                 </div>
               </div>
 
-              <div className="p-6 space-y-6">
-                <div>
-                  <h4 className="font-bold text-lg text-gray-900 mb-2">{selectedAnnouncement.title}</h4>
-                  {selectedAnnouncement.type === 'urgent' && (
-                    <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-red-100 text-red-700 text-xs font-bold">
-                      🚨 Urgent
-                    </span>
-                  )}
-                </div>
-
-                <div>
-                  <p className="text-gray-600 leading-relaxed whitespace-pre-wrap">{selectedAnnouncement.content}</p>
-                </div>
-
-                <div className="pt-4 border-t border-gray-200 space-y-3">
-                  <div>
-                    <p className="text-xs text-gray-500 uppercase font-semibold mb-1">Date</p>
-                    <p className="text-sm text-gray-700">{formatDate(selectedAnnouncement.createdAt)}</p>
-                  </div>
-                  <div>
-                    <p className="text-xs text-gray-500 uppercase font-semibold mb-1">From</p>
-                    <p className="text-sm text-gray-700">{selectedAnnouncement.createdBy?.name || 'Admin Team'}</p>
-                  </div>
-                  <div>
-                    <p className="text-xs text-gray-500 uppercase font-semibold mb-1">Status</p>
-                    <p className="text-sm">
-                      {isUnread(selectedAnnouncement) ? (
-                        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-green-100 text-green-700 font-medium">
-                          ✓ Unread
-                        </span>
-                      ) : (
-                        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-gray-100 text-gray-700 font-medium">
-                          ✓ Read
-                        </span>
-                      )}
+              {/* Notice Metadata */}
+              <div className="p-6 bg-gray-50 border-t border-gray-100 grid grid-cols-2 gap-4">
+                  <div className="bg-white p-4 rounded-2xl border border-gray-100 shadow-sm">
+                    <p className="text-xs text-gray-400 uppercase font-black tracking-widest mb-1.5 flex items-center gap-1.5">
+                       <span>🕒</span> Timestamp
                     </p>
+                    <p className="text-sm font-bold text-gray-800">{formatDate(selectedAnnouncement.createdAt)}</p>
                   </div>
-                </div>
+                  <div className="bg-white p-4 rounded-2xl border border-gray-100 shadow-sm">
+                    <p className="text-xs text-gray-400 uppercase font-black tracking-widest mb-1.5 flex items-center gap-1.5">
+                       <span>🛡️</span> Authority
+                    </p>
+                    <p className="text-sm font-bold text-gray-800">{selectedAnnouncement.createdBy?.name || 'Systems Admin'}</p>
+                  </div>
               </div>
             </div>
           ) : (
-            <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-8 text-center sticky top-6">
-              <span className="text-6xl block mb-4 text-gray-300">📢</span>
-              <p className="text-gray-600 font-medium">Select an announcement to view full details</p>
+            <div className="bg-white/50 backdrop-blur-sm rounded-3xl border-2 border-dashed border-gray-200 p-12 text-center sticky top-6 h-[400px] flex flex-col items-center justify-center">
+              <span className="text-7xl block mb-6 grayscale opacity-20 transform -rotate-12">📢</span>
+              <p className="text-gray-900 text-xl font-black mb-2">No Item Selected</p>
+              <p className="text-gray-500 font-medium max-w-xs">Click on any announcement from the left feed to preview the full secure broadcast here.</p>
             </div>
           )}
         </div>

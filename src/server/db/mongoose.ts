@@ -44,6 +44,7 @@ export async function connectToDatabase() {
         retryWrites: true,
         w: 'majority',
         retryReads: true,
+        family: 4, // Force IPv4 to prevent getaddrinfo ENOTFOUND errors on some network configurations
       });
       
       const result = await Promise.race([connectPromise, timeoutPromise]);

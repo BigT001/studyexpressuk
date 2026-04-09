@@ -14,6 +14,8 @@ async function fetchDashboardData() {
     const MembershipModel = (await import('@/server/db/models/membership.model')).default;
     const MessageModel = (await import('@/server/db/models/message.model')).default;
     const Announcement = (await import('@/server/db/models/announcement.model')).Announcement;
+    const { getServerAuthSession } = await import('@/server/auth/session');
+    const session = await getServerAuthSession();
 
     await connectToDatabase();
 
@@ -42,12 +44,15 @@ async function fetchDashboardData() {
     const totalEnrollments = await EnrollmentModel.countDocuments();
     const activeEnrollments = await EnrollmentModel.countDocuments({ status: { $in: ['enrolled', 'in_progress'] } });
     const completedEnrollments = await EnrollmentModel.countDocuments({ status: 'completed' });
+    const pendingEnrollments = await EnrollmentModel.countDocuments({ status: { $in: ['registered', 'cancelled'] } });
 
     const totalMemberships = await MembershipModel.countDocuments();
     const activeMemberships = await MembershipModel.countDocuments({ status: 'active' });
 
     const totalMessages = await MessageModel.countDocuments();
-    const unreadMessages = await MessageModel.countDocuments({ readAt: null });
+    const unreadMessages = session?.user?.id 
+      ? await MessageModel.countDocuments({ recipientId: session.user.id, readAt: null })
+      : 0;
 
     const totalAnnouncements = await Announcement.countDocuments({ isActive: true });
 
@@ -110,6 +115,7 @@ async function fetchDashboardData() {
         total: totalEnrollments,
         active: activeEnrollments,
         completed: completedEnrollments,
+        pending: pendingEnrollments,
         trend: enrollmentTrend,
       },
       memberships: {
@@ -148,12 +154,13 @@ export default async function AdminDashboard() {
     );
   }
 
-  const conversionRate = data.users.total > 0 
-    ? ((data.memberships.active / data.users.total) * 100).toFixed(1)
+  const potentialCustomers = data.users.individuals + data.users.corporates;
+  const conversionRate = potentialCustomers > 0 
+    ? ((data.memberships.active / potentialCustomers) * 100).toFixed(1)
     : 0;
 
-  const enrollmentRate = data.users.total > 0
-    ? ((data.enrollments.active / data.users.total) * 100).toFixed(1)
+  const enrollmentCompletionRate = data.enrollments.total > 0
+    ? ((data.enrollments.completed / data.enrollments.total) * 100).toFixed(1)
     : 0;
 
   return (
@@ -246,15 +253,21 @@ export default async function AdminDashboard() {
                   <Activity className="w-6 h-6 text-orange-600" />
                 </div>
                 <div>
-                  <p className="text-gray-600 text-sm font-medium">Enrollment Rate</p>
-                  <h3 className="text-2xl font-bold text-gray-900">{enrollmentRate}%</h3>
+                  <p className="text-gray-600 text-sm font-medium">Total Enrollments</p>
+                  <h3 className="text-2xl font-bold text-gray-900">{data.enrollments.total}</h3>
                 </div>
               </div>
-              <div className="text-sm text-gray-500">
-                {data.enrollments.active} active
+              <div className="text-sm font-medium text-green-600">
+                {enrollmentCompletionRate}% completed
               </div>
             </div>
-            <div className="text-xs text-gray-500">{data.enrollments.completed} completed</div>
+            <div className="flex items-center gap-2 text-xs text-gray-500 flex-wrap">
+              <span>{data.enrollments.active} active</span>
+              <span className="w-1 h-1 bg-gray-300 rounded-full" />
+              <span>{data.enrollments.completed} completed</span>
+              <span className="w-1 h-1 bg-gray-300 rounded-full" />
+              <span>{data.enrollments.pending} pending/cancelled</span>
+            </div>
           </div>
         </div>
 
