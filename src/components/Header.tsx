@@ -8,6 +8,7 @@ import { useSession } from 'next-auth/react';
 const NAV_ITEMS = [
   { label: 'Courses',    href: '/courses' },
   { label: 'Events',     href: '/events' },
+  { label: 'GRIP Programme', href: '/grip-programme' },
   { label: 'About',      href: '/about' },
 ];
 

@@ -24,7 +24,7 @@ const navItems: NavItem[] = [
   {
     icon: '👥',
     label: 'Members',
-    href: '/subadmin/users',
+    href: '/subadmin/members',
   },
   {
     icon: '📅',

@@ -1,92 +1,50 @@
 'use client'
 
-import { useState } from 'react'
-import { Download, Search, Filter, Eye, Users2 } from 'lucide-react'
-
-import { SubAdminMemberSearch, SubAdminMemberList, SubAdminMemberFilters } from '@/components/subadmin'
+import { useState, useEffect } from 'react'
+import { Download, Search, Filter, Eye, Users2, Loader2 } from 'lucide-react'
+import Link from 'next/link'
 
 export default function MembersPage() {
   const [searchQuery, setSearchQuery] = useState('')
   const [memberType, setMemberType] = useState('all')
-  const [sortBy, setSortBy] = useState('name')
+  const [users, setUsers] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
   const [showFilters, setShowFilters] = useState(false)
 
-  const memberStats = [
-    { label: 'Individual Members', value: '1,850', change: '+24 this month' },
-    { label: 'Corporate Members', value: '600', change: '+8 this month' },
-    { label: 'Active Members', value: '2,200', change: '89.8% engagement' },
-    { label: 'Inactive Members', value: '250', change: 'Needs attention' },
-  ]
+  useEffect(() => {
+    async function fetchUsers() {
+      try {
+        const res = await fetch('/api/users');
+        const data = await res.json();
+        if (data.success) {
+          setUsers(data.users);
+        }
+      } catch (err) {
+        console.error('Failed to fetch users:', err);
+      } finally {
+        setLoading(false);
+      }
+    }
+    fetchUsers();
+  }, []);
 
-  const members = [
-    {
-      id: 1,
-      name: 'Sarah Johnson',
-      type: 'Individual',
-      email: 'sarah.johnson@email.com',
-      phone: '+44 7700 123456',
-      joinDate: '2024-06-15',
-      status: 'Active',
-      courses: 3,
-      lastLogin: '2 hours ago',
-      avatar: 'SJ'
-    },
-    {
-      id: 2,
-      name: 'Tech Industries Ltd',
-      type: 'Corporate',
-      email: 'hr@techindustries.com',
-      phone: '+44 20 7946 0958',
-      joinDate: '2024-03-10',
-      status: 'Active',
-      staff: 45,
-      lastLogin: '1 day ago',
-      avatar: 'TI'
-    },
-    {
-      id: 3,
-      name: 'James Wilson',
-      type: 'Individual',
-      email: 'james.wilson@email.com',
-      phone: '+44 7700 654321',
-      joinDate: '2024-08-22',
-      status: 'Active',
-      courses: 1,
-      lastLogin: '5 days ago',
-      avatar: 'JW'
-    },
-    {
-      id: 4,
-      name: 'Global Consulting Group',
-      type: 'Corporate',
-      email: 'contact@globalconsulting.com',
-      phone: '+44 20 3031 1234',
-      joinDate: '2024-02-05',
-      status: 'Inactive',
-      staff: 120,
-      lastLogin: '3 weeks ago',
-      avatar: 'GC'
-    },
-    {
-      id: 5,
-      name: 'Emma Davis',
-      type: 'Individual',
-      email: 'emma.davis@email.com',
-      phone: '+44 7700 987654',
-      joinDate: '2024-07-08',
-      status: 'Active',
-      courses: 2,
-      lastLogin: '12 hours ago',
-      avatar: 'ED'
-    },
-  ]
-
-  const filteredMembers = members.filter(member => {
-    const matchesSearch = member.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         member.email.toLowerCase().includes(searchQuery.toLowerCase())
-    const matchesType = memberType === 'all' || member.type.toLowerCase() === memberType.toLowerCase()
-    return matchesSearch && matchesType
+  const filteredMembers = users.filter(user => {
+    const name = `${user.firstName || ''} ${user.lastName || ''}`.toLowerCase();
+    const email = (user.email || '').toLowerCase();
+    const query = searchQuery.toLowerCase();
+    
+    const matchesSearch = name.includes(query) || email.includes(query);
+    const matchesType = memberType === 'all' || user.role === memberType.toUpperCase();
+    
+    return matchesSearch && matchesType;
   })
+
+  const stats = {
+    individuals: users.filter(u => u.role === 'INDIVIDUAL').length,
+    corporates: users.filter(u => u.role === 'CORPORATE').length,
+    staff: users.filter(u => u.role === 'STAFF').length,
+    total: users.length
+  }
 
   return (
     <div className="space-y-6">
@@ -96,7 +54,10 @@ export default function MembersPage() {
           <h1 className="text-3xl font-bold text-slate-900">Member Management</h1>
           <p className="text-slate-600 mt-1">View and manage all individual and corporate member profiles</p>
         </div>
-        <button className="flex items-center gap-2 bg-slate-900 text-white px-4 py-2 rounded-lg hover:bg-slate-800 transition-colors">
+        <button 
+          onClick={() => window.print()}
+          className="flex items-center gap-2 bg-slate-900 text-white px-4 py-2 rounded-lg hover:bg-slate-800 transition-colors"
+        >
           <Download className="w-4 h-4" />
           Export
         </button>
@@ -104,136 +65,150 @@ export default function MembersPage() {
 
       {/* Stats */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        {memberStats.map((stat, idx) => (
-          <div key={idx} className="bg-white rounded-lg border border-slate-200 p-4">
-            <p className="text-sm text-slate-600">{stat.label}</p>
-            <p className="text-2xl font-bold text-slate-900 mt-2">{stat.value}</p>
-            <p className="text-xs text-slate-500 mt-2">{stat.change}</p>
+        {[
+          { label: 'Individual Members', value: stats.individuals, color: 'text-blue-600' },
+          { label: 'Corporate Members', value: stats.corporates, color: 'text-purple-600' },
+          { label: 'Staff Members', value: stats.staff, color: 'text-green-600' },
+          { label: 'Total Members', value: stats.total, color: 'text-slate-900' },
+        ].map((stat, idx) => (
+          <div key={idx} className="bg-white rounded-lg border border-slate-200 p-4 shadow-sm">
+            <p className="text-xs font-bold text-slate-500 uppercase tracking-widest">{stat.label}</p>
+            <p className={`text-2xl font-black mt-2 ${stat.color}`}>{stat.value}</p>
           </div>
         ))}
       </div>
 
       {/* Search and Filters */}
-      <div className="bg-white rounded-lg border border-slate-200 p-4 space-y-4">
-        <div className="flex items-center gap-2 bg-slate-50 rounded-lg px-3 py-2">
+      <div className="bg-white rounded-lg border border-slate-200 p-4 space-y-4 shadow-sm">
+        <div className="flex items-center gap-2 bg-slate-50 rounded-lg px-3 py-2 border border-slate-100 focus-within:border-blue-300 transition-all">
           <Search className="w-4 h-4 text-slate-400" />
           <input
             type="text"
             placeholder="Search by name, email, or phone..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="bg-transparent flex-1 outline-none text-sm"
+            className="bg-transparent flex-1 outline-none text-sm text-slate-700"
           />
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-4">
+          <div className="flex bg-slate-100 p-1 rounded-lg">
+            {['all', 'individual', 'corporate', 'staff'].map((type) => (
+              <button
+                key={type}
+                onClick={() => setMemberType(type)}
+                className={`px-4 py-1.5 rounded-md text-xs font-bold transition-all uppercase tracking-tighter ${
+                  memberType === type 
+                    ? 'bg-white text-slate-900 shadow-sm' 
+                    : 'text-slate-500 hover:text-slate-700'
+                }`}
+              >
+                {type}
+              </button>
+            ))}
+          </div>
+          
           <button
             onClick={() => setShowFilters(!showFilters)}
-            className="flex items-center gap-2 text-slate-600 hover:text-slate-900 transition-colors"
+            className="flex items-center gap-2 text-slate-600 hover:text-slate-900 transition-colors ml-auto"
           >
             <Filter className="w-4 h-4" />
-            <span className="text-sm">Filters</span>
+            <span className="text-sm font-semibold">More Filters</span>
           </button>
-
-          <select
-            value={memberType}
-            onChange={(e) => setMemberType(e.target.value)}
-            className="text-sm border border-slate-200 rounded px-3 py-1 outline-none"
-          >
-            <option value="all">All Types</option>
-            <option value="individual">Individual</option>
-            <option value="corporate">Corporate</option>
-          </select>
-
-          <select
-            value={sortBy}
-            onChange={(e) => setSortBy(e.target.value)}
-            className="text-sm border border-slate-200 rounded px-3 py-1 outline-none ml-auto"
-          >
-            <option value="name">Sort by Name</option>
-            <option value="date">Sort by Join Date</option>
-            <option value="activity">Sort by Activity</option>
-          </select>
         </div>
-
-        {showFilters && <SubAdminMemberFilters />}
       </div>
 
       {/* Members List */}
-      <div className="bg-white rounded-lg border border-slate-200 overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead className="bg-slate-50 border-b border-slate-200">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-semibold text-slate-900">Member</th>
-                <th className="px-6 py-3 text-left text-xs font-semibold text-slate-900">Type</th>
-                <th className="px-6 py-3 text-left text-xs font-semibold text-slate-900">Join Date</th>
-                <th className="px-6 py-3 text-left text-xs font-semibold text-slate-900">Status</th>
-                <th className="px-6 py-3 text-left text-xs font-semibold text-slate-900">Activity</th>
-                <th className="px-6 py-3 text-right text-xs font-semibold text-slate-900">Action</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-200">
-              {filteredMembers.map((member) => (
-                <tr key={member.id} className="hover:bg-slate-50 transition-colors">
-                  <td className="px-6 py-4">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg flex items-center justify-center text-white text-sm font-semibold">
-                        {member.avatar}
-                      </div>
-                      <div>
-                        <p className="font-medium text-slate-900">{member.name}</p>
-                        <p className="text-xs text-slate-600">{member.email}</p>
-                      </div>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4">
-                    <span className={`inline-flex px-3 py-1 rounded-full text-xs font-medium ${
-                      member.type === 'Individual' 
-                        ? 'bg-blue-100 text-blue-700' 
-                        : 'bg-purple-100 text-purple-700'
-                    }`}>
-                      {member.type}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 text-sm text-slate-600">{member.joinDate}</td>
-                  <td className="px-6 py-4">
-                    <span className={`inline-flex px-3 py-1 rounded-full text-xs font-medium ${
-                      member.status === 'Active'
-                        ? 'bg-green-100 text-green-700'
-                        : 'bg-slate-100 text-slate-700'
-                    }`}>
-                      {member.status}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 text-sm text-slate-600">{member.lastLogin}</td>
-                  <td className="px-6 py-4 text-right">
-                    <button className="text-blue-600 hover:text-blue-700 transition-colors">
-                      <Eye className="w-4 h-4" />
-                    </button>
-                  </td>
+      <div className="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-sm">
+        {loading ? (
+          <div className="p-20 flex flex-col items-center justify-center gap-4">
+            <Loader2 className="w-8 h-8 text-blue-500 animate-spin" />
+            <p className="text-slate-500 font-medium">Loading member directory...</p>
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead className="bg-slate-50/50 border-b border-slate-200">
+                <tr>
+                  <th className="px-6 py-4 text-left text-xs font-black text-slate-500 uppercase tracking-widest">Member</th>
+                  <th className="px-6 py-4 text-left text-xs font-black text-slate-500 uppercase tracking-widest">Role</th>
+                  <th className="px-6 py-4 text-left text-xs font-black text-slate-500 uppercase tracking-widest">Joined</th>
+                  <th className="px-6 py-4 text-left text-xs font-black text-slate-500 uppercase tracking-widest">Status</th>
+                  <th className="px-6 py-4 text-right text-xs font-black text-slate-500 uppercase tracking-widest">Action</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {filteredMembers.map((member) => (
+                  <tr key={member._id} className="hover:bg-slate-50/50 transition-colors group">
+                    <td className="px-6 py-4">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 bg-slate-900 rounded-lg flex items-center justify-center text-white text-sm font-black shadow-inner">
+                          {member.profileImage ? (
+                            <img src={member.profileImage} alt="" className="w-full h-full object-cover rounded-lg" />
+                          ) : (
+                            (member.firstName?.[0] || member.email?.[0] || '?').toUpperCase()
+                          )}
+                        </div>
+                        <div>
+                          <p className="font-bold text-slate-900">{member.firstName} {member.lastName}</p>
+                          <p className="text-xs text-slate-500 font-medium">{member.email}</p>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4">
+                      <span className={`inline-flex px-3 py-1 rounded-full text-[10px] font-black tracking-widest uppercase ${
+                        member.role === 'INDIVIDUAL' 
+                          ? 'bg-blue-50 text-blue-600 border border-blue-100' 
+                          : member.role === 'CORPORATE'
+                          ? 'bg-purple-50 text-purple-600 border border-purple-100'
+                          : 'bg-green-50 text-green-600 border border-green-100'
+                      }`}>
+                        {member.role}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 text-sm font-medium text-slate-600">
+                      {new Date(member.createdAt).toLocaleDateString()}
+                    </td>
+                    <td className="px-6 py-4">
+                      <span className={`inline-flex px-3 py-1 rounded-full text-[10px] font-black tracking-widest uppercase ${
+                        member.status === 'active' || member.status === 'subscribed'
+                          ? 'bg-green-50 text-green-600 border border-green-100'
+                          : 'bg-slate-100 text-slate-500'
+                      }`}>
+                        {member.status || 'Active'}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 text-right">
+                      <Link 
+                        href={`/subadmin/messages?user=${member._id}`}
+                        className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all inline-block"
+                      >
+                        <MessageSquare className="w-4 h-4" />
+                      </Link>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
 
-        {filteredMembers.length === 0 && (
-          <div className="p-8 text-center">
-            <Users2 className="w-12 h-12 text-slate-300 mx-auto mb-4" />
-            <p className="text-slate-600">No members found matching your search criteria</p>
+        {!loading && filteredMembers.length === 0 && (
+          <div className="p-20 text-center">
+            <Users2 className="w-12 h-12 text-slate-200 mx-auto mb-4" />
+            <p className="text-slate-500 font-bold">No members found matching your search</p>
           </div>
         )}
       </div>
 
-      {/* Pagination */}
-      <div className="flex items-center justify-between">
-        <p className="text-sm text-slate-600">Showing {filteredMembers.length} of {members.length} members</p>
-        <div className="flex gap-2">
-          <button className="px-3 py-1 border border-slate-200 rounded text-sm hover:bg-slate-50 transition-colors">Previous</button>
-          <button className="px-3 py-1 border border-slate-200 rounded text-sm hover:bg-slate-50 transition-colors">Next</button>
-        </div>
+      {/* Pagination Placeholder */}
+      <div className="flex items-center justify-between px-2">
+        <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">
+          Showing {filteredMembers.length} of {users.length} members
+        </p>
       </div>
     </div>
   )
 }
+
+import { MessageSquare } from 'lucide-react'
