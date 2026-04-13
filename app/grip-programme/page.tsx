@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { Suspense } from "react";
 import Head from "next/head";
 import Image from "next/image";
 import { motion } from "framer-motion";
@@ -89,7 +89,7 @@ const FAQItem = ({ question, answer }: { question: string; answer: string }) => 
 
 /* ─── Page Component ─────────────────────────────────────────────────── */
 
-export default function GripProgramme() {
+function GripContent() {
   const { data: session } = useSession();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -619,5 +619,13 @@ export default function GripProgramme() {
         © 2026 Studyexpress Nigeria Limited. All Rights Reserved.
       </footer>
     </main>
+  );
+}
+
+export default function GripProgramme() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-white" />}>
+      <GripContent />
+    </Suspense>
   );
 }
