@@ -272,7 +272,7 @@ export default function GripProgramme() {
               },
             ].map((item, i) => (
               <motion.div key={i} {...fadeInUp} transition={{ delay: i * 0.1 }}>
-                <Card className="h-full bg-[#fdfaf5]">
+                <Card className="h-full bg-[#F9FAFB]">
                   <div className="mb-6">{item.icon}</div>
                   <h3 className="text-xl font-extrabold text-[#0C0B20] mb-4">{item.title}</h3>
                   <p className="text-[#6B6880] leading-relaxed italic">{item.description}</p>
@@ -557,7 +557,7 @@ export default function GripProgramme() {
                      src="/blackgirl.png" 
                      alt="African Business Leader" 
                      fill
-                     className="object-cover"
+                     className="object-cover object-top"
                    />
                    <div className="absolute inset-0 bg-gradient-to-br from-[#008200] to-[#0E3386] opacity-10" />
                 </div>
@@ -595,14 +595,14 @@ export default function GripProgramme() {
       {/* ─── Final CTA ──────────────────────────────────────────────────────── */}
       <section id="register" className="py-32">
         <div className="section-container">
-          <div className="bg-[#008200] rounded-[50px] p-20 text-center text-white relative overflow-hidden shadow-2xl group">
+          <div className="bg-[#008200] rounded-[32px] md:rounded-[50px] p-10 md:p-20 text-center text-white relative overflow-hidden shadow-2xl group">
              <div className="absolute inset-0 z-0">
                 <div className="absolute top-0 right-0 w-[400px] h-[400px] bg-white/10 rounded-full blur-[100px] -translate-y-1/2 translate-x-1/2 group-hover:bg-white/20 transition-all duration-700" />
                 <div className="absolute bottom-0 left-0 w-[300px] h-[300px] bg-sky-500/20 rounded-full blur-[80px] translate-y-1/2 -translate-x-1/2" />
              </div>
              
              <div className="relative z-10 max-w-2xl mx-auto">
-               <h2 className="text-5xl md:text-7xl font-black mb-8 leading-tight tracking-tighter">Your next chapter starts in London.</h2>
+               <h2 className="text-3xl md:text-7xl font-black mb-8 leading-tight tracking-tighter">Your next chapter starts in London.</h2>
                <p className="text-xl text-white/80 mb-12">15 places. One cohort. November 2026. Don't let another year pass without a UK strategy.</p>
                <div className="flex flex-col items-center gap-6">
                  <a href="mailto:info@studyexpress.uk" className="bg-white text-[#008200] py-6 px-16 rounded-full text-xl font-black hover:scale-105 transition-all shadow-xl">

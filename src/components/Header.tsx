@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useState, useEffect } from 'react';
 import { usePathname } from 'next/navigation';
 import { useSession } from 'next-auth/react';
+import { X } from 'lucide-react';
 
 const NAV_ITEMS = [
   { label: 'Courses',    href: '/courses' },
@@ -137,13 +138,15 @@ export function Header() {
                   Sign In
                 </Link>
               )}
-              <Link
-                href="/auth/signup"
-                className="btn-primary"
-                style={{ padding: '9px 20px', fontSize: '0.85rem', borderRadius: 8 }}
-              >
-                Get Started
-              </Link>
+              {!isMobile && (
+                <Link
+                  href="/auth/signup"
+                  className="btn-primary"
+                  style={{ padding: '9px 20px', fontSize: '0.85rem', borderRadius: 8 }}
+                >
+                  Get Started
+                </Link>
+              )}
             </>
           ) : (
             <Link
@@ -185,66 +188,63 @@ export function Header() {
 
       {/* ── Mobile Drawer ──────────────────────────────────────────── */}
       {isOpen && (
-        <div style={{
-          position: 'fixed',
-          inset: 0,
-          top: 0,
-          zIndex: 99,
-          background: 'rgba(0,0,0,0.4)',
-          backdropFilter: 'blur(4px)',
-        }} onClick={() => setIsOpen(false)}>
+        <div 
+          className="fixed inset-0 z-[110] bg-black/40 backdrop-blur-sm lg:hidden"
+          onClick={() => setIsOpen(false)}
+        >
           <div
-            style={{
-              position: 'absolute',
-              top: 0,
-              right: 0,
-              width: 300,
-              height: '100vh',
-              background: 'white',
-              padding: '80px 24px 32px',
-              display: 'flex',
-              flexDirection: 'column',
-              gap: 8,
-              boxShadow: '-8px 0 40px rgba(0,0,0,0.15)',
-            }}
+            className="absolute top-0 right-0 w-[85%] max-w-sm h-full bg-white shadow-2xl flex flex-col p-6 animate-in slide-in-from-right duration-300"
             onClick={e => e.stopPropagation()}
           >
-            {NAV_ITEMS.map((item) => (
-              <Link
-                key={item.label}
-                href={item.href}
-                style={{
-                  padding: '12px 16px',
-                  borderRadius: 10,
-                  fontSize: '1rem',
-                  fontWeight: isActive(item.href) ? 700 : 500,
-                  color: isActive(item.href) ? '#008200' : '#374151',
-                  background: isActive(item.href) ? '#f0faf0' : 'transparent',
-                  textDecoration: 'none',
-                  transition: 'all 0.2s',
-                }}
-                onClick={() => setIsOpen(false)}
-              >
-                {item.label}
-              </Link>
-            ))}
+            {/* Drawer Header */}
+            <div className="flex items-center justify-between mb-8 pb-6 border-b border-gray-100">
+               <div className="flex items-center gap-2">
+                 <span className="text-xl font-black tracking-tighter">
+                   <span className="text-[#008200]">study</span>
+                   <span className="text-[#0E3386]">express</span>
+                 </span>
+               </div>
+               <button 
+                 onClick={() => setIsOpen(false)}
+                 className="p-2 bg-gray-50 rounded-full text-gray-400 hover:text-gray-900 transition-colors"
+               >
+                 <X size={20} />
+               </button>
+            </div>
 
-            <div style={{ marginTop: 'auto', display: 'flex', flexDirection: 'column', gap: 10 }}>
+            {/* Links */}
+            <nav className="flex flex-col gap-2 mb-8">
+              {NAV_ITEMS.map((item) => (
+                <Link
+                  key={item.label}
+                  href={item.href}
+                  onClick={() => setIsOpen(false)}
+                  className={`px-4 py-3 rounded-xl text-lg font-bold transition-all ${
+                    isActive(item.href) 
+                    ? 'bg-[#008200]/5 text-[#008200] border-l-4 border-[#008200]' 
+                    : 'text-gray-600 hover:bg-gray-50'
+                  }`}
+                >
+                  {item.label}
+                </Link>
+              ))}
+            </nav>
+
+            {/* Auth Buttons */}
+            <div className="mt-auto space-y-3 pt-6 border-t border-gray-100">
               {!session ? (
                 <>
                   <Link
                     href="/auth/signin"
-                    className="btn-secondary"
-                    style={{ justifyContent: 'center' }}
                     onClick={() => setIsOpen(false)}
+                    className="w-full h-14 flex items-center justify-center rounded-xl border-2 border-gray-100 text-gray-700 font-bold hover:bg-gray-50 transition-all"
                   >
                     Sign In
                   </Link>
                   <Link
                     href="/auth/signup"
-                    className="btn-primary"
-                    style={{ justifyContent: 'center' }}
                     onClick={() => setIsOpen(false)}
+                    className="w-full h-14 flex items-center justify-center rounded-xl bg-[#008200] text-white font-bold hover:bg-[#006600] transition-all"
                   >
                     Get Started
                   </Link>
@@ -252,9 +252,8 @@ export function Header() {
               ) : (
                 <Link
                   href={getDashboardHref(session?.user?.role as string)}
-                  className="btn-primary"
-                  style={{ justifyContent: 'center' }}
                   onClick={() => setIsOpen(false)}
+                  className="w-full h-14 flex items-center justify-center rounded-xl bg-[#0E3386] text-white font-bold hover:opacity-90 transition-all"
                 >
                   Dashboard →
                 </Link>
