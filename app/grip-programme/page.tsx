@@ -4,6 +4,9 @@ import React from "react";
 import Head from "next/head";
 import Image from "next/image";
 import { motion } from "framer-motion";
+import { useSession, signIn } from "next-auth/react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { toast } from "react-hot-toast";
 import { 
   Calendar, 
   Users, 
@@ -87,6 +90,47 @@ const FAQItem = ({ question, answer }: { question: string; answer: string }) => 
 /* ─── Page Component ─────────────────────────────────────────────────── */
 
 export default function GripProgramme() {
+  const { data: session } = useSession();
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const [isProcessing, setIsProcessing] = React.useState(false);
+
+  React.useEffect(() => {
+    if (searchParams.get("success") === "true") {
+      toast.success("Deposit received! Check your email for next steps.", {
+        duration: 6000,
+        icon: '🎉',
+      });
+    }
+  }, [searchParams]);
+
+  const handleCheckout = async (tier: string) => {
+    if (!session) {
+      signIn("google", { callbackUrl: "/grip-programme" });
+      return;
+    }
+
+    try {
+      setIsProcessing(true);
+      const res = await fetch("/api/grip/checkout", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ tier }),
+      });
+
+      const data = await res.json();
+      if (data.success && data.url) {
+        window.location.href = data.url;
+      } else {
+        toast.error(data.error || "Failed to initiate checkout");
+      }
+    } catch (err) {
+      toast.error("An error occurred. Please try again.");
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
   const fadeInUp = {
     initial: { opacity: 0, y: 30 },
     whileInView: { opacity: 1, y: 0 },
@@ -175,7 +219,7 @@ export default function GripProgramme() {
                 <div className="flex justify-center mb-4 opacity-70 group-hover:opacity-100 transition-opacity">
                   {stat.icon}
                 </div>
-                <div className="text-4xl font-black text-[#C9A84C] mb-2">{stat.value}</div>
+                <div className="text-4xl font-black text-[#008200] mb-2">{stat.value}</div>
                 <div className="text-[10px] font-bold tracking-[0.2em] text-[#AAAAAA] uppercase">
                   {stat.label}
                 </div>
@@ -386,7 +430,7 @@ export default function GripProgramme() {
               { time: "4:30 PM", title: "Certification", desc: "CMI/ILM CPD certificates issued." },
             ].map((slot, i) => (
               <div key={i} className="p-8 border border-white/10 bg-white/5 hover:bg-white/10 transition-colors">
-                <div className="text-[#C9A84C] font-black text-xs tracking-widest mb-4">{slot.time}</div>
+                <div className="text-[#008200] font-black text-xs tracking-widest mb-4">{slot.time}</div>
                 <h4 className="text-lg font-bold mb-4">{slot.title}</h4>
                 <p className="text-sm text-[#AAAAAA] leading-relaxed">{slot.desc}</p>
               </div>
@@ -394,8 +438,8 @@ export default function GripProgramme() {
           </div>
 
           {/* Academic Partner Info */}
-          <div className="mt-32 p-12 rounded-[40px] border-2 border-[#C9A84C]/30 bg-[#C9A84C]/5 max-w-5xl mx-auto text-center">
-            <div className="text-[#C9A84C] text-xs font-black tracking-widest mb-4">TRAINING PARTNER</div>
+          <div className="mt-32 p-12 rounded-[40px] border-2 border-[#008200]/30 bg-[#008200]/5 max-w-5xl mx-auto text-center">
+            <div className="text-[#008200] text-xs font-black tracking-widest mb-4">TRAINING PARTNER</div>
             <h3 className="text-3xl font-black mb-6">GBS Corporate Training</h3>
             <p className="text-[#AAAAAA] text-lg leading-relaxed max-w-3xl mx-auto">
               Established 1966 · ISO 9001:2015 Certified · Approved CMI & ILM Centre. GBS Corporate brings over 50 years of management and leadership development expertise.
@@ -452,8 +496,12 @@ export default function GripProgramme() {
                     </div>
                   ))}
                 </div>
-                <button className={`w-full py-4 rounded-xl font-black text-sm transition-all ${plan.popular ? 'bg-[#008200] text-white' : 'bg-[#0C0B20] text-white hover:bg-[#008200]'}`}>
-                  CHOOSE {plan.tier}
+                <button 
+                  disabled={isProcessing}
+                  onClick={() => handleCheckout(plan.tier)}
+                  className={`w-full py-4 rounded-xl font-black text-sm transition-all disabled:opacity-50 disabled:cursor-not-allowed ${plan.popular ? 'bg-[#008200] text-white hover:bg-[#006600]' : 'bg-[#0C0B20] text-white hover:bg-[#008200]'}`}
+                >
+                  {isProcessing ? "PROCESSING..." : `CHOOSE ${plan.tier}`}
                 </button>
               </Card>
             ))}
@@ -504,10 +552,14 @@ export default function GripProgramme() {
                 </div>
               </div>
               <div className="relative">
-                <div className="aspect-square rounded-[60px] bg-[#EEEEEE] overflow-hidden rotate-3 scale-95 shadow-2xl">
-                   {/* Placeholder for branding / team image */}
-                   <div className="absolute inset-0 bg-gradient-to-br from-[#008200] to-[#0E3386] opacity-20" />
-                   <div className="w-full h-full flex items-center justify-center text-8xl grayscale opacity-10">🌍</div>
+                <div className="aspect-square rounded-[60px] bg-[#EEEEEE] overflow-hidden rotate-3 scale-95 shadow-2xl relative">
+                   <Image 
+                     src="/blackgirl.png" 
+                     alt="African Business Leader" 
+                     fill
+                     className="object-cover"
+                   />
+                   <div className="absolute inset-0 bg-gradient-to-br from-[#008200] to-[#0E3386] opacity-10" />
                 </div>
                 <div className="absolute -bottom-10 -left-10 aspect-video w-64 rounded-3xl bg-white shadow-2xl p-6 border border-[#EEEEEE] -rotate-6">
                    <div className="text-[#008200] mb-4 font-black text-xs tracking-widest uppercase">TESTIMONIAL</div>
