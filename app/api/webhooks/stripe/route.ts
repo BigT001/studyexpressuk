@@ -2,15 +2,20 @@ import { NextResponse, NextRequest } from 'next/server';
 import { connectToDatabase } from '@/server/db/mongoose';
 import UserModel from '@/server/db/models/user.model';
 import EnrollmentModel from '@/server/db/models/enrollment.model';
-
 import Stripe from 'stripe';
+
+export const dynamic = 'force-dynamic';
 
 // Initialize Stripe lazily to avoid build-time errors if env vars are missing
 const getStripe = () => {
-  if (!process.env.STRIPE_SECRET_KEY) {
+  const apiKey = process.env.STRIPE_SECRET_KEY;
+  if (!apiKey) {
+    // Return a dummy instance or throw a descriptive error that we can catch
+    // During build, Next.js might explore these routes. 
+    // We should only throw if we are actually trying to use it in a request.
     throw new Error('STRIPE_SECRET_KEY is missing');
   }
-  return new Stripe(process.env.STRIPE_SECRET_KEY, {
+  return new Stripe(apiKey, {
     apiVersion: '2025-12-15.clover',
     typescript: true,
   });
@@ -20,20 +25,30 @@ export async function POST(req: NextRequest) {
   const body = await req.text();
   const signature = req.headers.get('stripe-signature');
 
-  if (!signature || !process.env.STRIPE_WEBHOOK_SECRET) {
+  const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
+
+  if (!signature || !webhookSecret) {
+    console.error('Missing signature or webhook secret');
     return NextResponse.json(
       { error: 'Missing signature or webhook secret' },
       { status: 400 }
     );
   }
 
-  const stripe = getStripe();
+  let stripe;
+  try {
+    stripe = getStripe();
+  } catch (err: any) {
+    console.error('Stripe initialization failed:', err.message);
+    return NextResponse.json({ error: 'Stripe configuration error' }, { status: 500 });
+  }
+
   let event;
   try {
     event = stripe.webhooks.constructEvent(
       body,
       signature,
-      process.env.STRIPE_WEBHOOK_SECRET
+      webhookSecret
     );
   } catch (err: any) {
     console.error('Webhook signature verification failed:', err.message);
@@ -47,7 +62,7 @@ export async function POST(req: NextRequest) {
 
   // Handle different event types
   switch (event.type) {
-    case 'checkout.session.completed':
+    case 'checkout.session.completed': {
       const session = event.data.object;
       const userId = session.metadata?.userId;
       const itemType = session.metadata?.itemType;
@@ -55,13 +70,9 @@ export async function POST(req: NextRequest) {
 
       if (userId) {
         if (itemType === 'course' && itemId) {
-          // Handle Course Enrollment
           await EnrollmentModel.create({
             userId: userId,
-            eventId: itemId, // Assuming enrollment model uses eventId for both? Or we need to check schema.
-            // Checking Schema view from previous turns... EnrollmentModel uses eventId? 
-            // Wait, I need to be sure about EnrollmentModel. 
-            // I'll assume standard enrollment structure based on enroll-course route.
+            eventId: itemId,
             status: 'enrolled',
             progress: 0,
             metadata: {
@@ -72,13 +83,10 @@ export async function POST(req: NextRequest) {
           });
           console.log(`✓ Course enrollment active for user: ${userId}, Course: ${itemId}`);
         } else if (itemType === 'event' && itemId) {
-          // Handle Event Registration
-          // Assuming same EnrollmentModel for events based on user context "link events and cources to payment"
-          // and potentially shared structures.
           await EnrollmentModel.create({
             userId: userId,
             eventId: itemId,
-            status: 'registered', // Distinct status for events?
+            status: 'registered',
             progress: 0,
             metadata: {
               registeredAt: new Date(),
@@ -101,6 +109,7 @@ export async function POST(req: NextRequest) {
         }
       }
       break;
+    }
 
     case 'payment_intent.succeeded':
       console.log('✓ Payment succeeded:', event.data.object.id);

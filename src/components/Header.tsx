@@ -1,34 +1,33 @@
-'use client';
-
 import Link from 'next/link';
 import { useState, useEffect } from 'react';
 import { usePathname } from 'next/navigation';
 import { useSession } from 'next-auth/react';
-import { X } from 'lucide-react';
+import { X, Menu } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 
 const NAV_ITEMS = [
-  { label: 'Courses',    href: '/courses' },
-  { label: 'Events',     href: '/events' },
+  { label: 'Courses', href: '/courses' },
+  { label: 'Events', href: '/events' },
   { label: 'GRIP Programme', href: '/grip-programme' },
-  { label: 'About',      href: '/about' },
+  { label: 'About', href: '/about' },
 ];
 
 function getDashboardHref(role?: string) {
   switch (role) {
     case 'INDIVIDUAL': return '/individual';
-    case 'CORPORATE':  return '/corporate';
-    case 'SUBADMIN':   return '/subadmin';
-    case 'STAFF':      return '/individual';
-    default:           return '/admin';
+    case 'CORPORATE': return '/corporate';
+    case 'SUBADMIN': return '/subadmin';
+    case 'STAFF': return '/individual';
+    default: return '/admin';
   }
 }
 
 export function Header() {
-  const [isOpen,     setIsOpen    ] = useState(false);
+  const [isOpen, setIsOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
-  const [isMobile,   setIsMobile  ] = useState(false);
-  const { data: session }           = useSession();
-  const pathname                    = usePathname();
+  const [isMobile, setIsMobile] = useState(false);
+  const { data: session } = useSession();
+  const pathname = usePathname();
 
   /* ── scroll listener ─────────────────────────────────────────────── */
   useEffect(() => {
@@ -39,7 +38,11 @@ export function Header() {
 
   /* ── responsive breakpoint tracker ──────────────────────────────── */
   useEffect(() => {
-    const check = () => setIsMobile(window.innerWidth < 768);
+    const check = () => {
+      const mobile = window.innerWidth < 1024; // Aligning with common drawer usage
+      setIsMobile(mobile);
+      if (!mobile) setIsOpen(false);
+    };
     check();
     window.addEventListener('resize', check);
     return () => window.removeEventListener('resize', check);
@@ -47,7 +50,11 @@ export function Header() {
 
   /* ── lock body scroll when mobile menu is open ───────────────────── */
   useEffect(() => {
-    document.body.style.overflow = isOpen ? 'hidden' : '';
+    if (isOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
     return () => { document.body.style.overflow = ''; };
   }, [isOpen]);
 
@@ -94,8 +101,8 @@ export function Header() {
           </div>
         </Link>
 
-        {/* ── Desktop Navigation (hidden on mobile) ───────────────────── */}
-        {!isMobile && <nav style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+        {/* ── Desktop Navigation ───────────────────── */}
+        <nav className="hidden lg:flex items-center gap-2">
           {NAV_ITEMS.map((item) => (
             <Link
               key={item.label}
@@ -117,13 +124,13 @@ export function Header() {
               {item.label}
             </Link>
           ))}
-        </nav>}
+        </nav>
 
-        {/* ── Auth Buttons ────────────────────────────────────────── */}
+        {/* ── Auth/Actions ────────────────────────────────────────── */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          {!session ? (
-            <>
-              {!isMobile && (
+          <div className="hidden lg:flex items-center gap-4">
+            {!session ? (
+              <>
                 <Link
                   href="/auth/signin"
                   style={{
@@ -137,8 +144,6 @@ export function Header() {
                 >
                   Sign In
                 </Link>
-              )}
-              {!isMobile && (
                 <Link
                   href="/auth/signup"
                   className="btn-primary"
@@ -146,123 +151,117 @@ export function Header() {
                 >
                   Get Started
                 </Link>
-              )}
-            </>
-          ) : (
-            <Link
-              href={getDashboardHref(session?.user?.role as string)}
-              className="btn-primary"
-              style={{ padding: '9px 20px', fontSize: '0.85rem', borderRadius: 8 }}
-            >
-              Dashboard →
-            </Link>
-          )}
+              </>
+            ) : (
+              <Link
+                href={getDashboardHref(session?.user?.role as string)}
+                className="btn-primary"
+                style={{ padding: '9px 20px', fontSize: '0.85rem', borderRadius: 8 }}
+              >
+                Dashboard →
+              </Link>
+            )}
+          </div>
 
-          {/* Mobile hamburger – only rendered on mobile */}
-          {isMobile && (
-            <button
-              onClick={() => setIsOpen(!isOpen)}
-              aria-label="Toggle menu"
-              style={{
-                padding: 8,
-                borderRadius: 8,
-                background: 'transparent',
-                border: '1.5px solid #e5e7eb',
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                color: '#374151',
-                transition: 'all 0.2s',
-              }}
-            >
-              <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-                {isOpen
-                  ? <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                  : <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" />}
-              </svg>
-            </button>
-          )}
+          {/* Mobile hamburger */}
+          <button
+            className="lg:hidden p-2.5 rounded-xl border border-gray-200 text-gray-700 hover:bg-gray-50 active:scale-95 transition-all"
+            onClick={() => setIsOpen(!isOpen)}
+            aria-label="Toggle menu"
+          >
+            {isOpen ? <X size={22} /> : <Menu size={22} />}
+          </button>
         </div>
       </div>
 
       {/* ── Mobile Drawer ──────────────────────────────────────────── */}
-      {isOpen && (
-        <div 
-          className="fixed inset-0 z-[110] bg-black/40 backdrop-blur-sm lg:hidden"
-          onClick={() => setIsOpen(false)}
-        >
-          <div
-            className="absolute top-0 right-0 w-[85%] max-w-sm h-full bg-white shadow-2xl flex flex-col p-6 animate-in slide-in-from-right duration-300"
-            onClick={e => e.stopPropagation()}
-          >
-            {/* Drawer Header */}
-            <div className="flex items-center justify-between mb-8 pb-6 border-b border-gray-100">
-               <div className="flex items-center gap-2">
-                 <span className="text-xl font-black tracking-tighter">
-                   <span className="text-[#008200]">study</span>
-                   <span className="text-[#0E3386]">express</span>
-                 </span>
-               </div>
-               <button 
-                 onClick={() => setIsOpen(false)}
-                 className="p-2 bg-gray-50 rounded-full text-gray-400 hover:text-gray-900 transition-colors"
-               >
-                 <X size={20} />
-               </button>
-            </div>
+      <AnimatePresence>
+        {isOpen && (
+          <>
+            {/* Backdrop */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 bg-black/40 backdrop-blur-sm z-[110] lg:hidden"
+              onClick={() => setIsOpen(false)}
+            />
+            
+            {/* Drawer Content */}
+            <motion.div
+              initial={{ x: '100%' }}
+              animate={{ x: 0 }}
+              exit={{ x: '100%' }}
+              transition={{ type: 'spring', damping: 25, stiffness: 200 }}
+              className="fixed top-0 right-0 w-[85%] max-w-sm h-full bg-white shadow-2xl z-[120] lg:hidden flex flex-col p-6"
+            >
+              {/* Drawer Header */}
+              <div className="flex items-center justify-between mb-8 pb-6 border-b border-gray-100">
+                 <div className="flex items-center gap-2">
+                   <span className="text-xl font-black tracking-tighter">
+                     <span className="text-[#008200]">study</span>
+                     <span className="text-[#0E3386]">express</span>
+                   </span>
+                 </div>
+                 <button 
+                   onClick={() => setIsOpen(false)}
+                   className="p-2.5 bg-gray-50 rounded-full text-gray-400 hover:text-gray-900 transition-colors"
+                 >
+                   <X size={20} />
+                 </button>
+              </div>
 
-            {/* Links */}
-            <nav className="flex flex-col gap-2 mb-8">
-              {NAV_ITEMS.map((item) => (
-                <Link
-                  key={item.label}
-                  href={item.href}
-                  onClick={() => setIsOpen(false)}
-                  className={`px-4 py-3 rounded-xl text-lg font-bold transition-all ${
-                    isActive(item.href) 
-                    ? 'bg-[#008200]/5 text-[#008200] border-l-4 border-[#008200]' 
-                    : 'text-gray-600 hover:bg-gray-50'
-                  }`}
-                >
-                  {item.label}
-                </Link>
-              ))}
-            </nav>
+              {/* Links */}
+              <nav className="flex flex-col gap-2 mb-8">
+                {NAV_ITEMS.map((item) => (
+                  <Link
+                    key={item.label}
+                    href={item.href}
+                    onClick={() => setIsOpen(false)}
+                    className={`px-4 py-4 rounded-xl text-lg font-bold transition-all border-l-4 ${
+                      isActive(item.href) 
+                      ? 'bg-[#008200]/5 text-[#008200] border-[#008200]' 
+                      : 'text-gray-600 border-transparent hover:bg-gray-50'
+                    }`}
+                  >
+                    {item.label}
+                  </Link>
+                ))}
+              </nav>
 
-            {/* Auth Buttons */}
-            <div className="mt-auto space-y-3 pt-6 border-t border-gray-100">
-              {!session ? (
-                <>
+              {/* Auth Buttons */}
+              <div className="mt-auto space-y-3 pt-6 border-t border-gray-100">
+                {!session ? (
+                  <>
+                    <Link
+                      href="/auth/signin"
+                      onClick={() => setIsOpen(false)}
+                      className="w-full h-14 flex items-center justify-center rounded-xl border-2 border-gray-100 text-gray-700 font-bold hover:bg-gray-50 transition-all"
+                    >
+                      Sign In
+                    </Link>
+                    <Link
+                      href="/auth/signup"
+                      onClick={() => setIsOpen(false)}
+                      className="w-full h-14 flex items-center justify-center rounded-xl bg-[#008200] text-white font-bold hover:bg-[#006600] transition-all shadow-lg shadow-green-200"
+                    >
+                      Get Started
+                    </Link>
+                  </>
+                ) : (
                   <Link
-                    href="/auth/signin"
+                    href={getDashboardHref(session?.user?.role as string)}
                     onClick={() => setIsOpen(false)}
-                    className="w-full h-14 flex items-center justify-center rounded-xl border-2 border-gray-100 text-gray-700 font-bold hover:bg-gray-50 transition-all"
+                    className="w-full h-14 flex items-center justify-center rounded-xl bg-[#0E3386] text-white font-bold hover:opacity-90 transition-all shadow-lg shadow-blue-200"
                   >
-                    Sign In
+                    Dashboard →
                   </Link>
-                  <Link
-                    href="/auth/signup"
-                    onClick={() => setIsOpen(false)}
-                    className="w-full h-14 flex items-center justify-center rounded-xl bg-[#008200] text-white font-bold hover:bg-[#006600] transition-all"
-                  >
-                    Get Started
-                  </Link>
-                </>
-              ) : (
-                <Link
-                  href={getDashboardHref(session?.user?.role as string)}
-                  onClick={() => setIsOpen(false)}
-                  className="w-full h-14 flex items-center justify-center rounded-xl bg-[#0E3386] text-white font-bold hover:opacity-90 transition-all"
-                >
-                  Dashboard →
-                </Link>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
-      {/* no CSS hack needed — visibility driven by isMobile state */}
+                )}
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
     </header>
   );
 }
