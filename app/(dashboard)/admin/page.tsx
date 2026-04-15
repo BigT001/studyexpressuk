@@ -25,14 +25,14 @@ async function fetchDashboardData() {
     const monthAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
 
     // Count data
-    const totalUsers = await UserModel.countDocuments();
+    const totalUsers = await UserModel.countDocuments({ role: { $ne: 'ADMIN' } });
     const totalIndividuals = await UserModel.countDocuments({ role: 'INDIVIDUAL' });
     const totalCorporates = await UserModel.countDocuments({ role: 'CORPORATE' });
     const totalStaff = await UserModel.countDocuments({ role: 'STAFF' });
     const totalSubAdmins = await UserModel.countDocuments({ role: 'SUB_ADMIN' });
     
-    const newUsersWeek = await UserModel.countDocuments({ createdAt: { $gte: weekAgo } });
-    const newUsersMonth = await UserModel.countDocuments({ createdAt: { $gte: monthAgo } });
+    const newUsersWeek = await UserModel.countDocuments({ createdAt: { $gte: weekAgo }, role: { $ne: 'ADMIN' } });
+    const newUsersMonth = await UserModel.countDocuments({ createdAt: { $gte: monthAgo }, role: { $ne: 'ADMIN' } });
 
     const totalEvents = await EventModel.countDocuments();
     const activeEvents = await EventModel.countDocuments({ status: { $in: ['active', 'published'] } });
@@ -79,7 +79,7 @@ async function fetchDashboardData() {
       .lean();
 
     // Recent activity
-    const recentUsers = await UserModel.find()
+    const recentUsers = await UserModel.find({ role: { $ne: 'ADMIN' } })
       .sort({ createdAt: -1 })
       .limit(5)
       .select('email firstName lastName role createdAt')

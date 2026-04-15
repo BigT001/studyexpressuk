@@ -22,6 +22,7 @@ const navItems: NavItem[] = [
   { icon: '💰', label: 'Payments', href: '/admin/payments' },
   { icon: '📊', label: 'Analytics', href: '/admin/analytics' },
   { icon: '⚙️', label: 'Settings', href: '/admin/settings' },
+  { icon: '🌍', label: 'GRIP Edits', href: '/admin/grip-content' },
   { icon: '🔑', label: 'Sub-Admins', href: '/admin/subadmins' },
 ];
 
