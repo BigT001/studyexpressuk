@@ -99,12 +99,67 @@ const newCourses = [
     status: 'active',
     imageUrl: 'https://images.unsplash.com/photo-1517245386807-bb43f82c33c4?q=80&w=2070&auto=format&fit=crop',
   },
+  {
+    title: 'Introduction to Management',
+    description: 'Master the core principles of effective management and learn how to lead teams toward organizational success.',
+    category: 'Management & Leadership Courses',
+    level: 'beginner',
+    duration: 15,
+    price: 2,
+    instructor: 'David Wilson',
+    status: 'active',
+    imageUrl: 'https://images.unsplash.com/photo-1552664730-d307ca884978?q=80&w=2070&auto=format&fit=crop',
+  },
+  {
+    title: 'Matrix Management',
+    description: 'Learn how to navigate and succeed within complex matrix organizational structures and multi-reporting lines.',
+    category: 'Management & Leadership Courses',
+    level: 'intermediate',
+    duration: 12,
+    price: 2,
+    instructor: 'Sarah Thompson',
+    status: 'active',
+    imageUrl: 'https://images.unsplash.com/photo-1543269865-cbf427effbad?q=80&w=2070&auto=format&fit=crop',
+  },
+  {
+    title: 'Stakeholder Management',
+    description: 'Identify, analyze, and manage relationships with key stakeholders to ensure project and business success.',
+    category: 'Management & Leadership Courses',
+    level: 'intermediate',
+    duration: 10,
+    price: 2,
+    instructor: 'Marcus Aurelius',
+    status: 'active',
+    imageUrl: 'https://images.unsplash.com/photo-1557804506-669a67965ba0?q=80&w=2074&auto=format&fit=crop',
+  },
+  {
+    title: 'Customer Relationship Management',
+    description: 'Build and maintain strong customer relationships using modern CRM strategies and technological tools.',
+    category: 'Management & Leadership Courses',
+    level: 'beginner',
+    duration: 14,
+    price: 2,
+    instructor: 'Jessica Pearson',
+    status: 'active',
+    imageUrl: 'https://images.unsplash.com/photo-1556740738-b6a63e27c4df?q=80&w=2070&auto=format&fit=crop',
+  },
 ];
 
 async function reseed() {
   try {
     console.log('Connecting to MongoDB...');
-    await mongoose.connect(MONGODB_URI);
+    await mongoose.connect(MONGODB_URI, {
+      serverSelectionTimeoutMS: 30000,
+      socketTimeoutMS: 30000,
+      connectTimeoutMS: 30000,
+      maxPoolSize: 10,
+      minPoolSize: 2,
+      maxIdleTimeMS: 45000,
+      retryWrites: true,
+      w: 'majority',
+      retryReads: true,
+      family: 4,
+    });
     console.log('Connected.');
 
     console.log('Deleting all existing courses...');
